@@ -1,8 +1,13 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Zap } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { getLoginUrl } from '@/const';
 import GlowButton from './GlowButton';
 
 export default function CTA() {
+  const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
   return (
     <section className="relative py-20 overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
@@ -70,17 +75,22 @@ export default function CTA() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <GlowButton variant="indigo" size="lg">
-                Start Free Trial
-                <ArrowRight className="w-5 h-5" />
-              </GlowButton>
+              <button
+                onClick={() => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl()}
+              >
+                <GlowButton variant="indigo" size="lg">
+                  Start Free Trial
+                  <ArrowRight className="w-5 h-5" />
+                </GlowButton>
+              </button>
 
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => setLocation('/flash-cards')}
                 className="px-8 py-4 rounded-lg border border-cyan-500/50 text-cyan-300 hover:text-cyan-200 font-semibold transition-colors"
               >
-                Schedule Demo
+                Study Flash Cards
               </motion.button>
             </motion.div>
 

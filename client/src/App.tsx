@@ -5,11 +5,21 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import DashboardPage from "./pages/DashboardPage";
+import AICoachPage from "./pages/AICoacPage";
+import FlashCardsPage from "./pages/FlashCardsPage";
+import SchedulePage from "./pages/SchedulePage";
+import BlockedWebsitesPage from "./pages/BlockedWebsitesPage";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/dashboard" component={DashboardPage} />
+      <Route path="/ai-coach" component={AICoachPage} />
+      <Route path="/flash-cards" component={FlashCardsPage} />
+      <Route path="/schedule" component={SchedulePage} />
+      <Route path="/focus-mode" component={BlockedWebsitesPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

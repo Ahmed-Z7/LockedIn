@@ -1,8 +1,13 @@
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { getLoginUrl } from '@/const';
 import GlowButton from './GlowButton';
 
 export default function Navbar() {
+  const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
   return (
     <motion.nav
       initial={{ y: -100 }}
@@ -13,8 +18,9 @@ export default function Navbar() {
       <div className="container flex items-center justify-between py-4">
         {/* Logo */}
         <motion.div
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 cursor-pointer"
           whileHover={{ scale: 1.05 }}
+          onClick={() => setLocation('/')}
         >
           <div className="relative">
             <motion.div
@@ -33,28 +39,37 @@ export default function Navbar() {
 
         {/* Navigation Links */}
         <div className="hidden md:flex items-center gap-8">
-          {['Features', 'Dashboard', 'Pricing', 'About'].map((item) => (
-            <motion.a
-              key={item}
-              href="#"
+          {[
+            { label: 'Features', action: () => setLocation('/') },
+            { label: 'Dashboard', action: () => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl() },
+            { label: 'Pricing', action: () => setLocation('/') },
+            { label: 'About', action: () => setLocation('/') },
+          ].map((item) => (
+            <motion.button
+              key={item.label}
+              onClick={item.action}
               className="text-gray-300 hover:text-white transition-colors relative group"
               whileHover={{ color: '#FFFFFF' }}
             >
-              {item}
+              {item.label}
               <motion.div
                 className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-cyan-500"
                 initial={{ width: 0 }}
                 whileHover={{ width: '100%' }}
                 transition={{ duration: 0.3 }}
               />
-            </motion.a>
+            </motion.button>
           ))}
         </div>
 
         {/* CTA Button */}
-        <GlowButton variant="indigo" size="md">
-          Get Started
-        </GlowButton>
+        <button
+          onClick={() => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl()}
+        >
+          <GlowButton variant="indigo" size="md">
+            {isAuthenticated ? 'Dashboard' : 'Get Started'}
+          </GlowButton>
+        </button>
       </div>
     </motion.nav>
   );

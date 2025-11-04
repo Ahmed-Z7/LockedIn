@@ -1,8 +1,13 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Zap } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { getLoginUrl } from '@/const';
 import GlowButton from './GlowButton';
 
 export default function HeroSection() {
+  const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -92,23 +97,28 @@ export default function HeroSection() {
           variants={itemVariants}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <GlowButton variant="indigo" size="lg">
-            Start Learning Today
-            <motion.span
-              className="inline-block"
-              whileHover={{ x: 5 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ArrowRight className="w-5 h-5" />
-            </motion.span>
-          </GlowButton>
+          <button
+            onClick={() => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl()}
+          >
+            <GlowButton variant="indigo" size="lg">
+              Start Learning Today
+              <motion.span
+                className="inline-block"
+                whileHover={{ x: 5 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ArrowRight className="w-5 h-5" />
+              </motion.span>
+            </GlowButton>
+          </button>
 
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => setLocation('/ai-coach')}
             className="px-8 py-4 rounded-lg border border-cyan-500/50 text-cyan-300 hover:text-cyan-200 font-semibold transition-colors"
           >
-            Watch Demo
+            Try AI Coach
           </motion.button>
         </motion.div>
 

@@ -1,0 +1,227 @@
+import { eq, desc } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/mysql2";
+import { 
+  InsertUser, users, 
+  userProfiles, InsertUserProfile,
+  badges, InsertBadge,
+  studySessions, InsertStudySession,
+  flashCardDecks, InsertFlashCardDeck,
+  flashCards, InsertFlashCard,
+  studySchedules, InsertStudySchedule,
+  blockedWebsites, InsertBlockedWebsite,
+  aiChatHistory, InsertAIChatHistory
+} from "../drizzle/schema";
+import { ENV } from './_core/env';
+
+let _db: ReturnType<typeof drizzle> | null = null;
+
+// Lazily create the drizzle instance so local tooling can run without a DB.
+export async function getDb() {
+  if (!_db && process.env.DATABASE_URL) {
+    try {
+      _db = drizzle(process.env.DATABASE_URL);
+    } catch (error) {
+      console.warn("[Database] Failed to connect:", error);
+      _db = null;
+    }
+  }
+  return _db;
+}
+
+export async function upsertUser(user: InsertUser): Promise<void> {
+  if (!user.openId) {
+    throw new Error("User openId is required for upsert");
+  }
+
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot upsert user: database not available");
+    return;
+  }
+
+  try {
+    const values: InsertUser = {
+      openId: user.openId,
+    };
+    const updateSet: Record<string, unknown> = {};
+
+    const textFields = ["name", "email", "loginMethod"] as const;
+    type TextField = (typeof textFields)[number];
+
+    const assignNullable = (field: TextField) => {
+      const value = user[field];
+      if (value === undefined) return;
+      const normalized = value ?? null;
+      values[field] = normalized;
+      updateSet[field] = normalized;
+    };
+
+    textFields.forEach(assignNullable);
+
+    if (user.lastSignedIn !== undefined) {
+      values.lastSignedIn = user.lastSignedIn;
+      updateSet.lastSignedIn = user.lastSignedIn;
+    }
+    if (user.role !== undefined) {
+      values.role = user.role;
+      updateSet.role = user.role;
+    } else if (user.openId === ENV.ownerOpenId) {
+      values.role = 'admin';
+      updateSet.role = 'admin';
+    }
+
+    if (!values.lastSignedIn) {
+      values.lastSignedIn = new Date();
+    }
+
+    if (Object.keys(updateSet).length === 0) {
+      updateSet.lastSignedIn = new Date();
+    }
+
+    await db.insert(users).values(values).onDuplicateKeyUpdate({
+      set: updateSet,
+    });
+  } catch (error) {
+    console.error("[Database] Failed to upsert user:", error);
+    throw error;
+  }
+}
+
+export async function getUserByOpenId(openId: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user: database not available");
+    return undefined;
+  }
+
+  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// User Profile Functions
+export async function getUserProfile(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createOrUpdateUserProfile(userId: number, data: Partial<InsertUserProfile>) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await getUserProfile(userId);
+  if (existing) {
+    await db.update(userProfiles).set(data).where(eq(userProfiles.userId, userId));
+  } else {
+    await db.insert(userProfiles).values({ userId, ...data });
+  }
+}
+
+// Gamification Functions
+export async function addXP(userId: number, xpAmount: number) {
+  const db = await getDb();
+  if (!db) return;
+  const profile = await getUserProfile(userId);
+  if (profile) {
+    const newXP = profile.xp + xpAmount;
+    const newLevel = Math.floor(newXP / 1000) + 1;
+    await db.update(userProfiles).set({ xp: newXP, level: newLevel }).where(eq(userProfiles.userId, userId));
+  }
+}
+
+export async function getUserBadges(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(badges).where(eq(badges.userId, userId));
+}
+
+export async function addBadge(userId: number, badgeName: string, badgeIcon?: string, description?: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(badges).values({ userId, badgeName, badgeIcon, description });
+}
+
+// Study Session Functions
+export async function createStudySession(data: InsertStudySession) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(studySessions).values(data);
+}
+
+export async function getUserStudySessions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(studySessions).where(eq(studySessions.userId, userId)).orderBy(desc(studySessions.createdAt));
+}
+
+// Flash Card Functions
+export async function createFlashCardDeck(data: InsertFlashCardDeck) {
+  const db = await getDb();
+  if (!db) return;
+  const result = await db.insert(flashCardDecks).values(data);
+  return result;
+}
+
+export async function getUserFlashCardDecks(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(flashCardDecks).where(eq(flashCardDecks.userId, userId));
+}
+
+export async function addFlashCard(data: InsertFlashCard) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(flashCards).values(data);
+}
+
+export async function getDeckFlashCards(deckId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(flashCards).where(eq(flashCards.deckId, deckId));
+}
+
+// Study Schedule Functions
+export async function createStudySchedule(data: InsertStudySchedule) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(studySchedules).values(data);
+}
+
+export async function getUserStudySchedules(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(studySchedules).where(eq(studySchedules.userId, userId)).orderBy(desc(studySchedules.scheduledTime));
+}
+
+// Blocked Websites Functions
+export async function addBlockedWebsite(data: InsertBlockedWebsite) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(blockedWebsites).values(data);
+}
+
+export async function getUserBlockedWebsites(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(blockedWebsites).where(eq(blockedWebsites.userId, userId));
+}
+
+export async function removeBlockedWebsite(websiteId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(blockedWebsites).where(eq(blockedWebsites.id, websiteId));
+}
+
+// AI Chat History Functions
+export async function saveAIChatMessage(userId: number, message: string, response: string, topic?: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(aiChatHistory).values({ userId, message, response, topic });
+}
+
+export async function getUserAIChatHistory(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(aiChatHistory).where(eq(aiChatHistory.userId, userId)).orderBy(desc(aiChatHistory.createdAt));
+}
