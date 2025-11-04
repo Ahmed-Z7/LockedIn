@@ -1,28 +1,25 @@
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { APP_LOGO, APP_TITLE } from "@/const";
-import { Streamdown } from 'streamdown';
+import Navbar from '@/components/Navbar';
+import HeroSection from '@/components/HeroSection';
+import Features from '@/components/Features';
+import Dashboard from '@/components/Dashboard';
+import FocusMode from '@/components/FocusMode';
+import Testimonials from '@/components/Testimonials';
+import CTA from '@/components/CTA';
+import Footer from '@/components/Footer';
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Best Practices, Design Guide and Common Pitfalls
- */
 export default function Home() {
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
-
-  // Use APP_LOGO (as image src) and APP_TITLE if needed
-
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      <Navbar />
       <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
+        <HeroSection />
+        <Features />
+        <Dashboard />
+        <FocusMode />
+        <Testimonials />
+        <CTA />
       </main>
+      <Footer />
     </div>
   );
 }
