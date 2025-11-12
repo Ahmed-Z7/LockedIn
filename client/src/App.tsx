@@ -10,6 +10,11 @@ import AICoachPage from "./pages/AICoacPage";
 import FlashCardsPage from "./pages/FlashCardsPage";
 import SchedulePage from "./pages/SchedulePage";
 import BlockedWebsitesPage from "./pages/BlockedWebsitesPage";
+import CoreBenefitsPage from "./pages/CoreBenefitsPage";
+import AIFeaturesPage from "./pages/AIFeaturesPage";
+import CommunityPage from "./pages/CommunityPage";
+import ChatPage from "./pages/ChatPage";
+import ChallengesPage from "./pages/ChallengesPage";
 
 function Router() {
   return (
@@ -20,6 +25,11 @@ function Router() {
       <Route path="/flash-cards" component={FlashCardsPage} />
       <Route path="/schedule" component={SchedulePage} />
       <Route path="/focus-mode" component={BlockedWebsitesPage} />
+      <Route path="/core-benefits" component={CoreBenefitsPage} />
+      <Route path="/ai-features" component={AIFeaturesPage} />
+      <Route path="/community" component={CommunityPage} />
+      <Route path="/chat" component={ChatPage} />
+      <Route path="/challenges" component={ChallengesPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -29,7 +39,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
           <Toaster />
           <Router />
