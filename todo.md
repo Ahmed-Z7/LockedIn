@@ -1,129 +1,70 @@
-# AuraLearn - Project TODO
+# EduLix - Project TODO
 
-## Phase 1: Frontend - UI & Visual Design ✅
-- [x] Configure dark theme with neon color palette
-- [x] Setup Framer Motion animations
-- [x] Create reusable animated components (GlowButton, NeonCard)
-- [x] Design and implement Hero Section
-- [x] Create responsive Navigation bar
-- [x] Implement glassmorphism panels
+## Branding & Design
+- [x] تصميم الشعار (Logo) بأسلوب حديث وتقني
+- [x] تحديد نظام الألوان (أزرق نابض، أخضر، أصفر مع ظلال داكنة)
+- [x] تصميم أيقونات (دماغ، مستويات، شارات، streaks)
+- [x] اختيار خط حديث وسهل القراءة (rounded, futuristic)
 
-## Phase 2: Frontend - Components ✅
-- [x] Build Dashboard layout with stat cards
-- [x] Create Focus Mode UI
-- [x] Implement Testimonials section
-- [x] Create CTA section
-- [x] Build Footer
+## Frontend Redesign
+- [x] إعادة تصميم الصفحة الرئيسية بهوية EduLix
+- [x] تحديث نظام الألوان والتصميم
+- [x] تحسين UX/UI للتطبيق
+- [x] تحديث الشعار والأيقونات
 
-## Phase 3: Backend Setup - IN PROGRESS
-- [ ] Setup Express.js server
-- [ ] Configure MongoDB connection
-- [ ] Setup environment variables
-- [ ] Create API folder structure
+## Gamification System
+- [ ] نظام المستويات (Levels) المتقدم
+- [ ] نظام الـ Streaks (السلاسل اليومية)
+- [ ] نظام الشارات والإنجازات (Badges)
+- [ ] نظام النقاط والمكافآت
+- [ ] عرض المستوى والتقدم بصرياً
 
-## Phase 4: Authentication System
-- [ ] Create User model (MongoDB)
-- [ ] Implement JWT authentication
-- [ ] Build Login API endpoint
-- [ ] Build Signup API endpoint
-- [ ] Create Login page (Frontend)
-- [ ] Create Signup page (Frontend)
-- [ ] Add logout functionality
-- [ ] Implement protected routes
+## Bilingual Support (i18n)
+- [ ] إضافة دعم اللغة العربية الفصحى والعامية المصرية
+- [ ] إضافة دعم اللغة الإنجليزية
+- [ ] تحويل جميع النصوص إلى نظام i18n
+- [ ] اختبار الترجمات
+- [ ] دعم RTL للعربية
 
-## Phase 5: Database & User Management
-- [ ] Create User schema with profile data
-- [ ] Create Study Session model
-- [ ] Create Gamification model (XP, Badges)
-- [ ] Create Flash Cards model
-- [ ] Implement user profile endpoints
+## Community Features
+- [ ] نظام Leaderboards (لوحة المتصدرين)
+- [ ] مجموعات الدراسة الجماعية
+- [ ] مشاركة الإنجازات
+- [ ] نظام التعليقات والمتابعة
+- [ ] صفحة الملف الشخصي المحسّنة
 
-## Phase 6: Gamification System
-- [ ] Create XP tracking system
-- [ ] Implement Badge system
-- [ ] Build Leaderboard API
-- [ ] Create Leaderboard page (Frontend)
-- [ ] Add XP display to Dashboard
-- [ ] Implement badge notifications
+## Notifications & Motivation
+- [ ] نظام الإشعارات الذكية
+- [ ] رسائل تحفيزية وفكاهية (memes)
+- [ ] تنبيهات الدراسة المخصصة
+- [ ] نظام التذكيرات
+- [ ] رسائل تشجيعية عند الإنجازات
 
-## Phase 7: AI Study Coach
-- [ ] Setup OpenAI/Gemini API integration
-- [ ] Create AI Chat API endpoint
-- [ ] Build Chat interface (Frontend)
-- [ ] Implement message history
-- [ ] Add AI coaching features
-- [ ] Create AI personality/tone
+## Study Features
+- [ ] محسّن الجدول الدراسي الذكي
+- [ ] نظام الاختبارات والكويزات
+- [ ] بطاقات تعليمية متقدمة
+- [ ] مؤقت الدراسة (Pomodoro)
+- [ ] حجب وسائل التواصل الاجتماعي
 
-## Phase 8: Smart Scheduler
-- [ ] Create Schedule model
-- [ ] Build Smart Scheduler API
-- [ ] Implement Pomodoro algorithm
-- [ ] Create Schedule page (Frontend)
-- [ ] Add calendar integration
-- [ ] Implement task auto-generation
+## Premium Features
+- [ ] نظام الاشتراك (Freemium)
+- [ ] ميزات AI المتقدمة للمشتركين
+- [ ] محتوى حصري
+- [ ] إزالة الإعلانات
+- [ ] ميزات gamification إضافية
 
-## Phase 9: Focus Mode
-- [ ] Implement real Focus Mode timer
-- [ ] Add browser notifications
-- [ ] Create ambient sound integration
-- [ ] Add distraction blocking
-- [ ] Implement session tracking
-- [ ] Create Focus Mode statistics
-
-## Phase 10: Flash Cards
-- [ ] Create Flash Cards API
-- [ ] Build Flash Cards page (Frontend)
-- [ ] Implement card creation/editing
-- [ ] Add spaced repetition algorithm
-- [ ] Create card categories
-- [ ] Add progress tracking
-
-## Phase 11: Social Media Lock
-- [ ] Implement website blocking API
-- [ ] Create blocked sites list
-- [ ] Build blocking UI
-- [ ] Add whitelist functionality
-- [ ] Implement time-based blocking
-- [ ] Create blocking notifications
-
-## Phase 12: Dashboard & Analytics
-- [ ] Connect Dashboard to real data
-- [ ] Implement real-time statistics
-- [ ] Create progress charts
-- [ ] Add performance metrics
-- [ ] Build analytics API
-- [ ] Implement data visualization
-
-## Phase 13: Button & Link Integration
-- [ ] Connect all navigation buttons
-- [ ] Link Hero CTA buttons to Login/Signup
-- [ ] Connect Feature cards to relevant pages
-- [ ] Link Dashboard cards to detail pages
-- [ ] Implement smooth page transitions
-- [ ] Add breadcrumb navigation
-
-## Phase 14: Testing & Optimization
-- [ ] Test all API endpoints
-- [ ] Test authentication flow
-- [ ] Test AI integration
-- [ ] Performance optimization
-- [ ] Security audit
-- [ ] Cross-browser testing
-- [ ] Mobile responsiveness testing
+## Testing & Optimization
+- [ ] اختبار شامل لجميع الميزات
+- [ ] تحسين الأداء
+- [ ] اختبار على أجهزة مختلفة
+- [ ] اختبار اللغات والترجمات
+- [ ] اختبار التوافقية
 
 ## Design System
-- **Primary Color:** #4F46E5 (Indigo Neon)
-- **Secondary Color:** #06B6D4 (Cyan Glow)
-- **Accent Color:** #A855F7 (Violet)
-- **Background:** #0A0A0A (Dark matte)
-- **Theme:** Dark mode with neon glow effects
-- **Typography:** Poppins / Inter fonts
-- **Style:** Futuristic, Tech, Educational
-
-## Tech Stack
-- **Frontend:** React 19 + Tailwind CSS + Framer Motion
-- **Backend:** Node.js + Express.js
-- **Database:** MongoDB
-- **Authentication:** JWT
-- **AI:** OpenAI/Gemini API
-- **Hosting:** Vercel (Frontend) + Render/Heroku (Backend)
+- **Primary Colors:** Blue (نابض), Green, Yellow مع ظلال داكنة
+- **Theme:** Modern, Minimalistic, Techy, Playful yet Professional
+- **Typography:** Clean, Rounded, Futuristic, Youth-friendly
+- **Iconography:** Abstract brain, levels, badges, streaks, AI elements
+- **Target Audience:** Middle/High school, University students, Professional cert learners
+- **Regional Focus:** Egyptian & Regional markets

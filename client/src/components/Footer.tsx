@@ -1,66 +1,93 @@
 import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   const footerLinks = [
-    { title: 'Product', items: ['Features', 'Pricing', 'Security', 'Roadmap'] },
-    { title: 'Company', items: ['About', 'Blog', 'Careers', 'Contact'] },
-    { title: 'Resources', items: ['Documentation', 'API', 'Community', 'Support'] },
-    { title: 'Legal', items: ['Privacy', 'Terms', 'Cookies', 'License'] },
+    {
+      title: 'Product',
+      links: ['Features', 'Pricing', 'Security', 'Roadmap'],
+    },
+    {
+      title: 'Company',
+      links: ['About Us', 'Blog', 'Careers', 'Contact'],
+    },
+    {
+      title: 'Resources',
+      links: ['Documentation', 'Help Center', 'Community', 'API'],
+    },
+    {
+      title: 'Legal',
+      links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy', 'GDPR'],
+    },
+  ];
+
+  const socialLinks = [
+    { icon: Facebook, href: '#', label: 'Facebook' },
+    { icon: Twitter, href: '#', label: 'Twitter' },
+    { icon: Instagram, href: '#', label: 'Instagram' },
+    { icon: Linkedin, href: '#', label: 'LinkedIn' },
   ];
 
   return (
-    <footer className="relative border-t border-indigo-500/20 bg-gradient-to-b from-transparent to-indigo-950/20">
-      <div className="container py-16">
+    <footer className="relative bg-background border-t border-gray-700/50 py-16 overflow-hidden">
+      <div className="container relative z-10">
         {/* Main footer content */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Brand section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
+            className="lg:col-span-1"
           >
             <div className="flex items-center gap-2 mb-4">
-              <div className="relative">
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-lg blur"
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-                <div className="relative bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-lg p-2">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-green-600 flex items-center justify-center">
+                <span className="text-white font-bold">E</span>
               </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                AuraLearn
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">
+                EduLix
               </span>
             </div>
-            <p className="text-sm text-gray-400">
-              Empowering students with AI-driven learning solutions.
+            <p className="text-gray-400 text-sm mb-4">
+              AI-powered learning platform for students worldwide
             </p>
+            <div className="flex gap-3">
+              {socialLinks.map((social, idx) => {
+                const Icon = social.icon;
+                return (
+                  <motion.a
+                    key={idx}
+                    href={social.href}
+                    whileHover={{ scale: 1.1 }}
+                    className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-blue-600 flex items-center justify-center transition-colors"
+                  >
+                    <Icon className="w-4 h-4 text-gray-400 hover:text-white" />
+                  </motion.a>
+                );
+              })}
+            </div>
           </motion.div>
 
           {/* Links sections */}
-          {footerLinks.map((section, index) => (
+          {footerLinks.map((section, idx) => (
             <motion.div
-              key={index}
+              key={idx}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: (index + 1) * 0.1 }}
+              transition={{ duration: 0.5, delay: (idx + 1) * 0.1 }}
             >
-              <h4 className="font-semibold text-white mb-4">{section.title}</h4>
+              <h3 className="font-bold text-white mb-4">{section.title}</h3>
               <ul className="space-y-2">
-                {section.items.map((item) => (
-                  <li key={item}>
-                    <motion.a
+                {section.links.map((link, linkIdx) => (
+                  <li key={linkIdx}>
+                    <a
                       href="#"
-                      className="text-sm text-gray-400 hover:text-indigo-400 transition-colors"
-                      whileHover={{ x: 4 }}
+                      className="text-gray-400 hover:text-blue-400 transition-colors text-sm"
                     >
-                      {item}
-                    </motion.a>
+                      {link}
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -68,33 +95,45 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent mb-8" />
+        {/* Contact section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="bg-background border border-gray-700/50 rounded-2xl p-6 mb-12 backdrop-blur-sm"
+        >
+          <h3 className="font-bold text-white mb-4">Get in Touch</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a
+              href="mailto:support@edulix.com"
+              className="flex items-center gap-3 text-gray-400 hover:text-blue-400 transition-colors"
+            >
+              <Mail className="w-5 h-5" />
+              <span>support@edulix.com</span>
+            </a>
+            <a
+              href="tel:+201234567890"
+              className="flex items-center gap-3 text-gray-400 hover:text-blue-400 transition-colors"
+            >
+              <Phone className="w-5 h-5" />
+              <span>+20 123 456 7890</span>
+            </a>
+          </div>
+        </motion.div>
 
-        {/* Bottom section */}
+        {/* Bottom bar */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-400"
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="border-t border-gray-700/50 pt-8 flex flex-col md:flex-row items-center justify-between gap-4"
         >
-          <p>
-            &copy; {currentYear} AuraLearn. All rights reserved. Crafted with
-            <span className="text-indigo-400 mx-1">✨</span>
-            for learners everywhere.
+          <p className="text-gray-400 text-sm">
+            © {currentYear} EduLix. All rights reserved.
           </p>
-          <div className="flex gap-6 mt-4 md:mt-0">
-            {['Twitter', 'GitHub', 'LinkedIn', 'Discord'].map((social) => (
-              <motion.a
-                key={social}
-                href="#"
-                className="hover:text-indigo-400 transition-colors"
-                whileHover={{ scale: 1.1 }}
-              >
-                {social}
-              </motion.a>
-            ))}
-          </div>
+          <p className="text-gray-400 text-sm">
+            Made with <span className="text-red-500">❤️</span> for students worldwide
+          </p>
         </motion.div>
       </div>
     </footer>

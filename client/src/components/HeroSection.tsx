@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Zap } from 'lucide-react';
+import { ArrowRight, Zap, Brain } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { getLoginUrl } from '@/const';
@@ -8,6 +8,7 @@ import GlowButton from './GlowButton';
 export default function HeroSection() {
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -32,23 +33,6 @@ export default function HeroSection() {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Gradient orbs */}
-        <motion.div
-          className="absolute top-20 left-10 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl"
-          animate={{ y: [0, 100, 0], x: [0, 50, 0] }}
-          transition={{ duration: 8, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-10 w-72 h-72 bg-cyan-500/20 rounded-full blur-3xl"
-          animate={{ y: [0, -100, 0], x: [0, -50, 0] }}
-          transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 6, repeat: Infinity }}
-        />
-
         {/* Grid pattern */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background opacity-50" />
       </div>
@@ -63,11 +47,11 @@ export default function HeroSection() {
         {/* Badge */}
         <motion.div
           variants={itemVariants}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 backdrop-blur-sm"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 backdrop-blur-sm"
         >
-          <Zap className="w-4 h-4 text-indigo-400" />
-          <span className="text-sm font-medium text-indigo-300">
-            AI-Powered Learning Platform
+          <Brain className="w-4 h-4 text-blue-400" />
+          <span className="text-sm font-medium text-blue-300">
+            AI-Powered Smart Learning
           </span>
         </motion.div>
 
@@ -76,7 +60,7 @@ export default function HeroSection() {
           variants={itemVariants}
           className="mb-6 text-5xl md:text-7xl font-bold tracking-tight"
         >
-          <span className="bg-gradient-to-r from-indigo-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-blue-400 via-green-400 to-yellow-400 bg-clip-text text-transparent">
             Study Smarter
           </span>
           <br />
@@ -88,8 +72,7 @@ export default function HeroSection() {
           variants={itemVariants}
           className="mb-8 max-w-2xl mx-auto text-xl text-gray-300"
         >
-          AuraLearn combines AI, gamification, and personalized scheduling to help
-          you achieve your academic goals with focus and motivation.
+          EduLix combines AI guidance, gamified learning, and personalized scheduling to help you ace your exams with focus and motivation.
         </motion.p>
 
         {/* CTA Buttons */}
@@ -100,7 +83,11 @@ export default function HeroSection() {
           <button
             onClick={() => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl()}
           >
-            <GlowButton variant="indigo" size="lg">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-4 rounded-lg bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-semibold transition-all duration-300 flex items-center gap-2 glow-blue"
+            >
               Start Learning Today
               <motion.span
                 className="inline-block"
@@ -109,14 +96,14 @@ export default function HeroSection() {
               >
                 <ArrowRight className="w-5 h-5" />
               </motion.span>
-            </GlowButton>
+            </motion.button>
           </button>
 
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setLocation('/ai-coach')}
-            className="px-8 py-4 rounded-lg border border-cyan-500/50 text-cyan-300 hover:text-cyan-200 font-semibold transition-colors"
+            className="px-8 py-4 rounded-lg border border-yellow-500/50 text-yellow-300 hover:text-yellow-200 font-semibold transition-colors"
           >
             Try AI Coach
           </motion.button>
@@ -128,19 +115,19 @@ export default function HeroSection() {
           className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto"
         >
           {[
-            { number: '10K+', label: 'Active Students' },
-            { number: '95%', label: 'Success Rate' },
-            { number: '24/7', label: 'AI Support' },
-          ].map((stat, index) => (
+            { label: "Active Students", value: "50K+" },
+            { label: "Success Rate", value: "95%" },
+            { label: "AI Tutoring", value: "24/7" },
+          ].map((stat, idx) => (
             <motion.div
-              key={index}
-              whileHover={{ scale: 1.05 }}
+              key={idx}
+              whileHover={{ scale: 1.1 }}
               className="text-center"
             >
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                {stat.number}
-              </div>
-              <div className="text-sm text-gray-400 mt-2">{stat.label}</div>
+              <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">
+                {stat.value}
+              </p>
+              <p className="text-sm text-gray-400 mt-1">{stat.label}</p>
             </motion.div>
           ))}
         </motion.div>
