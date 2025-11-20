@@ -53,16 +53,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 :root {
-  /* LOCKEDIN Colors */
-  --primary: #001F3F;  /* Navy Blue */
+  /* LOCKEDIN Official Color Palette */
+  --primary: #1d2952;  /* Primary Dark Blue */
   --primary-foreground: #ffffff;
-  --sidebar-primary: #001F3F;
+  --sidebar-primary: #1d2952;
   --sidebar-primary-foreground: #ffffff;
-  --chart-1: #7C3AED;  /* Electric Purple */
-  --chart-2: #001F3F;  /* Navy Blue */
-  --chart-3: #7C3AED;  /* Electric Purple */
-  --chart-4: #001F3F;  /* Navy Blue */
-  --chart-5: #7C3AED;  /* Electric Purple */
+  --secondary: #5053bf;  /* Bold Purple-Blue */
+  --accent: #9945ce;  /* Bright Purple Accent */
+  --chart-1: #6059d2;  /* Soft Violet */
+  --chart-2: #5053bf;  /* Bold Purple-Blue */
+  --chart-3: #9945ce;  /* Bright Purple Accent */
+  --chart-4: #6e68dd;  /* Lavender Purple */
+  --chart-5: #7a5fd4;  /* Medium Purple */
   --radius: 0.75rem;
   --background: #0A0A0A;
   --foreground: #FFFFFF;
@@ -90,69 +92,69 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 :root.light {
-  /* LOCKEDIN Colors - Light Mode */
-  --primary: #001F3F;  /* Navy Blue */
+  /* LOCKEDIN Official Colors - Light Mode */
+  --primary: #1d2952;  /* Primary Dark Blue */
   --primary-foreground: #ffffff;
-  --sidebar-primary: #001F3F;
+  --sidebar-primary: #1d2952;
   --sidebar-primary-foreground: #ffffff;
   --background: #FFFFFF;
-  --foreground: #0A0A0A;
-  --card: #F5F5F7;
-  --card-foreground: #0A0A0A;
-  --popover: #F5F5F7;
-  --popover-foreground: #0A0A0A;
-  --secondary: #7C3AED;  /* Electric Purple */
+  --foreground: #1d2952;
+  --card: #F8F9FC;
+  --card-foreground: #1d2952;
+  --popover: #F8F9FC;
+  --popover-foreground: #1d2952;
+  --secondary: #5053bf;  /* Bold Purple-Blue */
   --secondary-foreground: #FFFFFF;
   --muted: #D4D4D8;
   --muted-foreground: #4B5563;
-  --accent: #7C3AED;  /* Electric Purple */
+  --accent: #9945ce;  /* Bright Purple Accent */
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
   --border: #E5E7EB;
   --input: #FFFFFF;
-  --ring: #001F3F;
-  --chart-1: #7C3AED;
-  --chart-2: #001F3F;
-  --chart-3: #7C3AED;
-  --chart-4: #001F3F;
-  --chart-5: #7C3AED;
+  --ring: #5053bf;
+  --chart-1: #6059d2;
+  --chart-2: #5053bf;
+  --chart-3: #9945ce;
+  --chart-4: #6e68dd;
+  --chart-5: #7a5fd4;
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #0A0A0A;
-  --sidebar-accent: #7C3AED;
+  --sidebar-foreground: #1d2952;
+  --sidebar-accent: #5053bf;
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: #E5E7EB;
-  --sidebar-ring: #7C3AED;
+  --sidebar-ring: #5053bf;
 }
 
 .dark {
-  /* LOCKEDIN Colors - Dark Mode */
-  --primary: #001F3F;  /* Navy Blue */
+  /* LOCKEDIN Official Colors - Dark Mode */
+  --primary: #1d2952;  /* Primary Dark Blue */
   --primary-foreground: #ffffff;
-  --sidebar-primary: #001F3F;
+  --sidebar-primary: #1d2952;
   --sidebar-primary-foreground: #ffffff;
-  --background: #0A0A0A;
+  --background: #0F0F1E;
   --foreground: #FFFFFF;
-  --card: #141428;
+  --card: #16152b;
   --card-foreground: #FFFFFF;
-  --popover: #141428;
+  --popover: #16152b;
   --popover-foreground: #FFFFFF;
-  --secondary: #7C3AED;  /* Electric Purple */
+  --secondary: #5053bf;  /* Bold Purple-Blue */
   --secondary-foreground: #FFFFFF;
   --muted: #4B5563;
   --muted-foreground: #D4D4D8;
-  --accent: #7C3AED;  /* Electric Purple */
+  --accent: #9945ce;  /* Bright Purple Accent */
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #323248;
-  --input: #1E1E2E;
-  --ring: #001F3F;
-  --chart-1: #7C3AED;
-  --chart-2: #001F3F;
-  --chart-3: #7C3AED;
-  --chart-4: #001F3F;
-  --chart-5: #7C3AED;
+  --border: #2a2850;
+  --input: #1a1a2e;
+  --ring: #5053bf;
+  --chart-1: #6059d2;
+  --chart-2: #5053bf;
+  --chart-3: #9945ce;
+  --chart-4: #6e68dd;
+  --chart-5: #7a5fd4;
   --sidebar: #0A0A0A;
   --sidebar-foreground: #FFFFFF;
   --sidebar-accent: #4F46E5;
@@ -214,16 +216,16 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   /* LOCKEDIN Glow effects */
-  .glow-navy {
-    box-shadow: 0 0 20px rgba(0, 31, 63, 0.5);
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(29, 41, 82, 0.5);
   }
 
-  .glow-purple {
-    box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+  .glow-secondary {
+    box-shadow: 0 0 20px rgba(80, 83, 191, 0.5);
   }
 
   .glow-accent {
-    box-shadow: 0 0 20px rgba(124, 58, 237, 0.7);
+    box-shadow: 0 0 20px rgba(153, 69, 206, 0.7);
   }
 
   /* Glassmorphism effect */
@@ -235,17 +237,17 @@ h1, h2, h3, h4, h5, h6 {
 
   /* LOCKEDIN Neon border */
   .neon-border {
-    border: 1px solid rgba(124, 58, 237, 0.5);
-    box-shadow: 0 0 20px rgba(124, 58, 237, 0.2), inset 0 0 20px rgba(124, 58, 237, 0.1);
+    border: 1px solid rgba(153, 69, 206, 0.5);
+    box-shadow: 0 0 20px rgba(153, 69, 206, 0.2), inset 0 0 20px rgba(153, 69, 206, 0.1);
   }
 
   /* LOCKEDIN Animated gradient background */
   .gradient-animate {
     background: linear-gradient(
       -45deg,
-      rgba(0, 31, 63, 0.1),
-      rgba(124, 58, 237, 0.1),
-      rgba(124, 58, 237, 0.05)
+      rgba(29, 41, 82, 0.1),
+      rgba(153, 69, 206, 0.1),
+      rgba(110, 104, 221, 0.05)
     );
     background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
@@ -284,10 +286,10 @@ h1, h2, h3, h4, h5, h6 {
 
   @keyframes pulseGlow {
     0%, 100% {
-      box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+      box-shadow: 0 0 20px rgba(153, 69, 206, 0.3);
     }
     50% {
-      box-shadow: 0 0 40px rgba(124, 58, 237, 0.6);
+      box-shadow: 0 0 40px rgba(153, 69, 206, 0.6);
     }
   }
 }

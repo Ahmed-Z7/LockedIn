@@ -15,6 +15,9 @@ import AIFeaturesPage from "./pages/AIFeaturesPage";
 import CommunityPage from "./pages/CommunityPage";
 import ChatPage from "./pages/ChatPage";
 import ChallengesPage from "./pages/ChallengesPage";
+import ProfilePage from "./pages/ProfilePage";
+import AddPostPage from "./pages/AddPostPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 function Router() {
   return (
@@ -30,6 +33,9 @@ function Router() {
       <Route path="/community" component={CommunityPage} />
       <Route path="/chat" component={ChatPage} />
       <Route path="/challenges" component={ChallengesPage} />
+      <Route path="/profile" component={ProfilePage} />
+      <Route path="/add-post" component={AddPostPage} />
+      <Route path="/notifications" component={NotificationsPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
