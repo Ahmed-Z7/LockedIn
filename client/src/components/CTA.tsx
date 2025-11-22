@@ -12,12 +12,12 @@ export default function CTA() {
     <section className="relative py-20 overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
-          className="absolute top-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"
+          className="absolute top-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
           animate={{ y: [0, 100, 0], x: [0, 50, 0] }}
           transition={{ duration: 8, repeat: Infinity }}
         />
         <motion.div
-          className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl"
+          className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"
           animate={{ y: [0, -100, 0], x: [0, -50, 0] }}
           transition={{ duration: 10, repeat: Infinity, delay: 1 }}
         />
@@ -31,23 +31,23 @@ export default function CTA() {
           className="max-w-3xl mx-auto text-center"
         >
           <motion.div
-            className="inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 mb-6 backdrop-blur-sm"
+            className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-2 mb-6 backdrop-blur-sm"
             whileHover={{ scale: 1.05 }}
           >
-            <Zap className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm font-medium text-yellow-300">
+            <Zap className="w-4 h-4 text-purple-400" />
+            <span className="text-sm font-medium text-purple-300">
               Limited Time Offer - 50% Off Premium
             </span>
           </motion.div>
 
           <h2 className="text-4xl md:text-6xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-blue-400 via-green-400 to-yellow-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-blue-400 bg-clip-text text-transparent">
               Ready to Transform Your Learning?
             </span>
           </h2>
 
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of students who are already achieving their academic goals with EduLix. Start your free trial today!
+            Join thousands of students who are already achieving their academic goals with LOCKEDIN. Start your free trial today!
           </p>
 
           <motion.div
@@ -62,7 +62,7 @@ export default function CTA() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 rounded-lg bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-semibold transition-all duration-300 flex items-center gap-2 glow-blue"
+                className="px-8 py-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white font-semibold transition-all duration-300 flex items-center gap-2 glow-purple"
               >
                 Start Free Trial
                 <motion.span
@@ -78,30 +78,31 @@ export default function CTA() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => setLocation('/flash-cards')}
-              className="px-8 py-4 rounded-lg border border-yellow-500/50 text-yellow-300 hover:text-yellow-200 font-semibold transition-colors"
+              onClick={() => setLocation('/community')}
+              className="px-8 py-4 rounded-lg border border-blue-500/50 text-blue-300 hover:text-blue-200 font-semibold transition-colors"
             >
-              Explore Features
+              Join Community
             </motion.button>
           </motion.div>
 
+          {/* Trust indicators */}
           <motion.div
-            className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-gray-400"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
+            className="mt-12 flex flex-col sm:flex-row gap-6 justify-center items-center text-gray-400"
           >
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-400" />
-              No credit card required
+              <div className="w-2 h-2 rounded-full bg-purple-400" />
+              <span>No credit card required</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400" />
-              7-day free trial
+              <span>14-day free trial</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-yellow-400" />
-              Cancel anytime
+              <div className="w-2 h-2 rounded-full bg-purple-400" />
+              <span>Cancel anytime</span>
             </div>
           </motion.div>
         </motion.div>

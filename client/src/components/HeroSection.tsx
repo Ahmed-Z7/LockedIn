@@ -47,10 +47,10 @@ export default function HeroSection() {
         {/* Badge */}
         <motion.div
           variants={itemVariants}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 backdrop-blur-sm"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-2 backdrop-blur-sm"
         >
-          <Brain className="w-4 h-4 text-blue-400" />
-          <span className="text-sm font-medium text-blue-300">
+          <Brain className="w-4 h-4 text-purple-400" />
+          <span className="text-sm font-medium text-purple-300">
             AI-Powered Smart Learning
           </span>
         </motion.div>
@@ -60,7 +60,7 @@ export default function HeroSection() {
           variants={itemVariants}
           className="mb-6 text-5xl md:text-7xl font-bold tracking-tight"
         >
-          <span className="bg-gradient-to-r from-blue-400 via-green-400 to-yellow-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-blue-400 bg-clip-text text-transparent">
             Study Smarter
           </span>
           <br />
@@ -86,7 +86,7 @@ export default function HeroSection() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-8 py-4 rounded-lg bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-semibold transition-all duration-300 flex items-center gap-2 glow-blue"
+              className="px-8 py-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white font-semibold transition-all duration-300 flex items-center gap-2 glow-purple"
             >
               Start Learning Today
               <motion.span
@@ -103,7 +103,7 @@ export default function HeroSection() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setLocation('/ai-coach')}
-            className="px-8 py-4 rounded-lg border border-yellow-500/50 text-yellow-300 hover:text-yellow-200 font-semibold transition-colors"
+            className="px-8 py-4 rounded-lg border border-blue-500/50 text-blue-300 hover:text-blue-200 font-semibold transition-colors"
           >
             Try AI Coach
           </motion.button>
@@ -124,7 +124,7 @@ export default function HeroSection() {
               whileHover={{ scale: 1.1 }}
               className="text-center"
             >
-              <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">
+              <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                 {stat.value}
               </p>
               <p className="text-sm text-gray-400 mt-1">{stat.label}</p>

@@ -17,21 +17,21 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {/* Blue gradient orb */}
+        {/* Purple gradient orb */}
         <motion.div
-          className="absolute top-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"
+          className="absolute top-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
           animate={{ y: [0, 100, 0], x: [0, 50, 0] }}
           transition={{ duration: 8, repeat: Infinity }}
         />
-        {/* Green gradient orb */}
+        {/* Blue gradient orb */}
         <motion.div
-          className="absolute bottom-0 right-0 w-96 h-96 bg-green-500/10 rounded-full blur-3xl"
+          className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"
           animate={{ y: [0, -100, 0], x: [0, -50, 0] }}
           transition={{ duration: 10, repeat: Infinity, delay: 1 }}
         />
-        {/* Yellow accent orb */}
+        {/* Purple accent orb */}
         <motion.div
-          className="absolute top-1/2 left-1/2 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
+          className="absolute top-1/2 left-1/2 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 6, repeat: Infinity }}
         />

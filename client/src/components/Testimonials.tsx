@@ -6,7 +6,7 @@ export default function Testimonials() {
     {
       name: 'أحمد محمد',
       role: 'طالب جامعي',
-      content: 'EduLix غيّر طريقة دراستي تماماً. الـ AI Coach ساعدني أفهم الرياضيات بشكل أسهل بكثير!',
+      content: 'LOCKEDIN غيّر طريقة دراستي تماماً. الـ AI Coach ساعدني أفهم الرياضيات بشكل أسهل بكثير!',
       rating: 5,
       avatar: '👨‍🎓',
     },
@@ -36,12 +36,12 @@ export default function Testimonials() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-blue-400 via-green-400 to-yellow-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-blue-400 bg-clip-text text-transparent">
               What Students Say
             </span>
           </h2>
           <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-            Join thousands of students who are already studying smarter with EduLix
+            Join thousands of students who are already studying smarter with LOCKEDIN
           </p>
         </motion.div>
 
@@ -55,12 +55,12 @@ export default function Testimonials() {
               whileHover={{ scale: 1.05, y: -10 }}
               className="group relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-green-600 rounded-2xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
-              <div className="relative bg-background border border-gray-700/50 rounded-2xl p-8 backdrop-blur-sm hover:border-gray-600 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-600 rounded-2xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+              <div className="relative bg-background border border-purple-500/20 rounded-2xl p-8 backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300">
                 {/* Stars */}
                 <div className="flex gap-1 mb-4">
                   {Array(testimonial.rating).fill(0).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <Star key={i} className="w-4 h-4 fill-purple-400 text-purple-400" />
                   ))}
                 </div>
 
