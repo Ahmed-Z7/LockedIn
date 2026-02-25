@@ -97,34 +97,34 @@ h1, h2, h3, h4, h5, h6 {
   --primary-foreground: #ffffff;
   --sidebar-primary: #1d2952;
   --sidebar-primary-foreground: #ffffff;
-  --background: #FFFFFF;
-  --foreground: #1d2952;
-  --card: #F8F9FC;
-  --card-foreground: #1d2952;
-  --popover: #F8F9FC;
-  --popover-foreground: #1d2952;
+  --background: #FFFFFF;  /* White Background */
+  --foreground: #1d2952;  /* Dark Blue Text */
+  --card: #F5F3FF;  /* Very Light Purple */
+  --card-foreground: #1d2952;  /* Dark Blue Text */
+  --popover: #F5F3FF;  /* Very Light Purple */
+  --popover-foreground: #1d2952;  /* Dark Blue Text */
   --secondary: #5053bf;  /* Bold Purple-Blue */
   --secondary-foreground: #FFFFFF;
-  --muted: #D4D4D8;
-  --muted-foreground: #4B5563;
+  --muted: #D4D4D8;  /* Light Gray */
+  --muted-foreground: #4B5563;  /* Dark Gray */
   --accent: #9945ce;  /* Bright Purple Accent */
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #E5E7EB;
-  --input: #FFFFFF;
-  --ring: #5053bf;
-  --chart-1: #6059d2;
-  --chart-2: #5053bf;
-  --chart-3: #9945ce;
-  --chart-4: #6e68dd;
-  --chart-5: #7a5fd4;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #1d2952;
-  --sidebar-accent: #5053bf;
+  --border: #E5D9FF;  /* Light Purple Border */
+  --input: #FFFFFF;  /* White Input */
+  --ring: #5053bf;  /* Purple Ring */
+  --chart-1: #6059d2;  /* Soft Violet */
+  --chart-2: #5053bf;  /* Bold Purple-Blue */
+  --chart-3: #9945ce;  /* Bright Purple Accent */
+  --chart-4: #6e68dd;  /* Lavender Purple */
+  --chart-5: #7a5fd4;  /* Medium Purple */
+  --sidebar: #FFFFFF;  /* White Sidebar */
+  --sidebar-foreground: #1d2952;  /* Dark Blue Text */
+  --sidebar-accent: #5053bf;  /* Purple Accent */
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #E5E7EB;
-  --sidebar-ring: #5053bf;
+  --sidebar-border: #E5D9FF;  /* Light Purple Border */
+  --sidebar-ring: #5053bf;  /* Purple Ring */
 }
 
 .dark {

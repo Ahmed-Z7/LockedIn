@@ -12,13 +12,17 @@ export default function ThemeSwitcher() {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
       onClick={toggleTheme}
-      className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
+      className={`p-2 rounded-lg transition-colors ${
+        theme === 'dark'
+          ? 'bg-gray-800 hover:bg-gray-700'
+          : 'bg-purple-100 hover:bg-purple-200'
+      }`}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
       {theme === 'dark' ? (
         <Sun className="w-5 h-5 text-yellow-400" />
       ) : (
-        <Moon className="w-5 h-5 text-blue-600" />
+        <Moon className="w-5 h-5 text-purple-600" />
       )}
     </motion.button>
   );
