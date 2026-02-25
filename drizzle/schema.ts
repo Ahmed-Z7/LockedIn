@@ -138,3 +138,44 @@ export const aiChatHistory = mysqlTable("aiChatHistory", {
 
 export type AIChatHistory = typeof aiChatHistory.$inferSelect;
 export type InsertAIChatHistory = typeof aiChatHistory.$inferInsert;
+
+// Community Posts
+export const communityPosts = mysqlTable("communityPosts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  title: varchar("title", { length: 200 }).notNull(),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 100 }).default("general"),
+  likes: int("likes").default(0),
+  commentsCount: int("commentsCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CommunityPost = typeof communityPosts.$inferSelect;
+export type InsertCommunityPost = typeof communityPosts.$inferInsert;
+
+// Post Comments
+export const postComments = mysqlTable("postComments", {
+  id: int("id").autoincrement().primaryKey(),
+  postId: int("postId").notNull().references(() => communityPosts.id),
+  userId: int("userId").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  likes: int("likes").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PostComment = typeof postComments.$inferSelect;
+export type InsertPostComment = typeof postComments.$inferInsert;
+
+// Post Likes
+export const postLikes = mysqlTable("postLikes", {
+  id: int("id").autoincrement().primaryKey(),
+  postId: int("postId").notNull().references(() => communityPosts.id),
+  userId: int("userId").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PostLike = typeof postLikes.$inferSelect;
+export type InsertPostLike = typeof postLikes.$inferInsert;

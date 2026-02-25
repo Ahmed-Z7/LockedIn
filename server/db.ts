@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -9,7 +9,10 @@ import {
   flashCards, InsertFlashCard,
   studySchedules, InsertStudySchedule,
   blockedWebsites, InsertBlockedWebsite,
-  aiChatHistory, InsertAIChatHistory
+  aiChatHistory, InsertAIChatHistory,
+  communityPosts, InsertCommunityPost,
+  postComments, InsertPostComment,
+  postLikes, InsertPostLike
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -224,4 +227,81 @@ export async function getUserAIChatHistory(userId: number) {
   const db = await getDb();
   if (!db) return [];
   return await db.select().from(aiChatHistory).where(eq(aiChatHistory.userId, userId)).orderBy(desc(aiChatHistory.createdAt));
+}
+
+// Community Posts Functions
+export async function createCommunityPost(data: InsertCommunityPost) {
+  const db = await getDb();
+  if (!db) return;
+  const result = await db.insert(communityPosts).values(data);
+  return result;
+}
+
+export async function getAllCommunityPosts() {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(communityPosts).orderBy(desc(communityPosts.createdAt));
+}
+
+export async function getCommunityPostWithAuthor(postId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const post = await db.select().from(communityPosts).where(eq(communityPosts.id, postId)).limit(1);
+  if (post.length === 0) return undefined;
+  
+  const author = await db.select().from(users).where(eq(users.id, post[0].userId)).limit(1);
+  return { ...post[0], author: author[0] || null };
+}
+
+export async function getUserCommunityPosts(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(communityPosts).where(eq(communityPosts.userId, userId)).orderBy(desc(communityPosts.createdAt));
+}
+
+export async function updateCommunityPost(postId: number, data: Partial<InsertCommunityPost>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(communityPosts).set(data).where(eq(communityPosts.id, postId));
+}
+
+export async function deleteCommunityPost(postId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(communityPosts).where(eq(communityPosts.id, postId));
+}
+
+// Post Comments Functions
+export async function addPostComment(data: InsertPostComment) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(postComments).values(data);
+}
+
+export async function getPostComments(postId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(postComments).where(eq(postComments.postId, postId)).orderBy(desc(postComments.createdAt));
+}
+
+// Post Likes Functions
+export async function likePost(postId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(postLikes).values({ postId, userId });
+  await db.update(communityPosts).set({ likes: sql`${communityPosts.likes} + 1` }).where(eq(communityPosts.id, postId));
+}
+
+export async function unlikePost(postId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(postLikes).where(eq(postLikes.postId, postId) && eq(postLikes.userId, userId));
+  await db.update(communityPosts).set({ likes: sql`${communityPosts.likes} - 1` }).where(eq(communityPosts.id, postId));
+}
+
+export async function hasUserLikedPost(postId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.select().from(postLikes).where(eq(postLikes.postId, postId) && eq(postLikes.userId, userId)).limit(1);
+  return result.length > 0;
 }

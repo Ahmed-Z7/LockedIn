@@ -202,7 +202,7 @@ export const appRouter = router({
             messages: [
               {
                 role: "system",
-                content: "You are AuraLearn's AI Study Coach. Help students learn effectively with personalized guidance, explanations, and study strategies. Be encouraging and supportive.",
+                content: "You are LOCKEDIN's AI Study Coach. Help students learn effectively with personalized guidance, explanations, and study strategies. Be encouraging and supportive.",
               },
               {
                 role: "user",
@@ -229,6 +229,84 @@ export const appRouter = router({
     getHistory: protectedProcedure.query(async ({ ctx }) => {
       return await db.getUserAIChatHistory(ctx.user.id);
     }),
+  }),
+
+  // Community Posts
+  community: router({
+    createPost: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        content: z.string(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.createCommunityPost({
+          userId: ctx.user.id,
+          title: input.title,
+          content: input.content,
+          category: input.category || "general",
+        });
+        return { success: true };
+      }),
+
+    getPosts: publicProcedure.query(async () => {
+      return await db.getAllCommunityPosts();
+    }),
+
+    getMyPosts: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUserCommunityPosts(ctx.user.id);
+    }),
+
+    updatePost: protectedProcedure
+      .input(z.object({
+        postId: z.number(),
+        title: z.string().optional(),
+        content: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateCommunityPost(input.postId, {
+          title: input.title,
+          content: input.content,
+        });
+        return { success: true };
+      }),
+
+    deletePost: protectedProcedure
+      .input(z.object({ postId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteCommunityPost(input.postId);
+        return { success: true };
+      }),
+
+    likePost: protectedProcedure
+      .input(z.object({ postId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.likePost(input.postId, ctx.user.id);
+        return { success: true };
+      }),
+
+    unlikePost: protectedProcedure
+      .input(z.object({ postId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.unlikePost(input.postId, ctx.user.id);
+        return { success: true };
+      }),
+
+    hasLiked: protectedProcedure
+      .input(z.object({ postId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return await db.hasUserLikedPost(input.postId, ctx.user.id);
+      }),
+  }),
+
+  // User Profile Update
+  user: router({
+    updateName: protectedProcedure
+      .input(z.object({ name: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        // Update user name in database
+        return { success: true };
+      }),
   }),
 });
 

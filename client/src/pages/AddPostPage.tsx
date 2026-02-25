@@ -1,51 +1,83 @@
 import { motion } from 'framer-motion';
-import { Send, Image, Smile, X, FileText, BookOpen } from 'lucide-react';
+import { Send, X, FileText, BookOpen, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { useLocation } from 'wouter';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function AddPostPage() {
+  const { user, isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
+  const [postTitle, setPostTitle] = useState('');
   const [postContent, setPostContent] = useState('');
-  const [postType, setPostType] = useState('general');
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [postCategory, setPostCategory] = useState('general');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (postContent.trim()) {
-      console.log('Post submitted:', { content: postContent, type: postType, image: selectedImage });
+  const createPostMutation = trpc.community.createPost.useMutation();
+
+  const handleSubmit = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to create a post');
+      setLocation('/');
+      return;
+    }
+
+    if (!postTitle.trim() || !postContent.trim()) {
+      toast.error('Please fill in both title and content');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await createPostMutation.mutateAsync({
+        title: postTitle,
+        content: postContent,
+        category: postCategory,
+      });
+      toast.success('Post created successfully!');
+      setPostTitle('');
       setPostContent('');
-      setSelectedImage(null);
+      setPostCategory('general');
+      setLocation('/community');
+    } catch (error) {
+      toast.error('Failed to create post');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-24">
+    <div className="min-h-screen bg-gradient-to-br from-[#1d2952] via-[#202857] to-[#1d2952] text-white dark:from-white dark:via-gray-50 dark:to-white dark:text-gray-900 pt-24">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="container mb-12"
+        className="max-w-2xl mx-auto px-4 mb-12"
       >
-        <h1 className="text-5xl font-bold mb-2">
-          <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            Share Your Progress
-          </span>
+        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-[#9945ce] via-[#6e68dd] to-[#5053bf] bg-clip-text text-transparent dark:from-[#5053bf] dark:via-[#6e68dd] dark:to-[#9945ce]">
+          Share Your Progress
         </h1>
-        <p className="text-gray-400">Inspire the community with your LOCKEDIN journey</p>
+        <p className="text-gray-300 dark:text-gray-600">Inspire the community with your LOCKEDIN journey</p>
       </motion.div>
 
       {/* Main Editor */}
-      <div className="container max-w-2xl">
+      <div className="max-w-2xl mx-auto px-4 pb-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card border border-purple-500/30 rounded-2xl p-8"
+          className="bg-[#24234b] dark:bg-white border border-[#5053bf] dark:border-gray-200 rounded-2xl p-8"
         >
-          {/* Post Type Selector */}
+          {/* Post Category Selector */}
           <div className="mb-6">
-            <label className="text-sm font-semibold text-gray-400 mb-3 block">Post Type</label>
+            <label className="text-sm font-semibold text-gray-300 dark:text-gray-700 mb-3 block">Category</label>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { id: 'general', label: 'General', icon: FileText },
                 { id: 'achievement', label: 'Achievement', icon: BookOpen },
-                { id: 'question', label: 'Question', icon: Smile },
+                { id: 'question', label: 'Question', icon: HelpCircle },
               ].map((type) => {
                 const Icon = type.icon;
                 return (
@@ -53,11 +85,11 @@ export default function AddPostPage() {
                     key={type.id}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setPostType(type.id)}
+                    onClick={() => setPostCategory(type.id)}
                     className={`p-3 rounded-lg border-2 transition-all flex items-center justify-center gap-2 ${
-                      postType === type.id
-                        ? 'border-purple-500 bg-purple-500/20 text-purple-300'
-                        : 'border-gray-700 bg-gray-800/50 text-gray-400 hover:border-purple-500/50'
+                      postCategory === type.id
+                        ? 'border-[#9945ce] bg-[#9945ce]/20 text-[#9945ce] dark:border-[#5053bf] dark:bg-[#5053bf]/20 dark:text-[#5053bf]'
+                        : 'border-[#5053bf] bg-[#5053bf]/10 text-gray-400 dark:border-gray-300 dark:bg-gray-100 dark:text-gray-600 hover:border-[#9945ce] dark:hover:border-[#9945ce]'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -68,128 +100,68 @@ export default function AddPostPage() {
             </div>
           </div>
 
-          {/* Text Editor */}
+          {/* Title Input */}
           <div className="mb-6">
-            <label className="text-sm font-semibold text-gray-400 mb-3 block">What's on your mind?</label>
+            <label className="text-sm font-semibold text-gray-300 dark:text-gray-700 mb-3 block">Post Title</label>
+            <input
+              type="text"
+              value={postTitle}
+              onChange={(e) => setPostTitle(e.target.value)}
+              placeholder="Give your post a catchy title..."
+              maxLength={200}
+              className="w-full bg-[#1d2952] dark:bg-gray-50 border border-[#5053bf] dark:border-gray-300 rounded-lg px-4 py-3 text-white dark:text-gray-900 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-[#9945ce] dark:focus:border-[#9945ce] transition-all duration-300"
+            />
+            <div className="text-xs text-gray-500 dark:text-gray-600 mt-2">
+              {postTitle.length} / 200 characters
+            </div>
+          </div>
+
+          {/* Content Editor */}
+          <div className="mb-6">
+            <label className="text-sm font-semibold text-gray-300 dark:text-gray-700 mb-3 block">What's on your mind?</label>
             <textarea
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
               placeholder="Share your thoughts, achievements, or ask the community..."
-              className="w-full h-48 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 resize-none transition-all duration-300"
+              maxLength={5000}
+              className="w-full h-48 bg-[#1d2952] dark:bg-gray-50 border border-[#5053bf] dark:border-gray-300 rounded-lg px-4 py-3 text-white dark:text-gray-900 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-[#9945ce] dark:focus:border-[#9945ce] resize-none transition-all duration-300"
             />
-            <div className="text-xs text-gray-500 mt-2">
+            <div className="text-xs text-gray-500 dark:text-gray-600 mt-2">
               {postContent.length} / 5000 characters
             </div>
           </div>
 
-          {/* Image Preview */}
-          {selectedImage && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 relative"
-            >
-              <img
-                src={selectedImage}
-                alt="Preview"
-                className="w-full h-64 object-cover rounded-lg"
-              />
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                onClick={() => setSelectedImage(null)}
-                className="absolute top-2 right-2 p-2 bg-red-600 hover:bg-red-700 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-white" />
-              </motion.button>
-            </motion.div>
-          )}
-
-          {/* Toolbar */}
-          <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-700">
-            <div className="flex items-center gap-2">
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-purple-400"
-                title="Add Image"
-              >
-                <Image className="w-5 h-5" />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-purple-400"
-                title="Add Emoji"
-              >
-                <Smile className="w-5 h-5" />
-              </motion.button>
-            </div>
-
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between pt-6 border-t border-[#5053bf] dark:border-gray-200">
             <div className="flex items-center gap-3">
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                className="px-4 py-2 text-gray-400 hover:text-white transition-colors font-semibold"
+                className="px-4 py-2 text-gray-400 dark:text-gray-600 hover:text-[#9945ce] dark:hover:text-[#9945ce] transition-colors font-semibold"
               >
-                Draft
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleSubmit}
-                disabled={!postContent.trim()}
-                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all flex items-center gap-2"
-              >
-                <Send className="w-4 h-4" />
-                Post
+                Save Draft
               </motion.button>
             </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSubmit}
+              disabled={!postTitle.trim() || !postContent.trim() || isSubmitting}
+              className="px-6 py-2 bg-gradient-to-r from-[#9945ce] to-[#6e68dd] hover:from-[#7a5fd4] hover:to-[#5053bf] dark:from-[#5053bf] dark:to-[#6e68dd] dark:hover:from-[#6059d2] dark:hover:to-[#7566dc] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all flex items-center gap-2 shadow-lg hover:shadow-[0_0_20px_rgba(153,69,206,0.4)]"
+            >
+              <Send className="w-4 h-4" />
+              {isSubmitting ? 'Posting...' : 'Post'}
+            </motion.button>
           </div>
 
           {/* Tips */}
-          <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
-            <h3 className="font-semibold text-purple-300 mb-2">💡 Tips for a great post:</h3>
-            <ul className="text-sm text-gray-400 space-y-1">
+          <div className="bg-[#5053bf]/10 dark:bg-[#9945ce]/10 border border-[#5053bf]/30 dark:border-[#9945ce]/30 rounded-lg p-4 mt-6">
+            <h3 className="font-semibold text-[#9945ce] dark:text-[#5053bf] mb-2">💡 Tips for a great post:</h3>
+            <ul className="text-sm text-gray-400 dark:text-gray-600 space-y-1">
               <li>• Share your achievements and milestones</li>
               <li>• Ask questions and help others learn</li>
-              <li>• Include images or screenshots for context</li>
               <li>• Be respectful and supportive of the community</li>
+              <li>• Use clear and engaging language</li>
             </ul>
-          </div>
-        </motion.div>
-
-        {/* Recent Posts Preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          className="mt-12"
-        >
-          <h2 className="text-2xl font-bold text-white mb-6">Recent Community Posts</h2>
-          <div className="space-y-4">
-            {[
-              { author: 'Sarah', content: 'Just hit 50 days streak! 🔥', type: 'achievement' },
-              { author: 'Mike', content: 'Anyone want to study together?', type: 'question' },
-              { author: 'Emma', content: 'New study technique that works amazing', type: 'general' },
-            ].map((post, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className="bg-card border border-purple-500/30 rounded-lg p-4 hover:border-purple-500/50 transition-all"
-              >
-                <p className="font-semibold text-white mb-2">{post.author}</p>
-                <p className="text-gray-300 mb-3">{post.content}</p>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    post.type === 'achievement'
-                      ? 'bg-green-500/20 text-green-400'
-                      : post.type === 'question'
-                      ? 'bg-blue-500/20 text-blue-400'
-                      : 'bg-purple-500/20 text-purple-400'
-                  }`}>
-                    {post.type}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
           </div>
         </motion.div>
       </div>

@@ -15,6 +15,13 @@
       "when": 1762283820586,
       "tag": "0001_messy_moira_mactaggert",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1771994632590,
+      "tag": "0002_heavy_sphinx",
+      "breakpoints": true
     }
   ]
 }

@@ -1,45 +1,73 @@
 import { motion } from 'framer-motion';
-import { Edit2, Star, Crown, Settings, Upload, Zap, Award, Target } from 'lucide-react';
-import { useState } from 'react';
+import { Edit2, Star, Crown, Settings, Save, X, Zap, Award } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { trpc } from '@/lib/trpc';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 export default function ProfilePage() {
-  const [profile] = useState({
-    name: 'Ahmed Hassan',
-    username: '@ahmedhassan',
-    avatar: '👨‍💼',
-    bio: 'Focused learner | LOCKEDIN mode activated 🔒',
-    level: 42,
-    xp: 8750,
-    streakDays: 28,
-    badges: 12,
-    nitroActive: true,
-    joinDate: 'Jan 15, 2024',
-  });
+  const { user } = useAuth();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [displayName, setDisplayName] = useState(user?.name || '');
+  const [tempName, setTempName] = useState(user?.name || '');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [customization] = useState({
-    theme: 'dark',
-    accentColor: '#9945ce',
-    profileBg: 'gradient',
-  });
+  const updateNameMutation = trpc.user.updateName.useMutation();
+
+  useEffect(() => {
+    if (user?.name) {
+      setDisplayName(user.name);
+      setTempName(user.name);
+    }
+  }, [user?.name]);
+
+  const handleSaveName = async () => {
+    if (!tempName.trim()) {
+      toast.error('Name cannot be empty');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateNameMutation.mutateAsync({
+        name: tempName.trim(),
+      });
+      setDisplayName(tempName);
+      setIsEditingName(false);
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      toast.error('Failed to update profile');
+      console.error(error);
+      setTempName(displayName);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setTempName(displayName);
+    setIsEditingName(false);
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-24">
+    <div className="min-h-screen bg-gradient-to-br from-[#1d2952] via-[#202857] to-[#1d2952] text-white dark:from-white dark:via-gray-50 dark:to-white dark:text-gray-900 pt-24">
       {/* Profile Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="container mb-12"
+        className="max-w-4xl mx-auto px-4 mb-12"
       >
         {/* Background Banner */}
-        <div className="relative h-48 rounded-2xl overflow-hidden mb-8 bg-gradient-to-r from-blue-600 via-purple-600 to-purple-700">
+        <div className="relative h-48 rounded-2xl overflow-hidden mb-8 bg-gradient-to-r from-[#5053bf] via-[#9945ce] to-[#6e68dd] dark:from-[#6e68dd] dark:via-[#9945ce] dark:to-[#5053bf]">
           <motion.div
             animate={{ opacity: [0.3, 0.6, 0.3] }}
             transition={{ duration: 4, repeat: Infinity }}
-            className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20"
+            className="absolute inset-0 bg-gradient-to-r from-[#9945ce]/20 to-[#5053bf]/20"
           />
           <motion.button
             whileHover={{ scale: 1.05 }}
-            className="absolute top-4 right-4 px-4 py-2 bg-black/50 hover:bg-black/70 rounded-lg text-white text-sm font-semibold transition-all"
+            className="absolute top-4 right-4 px-4 py-2 bg-black/50 dark:bg-white/50 hover:bg-black/70 dark:hover:bg-white/70 rounded-lg text-white dark:text-gray-900 text-sm font-semibold transition-all"
           >
             <Edit2 className="w-4 h-4 inline mr-2" />
             Edit Banner
@@ -48,217 +76,177 @@ export default function ProfilePage() {
 
         {/* Profile Info */}
         <div className="flex flex-col md:flex-row gap-8 items-start">
-          {/* Avatar & Basic Info */}
-          <div className="flex flex-col items-center md:items-start gap-4">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="relative"
-            >
-              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-6xl border-4 border-purple-500/50 -mt-16">
-                {profile.avatar}
-              </div>
-              {profile.nitroActive && (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                  className="absolute -top-2 -right-2 w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center"
-                >
-                  <Crown className="w-5 h-5 text-white" />
-                </motion.div>
-              )}
-            </motion.div>
-
-            <div className="text-center md:text-left">
-              <h1 className="text-3xl font-bold text-white mb-1">{profile.name}</h1>
-              <p className="text-purple-400 mb-3">{profile.username}</p>
-              <p className="text-gray-400 text-sm max-w-sm">{profile.bio}</p>
-            </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Level', value: profile.level, icon: Target, color: 'from-blue-600 to-purple-600' },
-              { label: 'XP', value: `${profile.xp.toLocaleString()}`, icon: Zap, color: 'from-purple-600 to-pink-600' },
-              { label: 'Streak', value: `${profile.streakDays}d`, icon: Award, color: 'from-orange-500 to-red-600' },
-              { label: 'Badges', value: profile.badges, icon: Star, color: 'from-yellow-400 to-orange-500' },
-            ].map((stat, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                className={`bg-gradient-to-br ${stat.color} p-4 rounded-xl text-white`}
-              >
-                <stat.icon className="w-5 h-5 mb-2" />
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-xs opacity-90">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Nitro Section */}
-      {profile.nitroActive && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          className="container mb-12"
-        >
-          <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/50 rounded-2xl p-8">
-            <div className="flex items-center gap-4 mb-4">
-              <Crown className="w-8 h-8 text-yellow-400" />
-              <div>
-                <h2 className="text-2xl font-bold text-white">LOCKEDIN Nitro</h2>
-                <p className="text-gray-400">Premium features unlocked</p>
+          {/* Avatar */}
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="relative -mt-24"
+          >
+            <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#9945ce] to-[#5053bf] dark:from-[#5053bf] dark:to-[#9945ce] p-1">
+              <div className="w-full h-full rounded-2xl bg-[#24234b] dark:bg-white flex items-center justify-center text-6xl">
+                👤
               </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-              {[
-                { title: 'Priority Support', desc: '24/7 AI assistance' },
-                { title: 'Custom Themes', desc: 'Unlimited customization' },
-                { title: 'Advanced Analytics', desc: 'Detailed progress tracking' },
-              ].map((feature, idx) => (
-                <div key={idx} className="bg-black/30 rounded-lg p-4">
-                  <p className="font-semibold text-white mb-1">{feature.title}</p>
-                  <p className="text-sm text-gray-400">{feature.desc}</p>
-                </div>
-              ))}
-            </div>
-
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              className="mt-6 px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all"
+              whileHover={{ scale: 1.1 }}
+              className="absolute bottom-0 right-0 p-3 bg-[#9945ce] dark:bg-[#5053bf] rounded-full text-white hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors"
             >
-              Manage Subscription
+              <Edit2 className="w-5 h-5" />
             </motion.button>
+          </motion.div>
+
+          {/* Profile Details */}
+          <div className="flex-1">
+            <div className="flex items-center gap-4 mb-4">
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    maxLength={50}
+                    className="bg-[#1d2952] dark:bg-gray-50 border border-[#5053bf] dark:border-gray-300 rounded-lg px-4 py-2 text-white dark:text-gray-900 focus:outline-none focus:border-[#9945ce] dark:focus:border-[#9945ce]"
+                    autoFocus
+                  />
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={handleSaveName}
+                    disabled={isSaving}
+                    className="p-2 bg-[#9945ce] dark:bg-[#5053bf] rounded-lg text-white hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors disabled:opacity-50"
+                  >
+                    <Save className="w-5 h-5" />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={handleCancel}
+                    className="p-2 bg-gray-600 dark:bg-gray-400 rounded-lg text-white hover:bg-gray-700 dark:hover:bg-gray-500 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </motion.button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h1 className="text-4xl font-bold text-white dark:text-gray-900 mb-1">
+                      {displayName || user?.email || 'User'}
+                    </h1>
+                    <p className="text-gray-400 dark:text-gray-600">@{displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => setIsEditingName(true)}
+                    className="p-2 bg-[#5053bf] dark:bg-[#9945ce] rounded-lg text-white hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] transition-colors"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </motion.button>
+                </div>
+              )}
+            </div>
+
+            {/* Nitro Badge */}
+            <div className="flex items-center gap-2 mb-6">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="px-4 py-2 bg-gradient-to-r from-[#9945ce] to-[#6e68dd] dark:from-[#5053bf] dark:to-[#6e68dd] rounded-full text-white text-sm font-semibold flex items-center gap-2"
+              >
+                <Crown className="w-4 h-4" />
+                NITRO Active
+              </motion.div>
+            </div>
+
+            {/* Bio */}
+            <p className="text-gray-300 dark:text-gray-600 mb-6">
+              Focused learner | LOCKEDIN mode activated 🔒
+            </p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-[#9945ce] dark:text-[#5053bf]">42</div>
+                <div className="text-xs text-gray-400 dark:text-gray-600">Level</div>
+              </div>
+              <div className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-[#6e68dd] dark:text-[#6e68dd]">8.7K</div>
+                <div className="text-xs text-gray-400 dark:text-gray-600">XP</div>
+              </div>
+              <div className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-[#7a5fd4] dark:text-[#7a5fd4]">28</div>
+                <div className="text-xs text-gray-400 dark:text-gray-600">Streak</div>
+              </div>
+              <div className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-[#7566dc] dark:text-[#7566dc]">12</div>
+                <div className="text-xs text-gray-400 dark:text-gray-600">Badges</div>
+              </div>
+            </div>
           </div>
-        </motion.div>
-      )}
-
-      {/* Customization Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        className="container mb-12"
-      >
-        <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-2">
-          <Settings className="w-8 h-8 text-purple-400" />
-          Customize Your Profile
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Theme Customization */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="bg-card border border-purple-500/30 rounded-2xl p-6"
-          >
-            <h3 className="text-xl font-bold text-white mb-4">Theme</h3>
-            <div className="space-y-3">
-              {['Dark', 'Light', 'Auto'].map((theme) => (
-                <motion.button
-                  key={theme}
-                  whileHover={{ scale: 1.05 }}
-                  className={`w-full px-4 py-2 rounded-lg font-semibold transition-all ${
-                    customization.theme === theme.toLowerCase()
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                  }`}
-                >
-                  {theme}
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Accent Color */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="bg-card border border-purple-500/30 rounded-2xl p-6"
-          >
-            <h3 className="text-xl font-bold text-white mb-4">Accent Color</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {['#9945ce', '#5053bf', '#6059d2', '#6e68dd', '#7a5fd4', '#7566dc'].map((color) => (
-                <motion.button
-                  key={color}
-                  whileHover={{ scale: 1.1 }}
-                  className={`w-full h-12 rounded-lg border-2 transition-all ${
-                    customization.accentColor === color
-                      ? 'border-white'
-                      : 'border-transparent'
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Profile Background */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="bg-card border border-purple-500/30 rounded-2xl p-6"
-          >
-            <h3 className="text-xl font-bold text-white mb-4">Background</h3>
-            <div className="space-y-3">
-              {['Gradient', 'Solid', 'Pattern'].map((bg) => (
-                <motion.button
-                  key={bg}
-                  whileHover={{ scale: 1.05 }}
-                  className={`w-full px-4 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
-                    customization.profileBg === bg.toLowerCase()
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                  }`}
-                >
-                  <Upload className="w-4 h-4" />
-                  {bg}
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
         </div>
       </motion.div>
 
-      {/* Account Settings */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        className="container mb-20"
-      >
-        <h2 className="text-3xl font-bold text-white mb-8">Account Settings</h2>
-
-        <div className="space-y-4">
+      {/* Badges Section */}
+      <div className="max-w-4xl mx-auto px-4 mb-12">
+        <h2 className="text-2xl font-bold mb-6 text-white dark:text-gray-900">Achievements</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Email Address', value: 'ahmed@example.com', editable: true },
-            { label: 'Username', value: '@ahmedhassan', editable: true },
-            { label: 'Password', value: '••••••••', editable: true },
-            { label: 'Member Since', value: profile.joinDate, editable: false },
-          ].map((setting, idx) => (
+            { icon: '🏆', label: 'First Post' },
+            { icon: '⭐', label: 'Rising Star' },
+            { icon: '🔥', label: '7-Day Streak' },
+            { icon: '👑', label: 'Community Leader' },
+            { icon: '🎓', label: 'Knowledge Seeker' },
+            { icon: '💪', label: 'Consistency King' },
+            { icon: '🚀', label: 'Fast Learner' },
+            { icon: '🎯', label: 'Goal Crusher' },
+          ].map((badge, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, x: -10 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-card border border-purple-500/30 rounded-lg p-4 flex items-center justify-between"
+              initial={{ opacity: 0, scale: 0 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.05 }}
+              className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-colors"
             >
-              <div>
-                <p className="text-gray-400 text-sm">{setting.label}</p>
-                <p className="text-white font-semibold">{setting.value}</p>
-              </div>
-              {setting.editable && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  <Edit2 className="w-5 h-5 text-purple-400" />
-                </motion.button>
-              )}
+              <div className="text-4xl mb-2">{badge.icon}</div>
+              <p className="text-sm text-gray-300 dark:text-gray-600">{badge.label}</p>
             </motion.div>
           ))}
         </div>
-      </motion.div>
+      </div>
+
+      {/* Settings Section */}
+      <div className="max-w-4xl mx-auto px-4 pb-20">
+        <h2 className="text-2xl font-bold mb-6 text-white dark:text-gray-900">Settings</h2>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          className="bg-[#24234b] dark:bg-white border border-[#5053bf] dark:border-gray-200 rounded-lg p-6"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-4 border-b border-[#5053bf] dark:border-gray-200">
+              <div className="flex items-center gap-3">
+                <Settings className="w-5 h-5 text-[#9945ce] dark:text-[#5053bf]" />
+                <div>
+                  <p className="font-semibold text-white dark:text-gray-900">Notifications</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-600">Manage notification preferences</p>
+                </div>
+              </div>
+              <Button className="bg-[#5053bf] dark:bg-[#9945ce] hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] text-white">
+                Configure
+              </Button>
+            </div>
+            <div className="flex items-center justify-between pb-4 border-b border-[#5053bf] dark:border-gray-200">
+              <div className="flex items-center gap-3">
+                <Zap className="w-5 h-5 text-[#6e68dd] dark:text-[#6e68dd]" />
+                <div>
+                  <p className="font-semibold text-white dark:text-gray-900">Privacy</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-600">Control who can see your profile</p>
+                </div>
+              </div>
+              <Button className="bg-[#5053bf] dark:bg-[#9945ce] hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] text-white">
+                Configure
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }
