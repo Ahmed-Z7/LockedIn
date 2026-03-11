@@ -95,13 +95,13 @@ export default function Navbar() {
               </motion.button>
             </>
           )}
-          <button
+          <GlowButton
+            variant="indigo"
+            size="md"
             onClick={() => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl()}
           >
-            <GlowButton variant="indigo" size="md">
-              {isAuthenticated ? 'Dashboard' : 'Get Started'}
-            </GlowButton>
-          </button>
+            {isAuthenticated ? 'Dashboard' : 'Get Started'}
+          </GlowButton>
         </div>
       </div>
     </motion.nav>
