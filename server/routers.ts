@@ -23,6 +23,19 @@ export const appRouter = router({
   profile: router({
     get: protectedProcedure.query(async ({ ctx }) => {
       const profile = await db.getUserProfile(ctx.user.id);
+      // Return default profile if not found
+      if (!profile) {
+        return {
+          id: 0,
+          userId: ctx.user.id,
+          bio: null,
+          avatar: null,
+          xp: 0,
+          level: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
       return profile;
     }),
     

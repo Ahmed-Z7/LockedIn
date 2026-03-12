@@ -56,24 +56,21 @@ export default function CTA() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl()}
+              className="px-8 py-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white font-semibold transition-all duration-300 flex items-center gap-2 glow-purple"
             >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white font-semibold transition-all duration-300 flex items-center gap-2 glow-purple"
+              Start Free Trial
+              <motion.span
+                className="inline-block"
+                whileHover={{ x: 5 }}
+                transition={{ duration: 0.3 }}
               >
-                Start Free Trial
-                <motion.span
-                  className="inline-block"
-                  whileHover={{ x: 5 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <ArrowRight className="w-5 h-5" />
-                </motion.span>
-              </motion.button>
-            </button>
+                <ArrowRight className="w-5 h-5" />
+              </motion.span>
+            </motion.button>
 
             <motion.button
               whileHover={{ scale: 1.05 }}
