@@ -31,7 +31,7 @@ export default function GlowButton({
   return (
     <motion.button
       onClick={onClick}
-      className={`relative overflow-hidden rounded-lg font-semibold text-white transition-all duration-300 ${sizeClasses[size]} ${className}`}
+      className={`relative overflow-hidden rounded-lg font-semibold text-foreground transition-all duration-300 ${sizeClasses[size]} ${className}`}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >

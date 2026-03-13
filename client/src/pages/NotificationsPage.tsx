@@ -112,7 +112,7 @@ export default function NotificationsPage() {
           </div>
           <motion.button
             whileHover={{ scale: 1.05 }}
-            className="px-6 py-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold transition-all"
+            className="px-6 py-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-foreground font-semibold transition-all"
           >
             Mark all as read
           </motion.button>
@@ -128,7 +128,7 @@ export default function NotificationsPage() {
               animate={{ opacity: 1 }}
               className="text-center py-12"
             >
-              <Bell className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <p className="text-gray-400 text-lg">No notifications yet</p>
             </motion.div>
           ) : (
@@ -160,7 +160,7 @@ export default function NotificationsPage() {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className={`font-semibold ${notif.read ? 'text-gray-300' : 'text-white'}`}>
+                        <h3 className={`font-semibold ${notif.read ? 'text-gray-300' : 'text-foreground'}`}>
                           {notif.title}
                         </h3>
                         {!notif.read && (
@@ -177,7 +177,7 @@ export default function NotificationsPage() {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           onClick={() => markAsRead(notif.id)}
-                          className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-green-400"
+                          className="p-2 hover:bg-card rounded-lg transition-colors text-gray-400 hover:text-green-400"
                           title="Mark as read"
                         >
                           <Check className="w-4 h-4" />
@@ -186,7 +186,7 @@ export default function NotificationsPage() {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         onClick={() => deleteNotification(notif.id)}
-                        className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-red-400"
+                        className="p-2 hover:bg-card rounded-lg transition-colors text-gray-400 hover:text-red-400"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -206,7 +206,7 @@ export default function NotificationsPage() {
         whileInView={{ opacity: 1, y: 0 }}
         className="container max-w-2xl mt-16 mb-20"
       >
-        <h2 className="text-2xl font-bold text-white mb-6">Notification Settings</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">Notification Settings</h2>
         <div className="bg-card border border-purple-500/30 rounded-xl p-6 space-y-4">
           {[
             { label: 'Achievement Notifications', enabled: true },
@@ -220,17 +220,17 @@ export default function NotificationsPage() {
               initial={{ opacity: 0, x: -10 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className="flex items-center justify-between p-3 hover:bg-gray-800/50 rounded-lg transition-colors"
+              className="flex items-center justify-between p-3 hover:bg-card/50 rounded-lg transition-colors"
             >
-              <label className="text-white font-semibold cursor-pointer">{setting.label}</label>
+              <label className="text-foreground font-semibold cursor-pointer">{setting.label}</label>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 className={`w-12 h-6 rounded-full transition-all ${
-                  setting.enabled ? 'bg-purple-600' : 'bg-gray-700'
+                  setting.enabled ? 'bg-purple-600' : 'bg-card'
                 }`}
               >
                 <motion.div
-                  className="w-5 h-5 rounded-full bg-white"
+                  className="w-5 h-5 rounded-full bg-background"
                   animate={{ x: setting.enabled ? 22 : 2 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />

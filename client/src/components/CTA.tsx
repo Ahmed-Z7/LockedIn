@@ -60,7 +60,7 @@ export default function CTA() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl()}
-              className="px-8 py-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white font-semibold transition-all duration-300 flex items-center gap-2 glow-purple"
+              className="px-8 py-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-foreground font-semibold transition-all duration-300 flex items-center gap-2 glow-purple"
             >
               Start Free Trial
               <motion.span

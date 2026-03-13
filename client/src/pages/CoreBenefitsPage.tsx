@@ -87,7 +87,7 @@ export default function CoreBenefitsPage() {
                   <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${benefit.color} flex items-center justify-center mb-4`}>
                     <Icon className={`w-6 h-6 ${benefit.iconColor}`} />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">{benefit.title}</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-2">{benefit.title}</h3>
                   <p className="text-gray-400 text-sm">{benefit.description}</p>
                 </div>
               </motion.div>
@@ -104,7 +104,7 @@ export default function CoreBenefitsPage() {
       >
         <button
           onClick={() => setLocation('/dashboard')}
-          className="px-8 py-4 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold transition-all duration-300 glow-purple"
+          className="px-8 py-4 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-foreground font-semibold transition-all duration-300 glow-purple"
         >
           Experience These Benefits
         </button>

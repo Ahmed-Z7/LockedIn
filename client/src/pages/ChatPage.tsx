@@ -37,15 +37,15 @@ export default function ChatPage() {
               <span className="text-xl">🤖</span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">AI Coach</h2>
+              <h2 className="text-xl font-bold text-foreground">AI Coach</h2>
               <p className="text-sm text-green-400">Online</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <motion.button whileHover={{ scale: 1.1 }} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+            <motion.button whileHover={{ scale: 1.1 }} className="p-2 hover:bg-card rounded-lg transition-colors">
               <Phone className="w-5 h-5 text-gray-400" />
             </motion.button>
-            <motion.button whileHover={{ scale: 1.1 }} className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
+            <motion.button whileHover={{ scale: 1.1 }} className="p-2 hover:bg-card rounded-lg transition-colors">
               <Video className="w-5 h-5 text-gray-400" />
             </motion.button>
           </div>
@@ -62,9 +62,9 @@ export default function ChatPage() {
             transition={{ delay: idx * 0.1 }}
             className={`flex ${msg.isAI ? 'justify-start' : 'justify-end'}`}
           >
-            <div className={`max-w-xs lg:max-w-md ${msg.isAI ? 'bg-gray-800' : 'bg-gradient-to-r from-purple-600 to-blue-600'} rounded-2xl px-4 py-3`}>
+            <div className={`max-w-xs lg:max-w-md ${msg.isAI ? 'bg-card' : 'bg-gradient-to-r from-purple-600 to-blue-600'} rounded-2xl px-4 py-3`}>
               <p className="text-sm text-gray-300 mb-1">{msg.author}</p>
-              <p className="text-white">{msg.text}</p>
+              <p className="text-foreground">{msg.text}</p>
               <p className="text-xs text-gray-400 mt-1">{msg.timestamp}</p>
             </div>
           </motion.div>
@@ -80,13 +80,13 @@ export default function ChatPage() {
         <div className="flex items-center gap-3">
           <motion.button
             whileHover={{ scale: 1.1 }}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-card rounded-lg transition-colors"
           >
             <Paperclip className="w-5 h-5 text-gray-400" />
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.1 }}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-card rounded-lg transition-colors"
           >
             <Smile className="w-5 h-5 text-gray-400" />
           </motion.button>
@@ -96,7 +96,7 @@ export default function ChatPage() {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
+            className="flex-1 bg-card border border-gray-700 rounded-lg px-4 py-2 text-foreground placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
           />
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -104,7 +104,7 @@ export default function ChatPage() {
             onClick={handleSendMessage}
             className="p-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 rounded-lg transition-all duration-300 glow-purple"
           >
-            <Send className="w-5 h-5 text-white" />
+            <Send className="w-5 h-5 text-foreground" />
           </motion.button>
         </div>
       </motion.div>

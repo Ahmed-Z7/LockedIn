@@ -113,7 +113,7 @@ export default function Features() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-3">{feature.title}</h3>
 
                   {/* Description */}
                   <p className="text-gray-400 text-sm leading-relaxed">{feature.description}</p>

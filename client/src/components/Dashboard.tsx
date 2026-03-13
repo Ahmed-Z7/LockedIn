@@ -77,7 +77,7 @@ export default function Dashboard() {
                     />
                   </div>
                   <p className="text-gray-400 text-sm mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
+                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
                 </div>
               </motion.div>
             );
@@ -92,10 +92,10 @@ export default function Dashboard() {
           className="mt-12 bg-background border border-purple-500/20 rounded-2xl p-8 backdrop-blur-sm"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-white">Level Progress</h3>
+            <h3 className="text-xl font-bold text-foreground">Level Progress</h3>
             <span className="text-purple-400 font-semibold">Level 5</span>
           </div>
-          <div className="relative h-3 bg-gray-700/50 rounded-full overflow-hidden">
+          <div className="relative h-3 bg-card/50 rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               whileInView={{ width: '65%' }}

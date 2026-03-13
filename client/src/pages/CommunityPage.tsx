@@ -68,7 +68,7 @@ export default function CommunityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1d2952] via-[#202857] to-[#1d2952] text-white dark:from-white dark:via-gray-50 dark:to-white dark:text-gray-900 pt-24">
+    <div className="min-h-screen bg-gradient-to-br from-[#1d2952] via-[#202857] to-[#1d2952] text-foreground dark:from-white dark:via-gray-50 dark:to-white dark:text-foreground pt-24">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -80,13 +80,13 @@ export default function CommunityPage() {
             <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-[#9945ce] via-[#6e68dd] to-[#5053bf] bg-clip-text text-transparent dark:from-[#5053bf] dark:via-[#6e68dd] dark:to-[#9945ce]">
               Community
             </h1>
-            <p className="text-gray-300 dark:text-gray-600">Share your learning journey and connect with others</p>
+            <p className="text-gray-300 dark:text-muted-foreground">Share your learning journey and connect with others</p>
           </div>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleAddPost}
-            className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#9945ce] to-[#6e68dd] hover:from-[#7a5fd4] hover:to-[#5053bf] text-white dark:from-[#5053bf] dark:to-[#6e68dd] dark:hover:from-[#6059d2] dark:hover:to-[#7566dc] font-semibold flex items-center gap-2 shadow-lg hover:shadow-[0_0_20px_rgba(153,69,206,0.4)]"
+            className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#9945ce] to-[#6e68dd] hover:from-[#7a5fd4] hover:to-[#5053bf] text-foreground dark:from-[#5053bf] dark:to-[#6e68dd] dark:hover:from-[#6059d2] dark:hover:to-[#7566dc] font-semibold flex items-center gap-2 shadow-lg hover:shadow-[0_0_20px_rgba(153,69,206,0.4)]"
           >
             <Plus className="w-5 h-5" />
             New Post
@@ -109,12 +109,12 @@ export default function CommunityPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-12 bg-[#24234b] dark:bg-gray-100 rounded-lg border border-[#5053bf] dark:border-[#9945ce]"
+              className="text-center py-12 bg-[#24234b] dark:bg-card rounded-lg border border-[#5053bf] dark:border-[#9945ce]"
             >
-              <p className="text-gray-400 dark:text-gray-600 mb-4">No posts yet. Be the first to share!</p>
+              <p className="text-gray-400 dark:text-muted-foreground mb-4">No posts yet. Be the first to share!</p>
               <Button
                 onClick={handleAddPost}
-                className="bg-gradient-to-r from-[#9945ce] to-[#6e68dd] hover:from-[#7a5fd4] hover:to-[#5053bf] text-white dark:from-[#5053bf] dark:to-[#6e68dd]"
+                className="bg-gradient-to-r from-[#9945ce] to-[#6e68dd] hover:from-[#7a5fd4] hover:to-[#5053bf] text-foreground dark:from-[#5053bf] dark:to-[#6e68dd]"
               >
                 Create First Post
               </Button>
@@ -126,18 +126,18 @@ export default function CommunityPage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="bg-[#24234b] dark:bg-white border border-[#5053bf] dark:border-gray-200 rounded-lg p-6 hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-all duration-300 hover:shadow-[0_0_20px_rgba(153,69,206,0.2)]"
+                className="bg-[#24234b] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg p-6 hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-all duration-300 hover:shadow-[0_0_20px_rgba(153,69,206,0.2)]"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-white dark:text-gray-900 mb-1">
+                    <h3 className="text-xl font-bold text-foreground dark:text-foreground mb-1">
                       {post.title}
                     </h3>
-                    <p className="text-sm text-gray-400 dark:text-gray-600">
+                    <p className="text-sm text-gray-400 dark:text-muted-foreground">
                       By <span className="font-semibold text-[#9945ce] dark:text-[#5053bf]">{post.author?.name || post.author?.email || 'Anonymous'}</span> • {new Date(post.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <span className="px-3 py-1 bg-[#5053bf] dark:bg-[#9945ce] text-white dark:text-white rounded-full text-xs font-semibold">
+                  <span className="px-3 py-1 bg-[#5053bf] dark:bg-[#9945ce] text-foreground dark:text-foreground rounded-full text-xs font-semibold">
                     {post.category}
                   </span>
                 </div>
@@ -147,14 +147,14 @@ export default function CommunityPage() {
                 </p>
 
                 {/* Actions */}
-                <div className="flex gap-6 pt-4 border-t border-[#5053bf] dark:border-gray-200">
+                <div className="flex gap-6 pt-4 border-t border-[#5053bf] dark:border-border">
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     onClick={() => handleLike(post.id)}
                     className={`flex items-center gap-2 transition-colors ${
                       likedPosts.has(post.id)
                         ? 'text-red-500 dark:text-red-500'
-                        : 'text-gray-400 dark:text-gray-600 hover:text-[#9945ce] dark:hover:text-[#9945ce]'
+                        : 'text-gray-400 dark:text-muted-foreground hover:text-[#9945ce] dark:hover:text-[#9945ce]'
                     }`}
                   >
                     <Heart size={18} fill={likedPosts.has(post.id) ? 'currentColor' : 'none'} />
@@ -162,14 +162,14 @@ export default function CommunityPage() {
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
-                    className="flex items-center gap-2 text-gray-400 dark:text-gray-600 hover:text-[#6e68dd] dark:hover:text-[#6e68dd] transition-colors"
+                    className="flex items-center gap-2 text-gray-400 dark:text-muted-foreground hover:text-[#6e68dd] dark:hover:text-[#6e68dd] transition-colors"
                   >
                     <MessageCircle size={18} />
                     <span className="text-sm">{post.comments || 0}</span>
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.1 }}
-                    className="flex items-center gap-2 text-gray-400 dark:text-gray-600 hover:text-[#5053bf] dark:hover:text-[#5053bf] transition-colors"
+                    className="flex items-center gap-2 text-gray-400 dark:text-muted-foreground hover:text-[#5053bf] dark:hover:text-[#5053bf] transition-colors"
                   >
                     <Share2 size={18} />
                     <span className="text-sm">Share</span>

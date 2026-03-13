@@ -96,7 +96,7 @@ export default function ChallengesPage() {
               <div className="flex items-start justify-between mb-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-2xl font-bold text-white">{challenge.title}</h3>
+                    <h3 className="text-2xl font-bold text-foreground">{challenge.title}</h3>
                     <span className={`text-sm font-semibold px-3 py-1 rounded-full border ${getDifficultyColor(challenge.difficulty)} border-current/30`}>
                       {challenge.difficulty}
                     </span>
@@ -112,7 +112,7 @@ export default function ChallengesPage() {
                   <span className="text-sm text-gray-400">Progress</span>
                   <span className="text-sm font-semibold text-purple-400">{challenge.progress}/{challenge.totalDays}</span>
                 </div>
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-card rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-gradient-to-r from-purple-600 to-blue-600"
                     initial={{ width: 0 }}
@@ -128,14 +128,14 @@ export default function ChallengesPage() {
                   <Users className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-500">Participants</p>
-                    <p className="font-semibold text-white">{challenge.participants.toLocaleString()}</p>
+                    <p className="font-semibold text-foreground">{challenge.participants.toLocaleString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-500">Days Left</p>
-                    <p className="font-semibold text-white">{challenge.daysLeft}</p>
+                    <p className="font-semibold text-foreground">{challenge.daysLeft}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export default function ChallengesPage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold transition-all duration-300 glow-purple flex items-center justify-center gap-2"
+                className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-foreground font-semibold transition-all duration-300 glow-purple flex items-center justify-center gap-2"
               >
                 <Target className="w-5 h-5" />
                 Join Challenge
@@ -167,7 +167,7 @@ export default function ChallengesPage() {
         whileInView={{ opacity: 1, y: 0 }}
         className="container bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-2xl p-8 mb-20"
       >
-        <h2 className="text-2xl font-bold text-white mb-6">Your Challenge Stats</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">Your Challenge Stats</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="text-center">
             <p className="text-3xl font-bold text-purple-400 mb-2">3</p>

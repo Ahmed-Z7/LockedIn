@@ -44,7 +44,7 @@ export default function Footer() {
           >
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
-                <span className="text-white font-bold">L</span>
+                <span className="text-foreground font-bold">L</span>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                 LOCKEDIN
@@ -61,9 +61,9 @@ export default function Footer() {
                     key={idx}
                     href={social.href}
                     whileHover={{ scale: 1.1 }}
-                    className="w-9 h-9 rounded-lg bg-gray-800 hover:bg-purple-600 flex items-center justify-center transition-colors"
+                    className="w-9 h-9 rounded-lg bg-card hover:bg-purple-600 flex items-center justify-center transition-colors"
                   >
-                    <Icon className="w-4 h-4 text-gray-400 hover:text-white" />
+                    <Icon className="w-4 h-4 text-gray-400 hover:text-foreground" />
                   </motion.a>
                 );
               })}
@@ -78,7 +78,7 @@ export default function Footer() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: (idx + 1) * 0.1 }}
             >
-              <h3 className="font-bold text-white mb-4">{section.title}</h3>
+              <h3 className="font-bold text-foreground mb-4">{section.title}</h3>
               <ul className="space-y-2">
                 {section.links.map((link, linkIdx) => (
                   <li key={linkIdx}>

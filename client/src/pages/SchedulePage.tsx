@@ -77,7 +77,7 @@ export default function SchedulePage() {
             </div>
             <Button
               onClick={() => setShowAddSchedule(!showAddSchedule)}
-              className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white"
+              className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-foreground"
             >
               <Plus className="w-5 h-5 mr-2" />
               Add Schedule
@@ -148,7 +148,7 @@ export default function SchedulePage() {
                 <Button
                   onClick={handleCreateSchedule}
                   disabled={createMutation.isPending}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-foreground"
                 >
                   {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Add to Schedule"}
                 </Button>

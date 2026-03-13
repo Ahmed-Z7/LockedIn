@@ -14,7 +14,7 @@ export default function ThemeSwitcher() {
       onClick={toggleTheme}
       className={`p-2 rounded-lg transition-colors ${
         theme === 'dark'
-          ? 'bg-gray-800 hover:bg-gray-700'
+          ? 'bg-card hover:bg-card'
           : 'bg-purple-100 hover:bg-purple-200'
       }`}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}

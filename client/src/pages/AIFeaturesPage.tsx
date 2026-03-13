@@ -76,9 +76,9 @@ export default function AIFeaturesPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
                 <div className="relative bg-background border border-gray-700/50 rounded-2xl p-8 backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300">
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6 text-white" />
+                    <Icon className="w-6 h-6 text-foreground" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-2">{feature.title}</h3>
                   <p className="text-gray-400 text-sm mb-4">{feature.description}</p>
                   <ul className="space-y-2">
                     {feature.features.map((f, i) => (
@@ -101,7 +101,7 @@ export default function AIFeaturesPage() {
         whileInView={{ opacity: 1, y: 0 }}
         className="container bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-2xl p-8 mb-20"
       >
-        <h2 className="text-2xl font-bold text-white mb-4">How AI Enhances Your Learning</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-4">How AI Enhances Your Learning</h2>
         <p className="text-gray-300 mb-4">
           Our AI system uses advanced machine learning algorithms to understand your learning patterns, identify knowledge gaps, and create personalized learning experiences. Every interaction helps the AI better understand your needs and provide more targeted assistance.
         </p>

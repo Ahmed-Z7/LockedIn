@@ -186,19 +186,19 @@ export default function DashboardPage() {
         >
           <Button
             onClick={() => setLocation("/ai-coach")}
-            className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white py-6 text-lg"
+            className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-foreground py-6 text-lg"
           >
             Chat with AI Coach
           </Button>
           <Button
             onClick={() => setLocation("/flash-cards")}
-            className="bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-700 hover:to-violet-700 text-white py-6 text-lg"
+            className="bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-700 hover:to-violet-700 text-foreground py-6 text-lg"
           >
             Study Flash Cards
           </Button>
           <Button
             onClick={() => setLocation("/schedule")}
-            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white py-6 text-lg"
+            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-foreground py-6 text-lg"
           >
             Plan Your Study
           </Button>

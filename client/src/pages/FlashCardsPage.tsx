@@ -88,7 +88,7 @@ export default function FlashCardsPage() {
             </div>
             <Button
               onClick={() => setShowCreateDeck(!showCreateDeck)}
-              className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white"
+              className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-foreground"
             >
               <Plus className="w-5 h-5 mr-2" />
               New Deck
@@ -123,7 +123,7 @@ export default function FlashCardsPage() {
                 <Button
                   onClick={handleCreateDeck}
                   disabled={createDeckMutation.isPending}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-foreground"
                 >
                   {createDeckMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Deck"}
                 </Button>
@@ -187,7 +187,7 @@ export default function FlashCardsPage() {
               </h2>
               <Button
                 onClick={() => setShowAddCard(!showAddCard)}
-                className="bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-700 hover:to-violet-700 text-white"
+                className="bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-700 hover:to-violet-700 text-foreground"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Add Card
@@ -219,7 +219,7 @@ export default function FlashCardsPage() {
                     <Button
                       onClick={handleAddCard}
                       disabled={addCardMutation.isPending}
-                      className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                      className="bg-cyan-600 hover:bg-cyan-700 text-foreground"
                     >
                       {addCardMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Add Card"}
                     </Button>

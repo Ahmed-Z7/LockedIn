@@ -114,7 +114,7 @@ export default function AICoachPage() {
                 <div
                   className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
                     msg.role === "user"
-                      ? "bg-indigo-600 text-white"
+                      ? "bg-indigo-600 text-foreground"
                       : "bg-background border border-indigo-500/30 text-foreground"
                   }`}
                 >
@@ -157,7 +157,7 @@ export default function AICoachPage() {
           <Button
             onClick={handleSendMessage}
             disabled={chatMutation.isPending || !input.trim()}
-            className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white px-6"
+            className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-foreground px-6"
           >
             <Send className="w-5 h-5" />
           </Button>

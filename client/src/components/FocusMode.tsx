@@ -105,7 +105,7 @@ export default function FocusMode() {
 
           {/* Timer display */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-6xl font-bold text-white tabular-nums">
+            <div className="text-6xl font-bold text-foreground tabular-nums">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </div>
             <div className="text-sm text-gray-400 mt-2">Focus Time</div>
@@ -123,7 +123,7 @@ export default function FocusMode() {
             onClick={handleStart}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            className="p-4 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-500/50 hover:shadow-xl hover:shadow-violet-500/70 transition-all"
+            className="p-4 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-foreground shadow-lg shadow-violet-500/50 hover:shadow-xl hover:shadow-violet-500/70 transition-all"
           >
             {isActive ? (
               <Pause className="w-6 h-6" />
@@ -160,7 +160,7 @@ export default function FocusMode() {
               className="p-4 rounded-lg border border-indigo-500/20 bg-indigo-500/5 backdrop-blur-sm"
             >
               <div className="text-3xl mb-2">{tip.icon}</div>
-              <h4 className="font-semibold text-white mb-1">{tip.title}</h4>
+              <h4 className="font-semibold text-foreground mb-1">{tip.title}</h4>
               <p className="text-sm text-gray-400">{tip.desc}</p>
             </motion.div>
           ))}

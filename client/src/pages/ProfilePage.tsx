@@ -51,7 +51,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1d2952] via-[#202857] to-[#1d2952] text-white dark:from-white dark:via-gray-50 dark:to-white dark:text-gray-900 pt-24">
+    <div className="min-h-screen bg-gradient-to-br from-[#1d2952] via-[#202857] to-[#1d2952] text-foreground dark:from-white dark:via-gray-50 dark:to-white dark:text-foreground pt-24">
       {/* Profile Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -67,7 +67,7 @@ export default function ProfilePage() {
           />
           <motion.button
             whileHover={{ scale: 1.05 }}
-            className="absolute top-4 right-4 px-4 py-2 bg-black/50 dark:bg-white/50 hover:bg-black/70 dark:hover:bg-white/70 rounded-lg text-white dark:text-gray-900 text-sm font-semibold transition-all"
+            className="absolute top-4 right-4 px-4 py-2 bg-background/50 dark:bg-background/50 hover:bg-background/70 dark:hover:bg-background/70 rounded-lg text-foreground dark:text-foreground text-sm font-semibold transition-all"
           >
             <Edit2 className="w-4 h-4 inline mr-2" />
             Edit Banner
@@ -83,13 +83,13 @@ export default function ProfilePage() {
             className="relative -mt-24"
           >
             <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#9945ce] to-[#5053bf] dark:from-[#5053bf] dark:to-[#9945ce] p-1">
-              <div className="w-full h-full rounded-2xl bg-[#24234b] dark:bg-white flex items-center justify-center text-6xl">
+              <div className="w-full h-full rounded-2xl bg-[#24234b] dark:bg-background flex items-center justify-center text-6xl">
                 👤
               </div>
             </div>
             <motion.button
               whileHover={{ scale: 1.1 }}
-              className="absolute bottom-0 right-0 p-3 bg-[#9945ce] dark:bg-[#5053bf] rounded-full text-white hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors"
+              className="absolute bottom-0 right-0 p-3 bg-[#9945ce] dark:bg-[#5053bf] rounded-full text-foreground hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors"
             >
               <Edit2 className="w-5 h-5" />
             </motion.button>
@@ -105,21 +105,21 @@ export default function ProfilePage() {
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
                     maxLength={50}
-                    className="bg-[#1d2952] dark:bg-gray-50 border border-[#5053bf] dark:border-gray-300 rounded-lg px-4 py-2 text-white dark:text-gray-900 focus:outline-none focus:border-[#9945ce] dark:focus:border-[#9945ce]"
+                    className="bg-[#1d2952] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg px-4 py-2 text-foreground dark:text-foreground focus:outline-none focus:border-[#9945ce] dark:focus:border-[#9945ce]"
                     autoFocus
                   />
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={handleSaveName}
                     disabled={isSaving}
-                    className="p-2 bg-[#9945ce] dark:bg-[#5053bf] rounded-lg text-white hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors disabled:opacity-50"
+                    className="p-2 bg-[#9945ce] dark:bg-[#5053bf] rounded-lg text-foreground hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors disabled:opacity-50"
                   >
                     <Save className="w-5 h-5" />
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={handleCancel}
-                    className="p-2 bg-gray-600 dark:bg-gray-400 rounded-lg text-white hover:bg-gray-700 dark:hover:bg-gray-500 transition-colors"
+                    className="p-2 bg-gray-600 dark:bg-gray-400 rounded-lg text-foreground hover:bg-card dark:hover:bg-gray-500 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </motion.button>
@@ -127,15 +127,15 @@ export default function ProfilePage() {
               ) : (
                 <div className="flex items-center gap-4">
                   <div>
-                    <h1 className="text-4xl font-bold text-white dark:text-gray-900 mb-1">
+                    <h1 className="text-4xl font-bold text-foreground dark:text-foreground mb-1">
                       {displayName || user?.email || 'User'}
                     </h1>
-                    <p className="text-gray-400 dark:text-gray-600">@{displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+                    <p className="text-gray-400 dark:text-muted-foreground">@{displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={() => setIsEditingName(true)}
-                    className="p-2 bg-[#5053bf] dark:bg-[#9945ce] rounded-lg text-white hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] transition-colors"
+                    className="p-2 bg-[#5053bf] dark:bg-[#9945ce] rounded-lg text-foreground hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] transition-colors"
                   >
                     <Edit2 className="w-5 h-5" />
                   </motion.button>
@@ -148,7 +148,7 @@ export default function ProfilePage() {
               <motion.div
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="px-4 py-2 bg-gradient-to-r from-[#9945ce] to-[#6e68dd] dark:from-[#5053bf] dark:to-[#6e68dd] rounded-full text-white text-sm font-semibold flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-[#9945ce] to-[#6e68dd] dark:from-[#5053bf] dark:to-[#6e68dd] rounded-full text-foreground text-sm font-semibold flex items-center gap-2"
               >
                 <Crown className="w-4 h-4" />
                 NITRO Active
@@ -156,27 +156,27 @@ export default function ProfilePage() {
             </div>
 
             {/* Bio */}
-            <p className="text-gray-300 dark:text-gray-600 mb-6">
+            <p className="text-gray-300 dark:text-muted-foreground mb-6">
               Focused learner | LOCKEDIN mode activated 🔒
             </p>
 
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4">
-              <div className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center">
+              <div className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-[#9945ce] dark:text-[#5053bf]">42</div>
-                <div className="text-xs text-gray-400 dark:text-gray-600">Level</div>
+                <div className="text-xs text-gray-400 dark:text-muted-foreground">Level</div>
               </div>
-              <div className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center">
+              <div className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-[#6e68dd] dark:text-[#6e68dd]">8.7K</div>
-                <div className="text-xs text-gray-400 dark:text-gray-600">XP</div>
+                <div className="text-xs text-gray-400 dark:text-muted-foreground">XP</div>
               </div>
-              <div className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center">
+              <div className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-[#7a5fd4] dark:text-[#7a5fd4]">28</div>
-                <div className="text-xs text-gray-400 dark:text-gray-600">Streak</div>
+                <div className="text-xs text-gray-400 dark:text-muted-foreground">Streak</div>
               </div>
-              <div className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center">
+              <div className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-[#7566dc] dark:text-[#7566dc]">12</div>
-                <div className="text-xs text-gray-400 dark:text-gray-600">Badges</div>
+                <div className="text-xs text-gray-400 dark:text-muted-foreground">Badges</div>
               </div>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function ProfilePage() {
 
       {/* Badges Section */}
       <div className="max-w-4xl mx-auto px-4 mb-12">
-        <h2 className="text-2xl font-bold mb-6 text-white dark:text-gray-900">Achievements</h2>
+        <h2 className="text-2xl font-bold mb-6 text-foreground dark:text-foreground">Achievements</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { icon: '🏆', label: 'First Post' },
@@ -202,10 +202,10 @@ export default function ProfilePage() {
               initial={{ opacity: 0, scale: 0 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.05 }}
-              className="bg-[#24234b] dark:bg-gray-100 border border-[#5053bf] dark:border-gray-300 rounded-lg p-4 text-center hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-colors"
+              className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-colors"
             >
               <div className="text-4xl mb-2">{badge.icon}</div>
-              <p className="text-sm text-gray-300 dark:text-gray-600">{badge.label}</p>
+              <p className="text-sm text-gray-300 dark:text-muted-foreground">{badge.label}</p>
             </motion.div>
           ))}
         </div>
@@ -213,34 +213,34 @@ export default function ProfilePage() {
 
       {/* Settings Section */}
       <div className="max-w-4xl mx-auto px-4 pb-20">
-        <h2 className="text-2xl font-bold mb-6 text-white dark:text-gray-900">Settings</h2>
+        <h2 className="text-2xl font-bold mb-6 text-foreground dark:text-foreground">Settings</h2>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          className="bg-[#24234b] dark:bg-white border border-[#5053bf] dark:border-gray-200 rounded-lg p-6"
+          className="bg-[#24234b] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg p-6"
         >
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-4 border-b border-[#5053bf] dark:border-gray-200">
+            <div className="flex items-center justify-between pb-4 border-b border-[#5053bf] dark:border-border">
               <div className="flex items-center gap-3">
                 <Settings className="w-5 h-5 text-[#9945ce] dark:text-[#5053bf]" />
                 <div>
-                  <p className="font-semibold text-white dark:text-gray-900">Notifications</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-600">Manage notification preferences</p>
+                  <p className="font-semibold text-foreground dark:text-foreground">Notifications</p>
+                  <p className="text-xs text-gray-400 dark:text-muted-foreground">Manage notification preferences</p>
                 </div>
               </div>
-              <Button className="bg-[#5053bf] dark:bg-[#9945ce] hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] text-white">
+              <Button className="bg-[#5053bf] dark:bg-[#9945ce] hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] text-foreground">
                 Configure
               </Button>
             </div>
-            <div className="flex items-center justify-between pb-4 border-b border-[#5053bf] dark:border-gray-200">
+            <div className="flex items-center justify-between pb-4 border-b border-[#5053bf] dark:border-border">
               <div className="flex items-center gap-3">
                 <Zap className="w-5 h-5 text-[#6e68dd] dark:text-[#6e68dd]" />
                 <div>
-                  <p className="font-semibold text-white dark:text-gray-900">Privacy</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-600">Control who can see your profile</p>
+                  <p className="font-semibold text-foreground dark:text-foreground">Privacy</p>
+                  <p className="text-xs text-gray-400 dark:text-muted-foreground">Control who can see your profile</p>
                 </div>
               </div>
-              <Button className="bg-[#5053bf] dark:bg-[#9945ce] hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] text-white">
+              <Button className="bg-[#5053bf] dark:bg-[#9945ce] hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] text-foreground">
                 Configure
               </Button>
             </div>

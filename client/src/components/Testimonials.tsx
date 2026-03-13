@@ -71,7 +71,7 @@ export default function Testimonials() {
                 <div className="flex items-center gap-3">
                   <div className="text-3xl">{testimonial.avatar}</div>
                   <div>
-                    <p className="font-bold text-white">{testimonial.name}</p>
+                    <p className="font-bold text-foreground">{testimonial.name}</p>
                     <p className="text-sm text-gray-400">{testimonial.role}</p>
                   </div>
                 </div>

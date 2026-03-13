@@ -64,7 +64,7 @@ export default function BlockedWebsitesPage() {
             </div>
             <Button
               onClick={() => setShowAddWebsite(!showAddWebsite)}
-              className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white"
+              className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-foreground"
             >
               <Plus className="w-5 h-5 mr-2" />
               Block Website
@@ -121,7 +121,7 @@ export default function BlockedWebsitesPage() {
                 <Button
                   onClick={handleAddWebsite}
                   disabled={addMutation.isPending}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-foreground"
                 >
                   {addMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Block Website"}
                 </Button>

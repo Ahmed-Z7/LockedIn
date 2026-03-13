@@ -30,7 +30,7 @@ export default function Navbar() {
               transition={{ duration: 2, repeat: Infinity }}
             />
             <div className="relative bg-gradient-to-r from-purple-700 to-blue-700 rounded-lg p-2">
-              <Lock className="w-6 h-6 text-white" />
+              <Lock className="w-6 h-6 text-foreground" />
             </div>
           </div>
           <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
@@ -49,7 +49,7 @@ export default function Navbar() {
             <motion.button
               key={item.label}
               onClick={item.action}
-              className="text-gray-300 hover:text-white transition-colors relative group"
+              className="text-gray-300 hover:text-foreground transition-colors relative group"
               whileHover={{ color: '#FFFFFF' }}
             >
               {item.label}
@@ -71,7 +71,7 @@ export default function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 onClick={() => setLocation('/add-post')}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-purple-400"
+                className="p-2 hover:bg-card rounded-lg transition-colors text-gray-400 hover:text-purple-400"
                 title="Create Post"
               >
                 <Plus className="w-5 h-5" />
@@ -79,7 +79,7 @@ export default function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 onClick={() => setLocation('/notifications')}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-purple-400 relative"
+                className="p-2 hover:bg-card rounded-lg transition-colors text-gray-400 hover:text-purple-400 relative"
                 title="Notifications"
               >
                 <Bell className="w-5 h-5" />
@@ -88,7 +88,7 @@ export default function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 onClick={() => setLocation('/profile')}
-                className="p-2 hover:bg-gray-800 rounded-lg transition-colors text-gray-400 hover:text-purple-400"
+                className="p-2 hover:bg-card rounded-lg transition-colors text-gray-400 hover:text-purple-400"
                 title="Profile"
               >
                 <User className="w-5 h-5" />
