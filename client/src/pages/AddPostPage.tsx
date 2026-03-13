@@ -72,7 +72,7 @@ export default function AddPostPage() {
         >
           {/* Post Category Selector */}
           <div className="mb-6">
-            <label className="text-sm font-semibold text-gray-300 dark:text-gray-700 mb-3 block">Category</label>
+            <label className="text-sm font-semibold text-gray-300 dark:text-[#1E293B] mb-3 block">Category</label>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { id: 'general', label: 'General', icon: FileText },
@@ -102,7 +102,7 @@ export default function AddPostPage() {
 
           {/* Title Input */}
           <div className="mb-6">
-            <label className="text-sm font-semibold text-gray-300 dark:text-gray-700 mb-3 block">Post Title</label>
+            <label className="text-sm font-semibold text-gray-300 dark:text-[#1E293B] mb-3 block">Post Title</label>
             <input
               type="text"
               value={postTitle}
@@ -118,7 +118,7 @@ export default function AddPostPage() {
 
           {/* Content Editor */}
           <div className="mb-6">
-            <label className="text-sm font-semibold text-gray-300 dark:text-gray-700 mb-3 block">What's on your mind?</label>
+            <label className="text-sm font-semibold text-gray-300 dark:text-[#1E293B] mb-3 block">What's on your mind?</label>
             <textarea
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}

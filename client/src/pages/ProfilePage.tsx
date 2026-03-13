@@ -119,7 +119,7 @@ export default function ProfilePage() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={handleCancel}
-                    className="p-2 bg-gray-600 dark:bg-gray-400 rounded-lg text-foreground hover:bg-card dark:hover:bg-gray-500 transition-colors"
+                    className="p-2 bg-gray-600 dark:bg-gray-400 rounded-lg text-foreground hover:bg-card dark:hover:bg-[#EEF2FF]0 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </motion.button>
