@@ -50,7 +50,7 @@ export default function AddPostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1d2952] via-[#202857] to-[#1d2952] text-foreground dark:from-white dark:via-gray-50 dark:to-white dark:text-foreground pt-24">
+    <div className="min-h-screen bg-gradient-to-br from-[#F6F7FF] via-[#EEF2FF] to-[#F6F7FF] text-foreground dark:from-[#F6F7FF] dark:via-[#EEF2FF] dark:to-[#F6F7FF] dark:text-foreground pt-24">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -68,7 +68,7 @@ export default function AddPostPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[#24234b] dark:bg-background border border-[#5053bf] dark:border-border rounded-2xl p-8"
+          className="bg-[#FFFFFF] dark:bg-background border border-[#5053bf] dark:border-border rounded-2xl p-8"
         >
           {/* Post Category Selector */}
           <div className="mb-6">

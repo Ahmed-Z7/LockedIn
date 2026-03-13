@@ -68,7 +68,7 @@ export default function CommunityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1d2952] via-[#202857] to-[#1d2952] text-foreground dark:from-white dark:via-gray-50 dark:to-white dark:text-foreground pt-24">
+    <div className="min-h-screen bg-gradient-to-br from-[#F6F7FF] via-[#EEF2FF] to-[#F6F7FF] text-foreground dark:from-[#F6F7FF] dark:via-[#EEF2FF] dark:to-[#F6F7FF] dark:text-foreground pt-24">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -109,7 +109,7 @@ export default function CommunityPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-12 bg-[#24234b] dark:bg-card rounded-lg border border-[#5053bf] dark:border-[#9945ce]"
+              className="text-center py-12 bg-[#FFFFFF] dark:bg-card rounded-lg border border-[#5053bf] dark:border-[#9945ce]"
             >
               <p className="text-gray-400 dark:text-muted-foreground mb-4">No posts yet. Be the first to share!</p>
               <Button
@@ -126,7 +126,7 @@ export default function CommunityPage() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="bg-[#24234b] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg p-6 hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-all duration-300 hover:shadow-[0_0_20px_rgba(153,69,206,0.2)]"
+                className="bg-[#FFFFFF] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg p-6 hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-all duration-300 hover:shadow-[0_0_20px_rgba(153,69,206,0.2)]"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>

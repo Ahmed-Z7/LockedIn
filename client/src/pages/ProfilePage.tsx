@@ -51,7 +51,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1d2952] via-[#202857] to-[#1d2952] text-foreground dark:from-white dark:via-gray-50 dark:to-white dark:text-foreground pt-24">
+    <div className="min-h-screen bg-gradient-to-br from-[#F6F7FF] via-[#EEF2FF] to-[#F6F7FF] text-foreground dark:from-[#F6F7FF] dark:via-[#EEF2FF] dark:to-[#F6F7FF] dark:text-foreground pt-24">
       {/* Profile Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -83,7 +83,7 @@ export default function ProfilePage() {
             className="relative -mt-24"
           >
             <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#9945ce] to-[#5053bf] dark:from-[#5053bf] dark:to-[#9945ce] p-1">
-              <div className="w-full h-full rounded-2xl bg-[#24234b] dark:bg-background flex items-center justify-center text-6xl">
+              <div className="w-full h-full rounded-2xl bg-[#FFFFFF] dark:bg-background flex items-center justify-center text-6xl">
                 👤
               </div>
             </div>
@@ -162,19 +162,19 @@ export default function ProfilePage() {
 
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4">
-              <div className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
+              <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-[#9945ce] dark:text-[#5053bf]">42</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">Level</div>
               </div>
-              <div className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
+              <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-[#6e68dd] dark:text-[#6e68dd]">8.7K</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">XP</div>
               </div>
-              <div className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
+              <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-[#7a5fd4] dark:text-[#7a5fd4]">28</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">Streak</div>
               </div>
-              <div className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
+              <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-[#7566dc] dark:text-[#7566dc]">12</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">Badges</div>
               </div>
@@ -202,7 +202,7 @@ export default function ProfilePage() {
               initial={{ opacity: 0, scale: 0 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.05 }}
-              className="bg-[#24234b] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-colors"
+              className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-colors"
             >
               <div className="text-4xl mb-2">{badge.icon}</div>
               <p className="text-sm text-gray-300 dark:text-muted-foreground">{badge.label}</p>
@@ -217,7 +217,7 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          className="bg-[#24234b] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg p-6"
+          className="bg-[#FFFFFF] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg p-6"
         >
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-4 border-b border-[#5053bf] dark:border-border">
