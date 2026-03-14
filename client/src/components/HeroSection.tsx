@@ -30,11 +30,31 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Grid pattern */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background opacity-50" />
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-gradient-to-br from-[#F7F8FF] via-[#F9FAFF] to-[#F7F8FF]">
+      {/* Animated background elements - Crystal Glassmorphism */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Top-Left: Fuchsia-Purple glow */}
+        <motion.div
+          className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(147, 51, 234, 0.08) 0%, transparent 70%)',
+          }}
+          animate={{ y: [0, 50, 0], x: [0, 30, 0] }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        {/* Bottom-Right: Cyan opalescent glow */}
+        <motion.div
+          className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 70%)',
+          }}
+          animate={{ y: [0, -50, 0], x: [0, -30, 0] }}
+          transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+        />
+        {/* Subtle neural network pattern overlay */}
+        <div className="absolute inset-0 opacity-30" style={{
+          backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(196, 181, 253, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(165, 243, 252, 0.05) 0%, transparent 50%)',
+        }} />
       </div>
 
       {/* Content */}
@@ -44,35 +64,47 @@ export default function HeroSection() {
         initial="hidden"
         animate="visible"
       >
-        {/* Badge */}
+        {/* Badge - Crystal Circuit Pattern */}
         <motion.div
           variants={itemVariants}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-2 backdrop-blur-sm"
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-white/40 px-4 py-2 backdrop-blur-md shadow-sm"
+          style={{
+            boxShadow: '0 0 20px rgba(99, 102, 241, 0.05)',
+          }}
         >
-          <Brain className="w-4 h-4 text-purple-400" />
-          <span className="text-sm font-medium text-purple-300">
+          <Brain className="w-4 h-4 text-[#6366F1]" />
+          <span className="text-sm font-medium text-[#1E293B]">
             AI-Powered Smart Learning
           </span>
         </motion.div>
 
-        {/* Main heading */}
+        {/* Main heading - Dimensional Crystal Glass Text */}
         <motion.h1
           variants={itemVariants}
           className="mb-6 text-5xl md:text-7xl font-bold tracking-tight"
         >
-          <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-blue-400 bg-clip-text text-transparent">
+          <motion.span
+            className="inline-block bg-gradient-to-r from-[#9333EA] via-[#6366F1] to-[#06B6D4] bg-clip-text text-transparent"
+            animate={{
+              backgroundPosition: ['0%', '100%', '0%'],
+            }}
+            transition={{ duration: 4, repeat: Infinity }}
+            style={{
+              backgroundSize: '200% 200%',
+            }}
+          >
             Study Smarter
-          </span>
+          </motion.span>
           <br />
-          <span className="text-foreground">Not Harder</span>
+          <span className="text-[#0F172A]">Not Harder</span>
         </motion.h1>
 
-        {/* Subheading */}
+        {/* Subheading - Soft glowing text */}
         <motion.p
           variants={itemVariants}
-          className="mb-8 max-w-2xl mx-auto text-xl text-gray-300"
+          className="mb-8 max-w-2xl mx-auto text-xl text-[#1E293B]"
         >
-          EduLix combines AI guidance, gamified learning, and personalized scheduling to help you ace your exams with focus and motivation.
+          LOCKEDIN combines AI guidance, gamified learning, and personalized scheduling to help you ace your exams with focus and motivation.
         </motion.p>
 
         {/* CTA Buttons */}
@@ -80,11 +112,15 @@ export default function HeroSection() {
           variants={itemVariants}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
+          {/* Primary Button - Crystal Glass with gradient */}
           <motion.button
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl()}
-            className="px-8 py-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-foreground font-semibold transition-all duration-300 flex items-center gap-2 glow-purple"
+            className="px-8 py-4 rounded-lg bg-gradient-to-r from-[#9333EA] to-[#06B6D4] hover:from-[#7E22CE] hover:to-[#0891B2] text-white font-semibold transition-all duration-300 flex items-center gap-2"
+            style={{
+              boxShadow: '0 8px 32px rgba(147, 51, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+            }}
           >
             Start Learning Today
             <motion.span
@@ -96,17 +132,21 @@ export default function HeroSection() {
             </motion.span>
           </motion.button>
 
+          {/* Secondary Button - Crystal Panel Outline */}
           <motion.button
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setLocation('/ai-coach')}
-            className="px-8 py-4 rounded-lg border border-blue-500/50 text-blue-300 hover:text-blue-200 font-semibold transition-colors"
+            className="px-8 py-4 rounded-lg border border-[#E2E8F0] bg-white text-[#6366F1] hover:text-[#4F46E5] font-semibold transition-all duration-300"
+            style={{
+              boxShadow: '0 4px 16px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+            }}
           >
             Try AI Coach
           </motion.button>
         </motion.div>
 
-        {/* Stats */}
+        {/* Stats - Crystal Panels */}
         <motion.div
           variants={itemVariants}
           className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto"
@@ -118,13 +158,16 @@ export default function HeroSection() {
           ].map((stat, idx) => (
             <motion.div
               key={idx}
-              whileHover={{ scale: 1.1 }}
-              className="text-center"
+              whileHover={{ scale: 1.1, y: -4 }}
+              className="text-center p-4 rounded-lg bg-white/50 backdrop-blur-md border border-[#E5E7EB] transition-all duration-300"
+              style={{
+                boxShadow: '0 4px 16px rgba(99, 102, 241, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+              }}
             >
-              <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#9333EA] to-[#06B6D4] bg-clip-text text-transparent">
                 {stat.value}
               </p>
-              <p className="text-sm text-gray-400 mt-1">{stat.label}</p>
+              <p className="text-sm text-[#64748B] mt-1">{stat.label}</p>
             </motion.div>
           ))}
         </motion.div>
