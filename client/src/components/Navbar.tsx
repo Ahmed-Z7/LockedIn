@@ -14,7 +14,7 @@ export default function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-md border-b border-[#E5E7EB]"
+      className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:glass backdrop-blur-md dark:backdrop-blur-md border-b border-[#E5E7EB] dark:border-purple-500/20"
       style={{
         boxShadow: '0 4px 16px rgba(99, 102, 241, 0.08)',
       }}
@@ -28,15 +28,15 @@ export default function Navbar() {
         >
           <div className="relative">
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-[#9333EA] to-[#6366F1] rounded-lg blur"
+              className="absolute inset-0 bg-gradient-to-r from-[#9333EA] to-[#6366F1] dark:from-purple-600 dark:to-blue-600 rounded-lg blur"
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2, repeat: Infinity }}
             />
-            <div className="relative bg-gradient-to-r from-[#9333EA] to-[#6366F1] rounded-lg p-2">
-              <Lock className="w-6 h-6 text-white" />
+            <div className="relative bg-gradient-to-r from-[#9333EA] to-[#6366F1] dark:from-purple-700 dark:to-blue-700 rounded-lg p-2">
+              <Lock className="w-6 h-6 text-white dark:text-foreground" />
             </div>
           </div>
-          <span className="text-xl font-bold text-[#334155]">
+          <span className="text-xl font-bold text-[#334155] dark:bg-gradient-to-r dark:from-purple-400 dark:to-blue-400 dark:bg-clip-text dark:text-transparent">
             LOCKEDIN
           </span>
         </motion.div>
@@ -52,12 +52,12 @@ export default function Navbar() {
             <motion.button
               key={item.label}
               onClick={item.action}
-              className="text-[#64748B] hover:text-[#1E293B] transition-colors relative group font-medium"
+              className="text-[#64748B] dark:text-gray-300 hover:text-[#1E293B] dark:hover:text-foreground transition-colors relative group font-medium"
               whileHover={{ color: '#0F172A' }}
             >
               {item.label}
               <motion.div
-                className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-[#9333EA] to-[#06B6D4]"
+                className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-[#9333EA] to-[#06B6D4] dark:from-purple-500 dark:to-blue-500"
                 initial={{ width: 0 }}
                 whileHover={{ width: '100%' }}
                 transition={{ duration: 0.3 }}
@@ -74,7 +74,7 @@ export default function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 onClick={() => setLocation('/add-post')}
-                className="p-2 hover:bg-[#F1F3FF] rounded-lg transition-colors text-[#64748B] hover:text-[#6366F1]"
+                className="p-2 hover:bg-[#F1F3FF] dark:hover:bg-card rounded-lg transition-colors text-[#64748B] dark:text-gray-400 hover:text-[#6366F1] dark:hover:text-purple-400"
                 title="Create Post"
               >
                 <Plus className="w-5 h-5" />
@@ -82,7 +82,7 @@ export default function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 onClick={() => setLocation('/notifications')}
-                className="p-2 hover:bg-[#F1F3FF] rounded-lg transition-colors text-[#64748B] hover:text-[#6366F1] relative"
+                className="p-2 hover:bg-[#F1F3FF] dark:hover:bg-card rounded-lg transition-colors text-[#64748B] dark:text-gray-400 hover:text-[#6366F1] dark:hover:text-purple-400 relative"
                 title="Notifications"
               >
                 <Bell className="w-5 h-5" />
@@ -91,7 +91,7 @@ export default function Navbar() {
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 onClick={() => setLocation('/profile')}
-                className="p-2 hover:bg-[#F1F3FF] rounded-lg transition-colors text-[#64748B] hover:text-[#6366F1]"
+                className="p-2 hover:bg-[#F1F3FF] dark:hover:bg-card rounded-lg transition-colors text-[#64748B] dark:text-gray-400 hover:text-[#6366F1] dark:hover:text-purple-400"
                 title="Profile"
               >
                 <User className="w-5 h-5" />
