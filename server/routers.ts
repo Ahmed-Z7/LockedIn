@@ -263,7 +263,21 @@ export const appRouter = router({
       }),
 
     getPosts: publicProcedure.query(async () => {
-      return await db.getAllCommunityPosts();
+      const posts = await db.getAllCommunityPosts();
+      // Enrich posts with user data
+      const enrichedPosts = await Promise.all(
+        posts.map(async (post: any) => {
+          const user = await db.getUserById(post.userId);
+          const profile = await db.getUserProfile(post.userId);
+          return {
+            ...post,
+            authorName: user?.name || 'Unknown',
+            authorUsername: user?.username || 'unknown',
+            authorAvatar: profile?.profilePhoto || null,
+          };
+        })
+      );
+      return enrichedPosts;
     }),
 
     getMyPosts: protectedProcedure.query(async ({ ctx }) => {
@@ -309,6 +323,67 @@ export const appRouter = router({
       .input(z.object({ postId: z.number() }))
       .query(async ({ ctx, input }) => {
         return await db.hasUserLikedPost(input.postId, ctx.user.id);
+      }),
+
+    // Comments
+    addComment: protectedProcedure
+      .input(z.object({
+        postId: z.number(),
+        content: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.addPostComment({
+          postId: input.postId,
+          userId: ctx.user.id,
+          content: input.content,
+          createdAt: new Date(),
+        });
+        // Create notification for post author
+        const post = await db.getCommunityPost(input.postId);
+        if (post && post.userId !== ctx.user.id) {
+          await db.createNotification({
+            userId: post.userId,
+            type: 'comment',
+            fromUserId: ctx.user.id,
+            postId: input.postId,
+            createdAt: new Date(),
+          });
+        }
+        return { success: true };
+      }),
+
+    getComments: publicProcedure
+      .input(z.object({ postId: z.number() }))
+      .query(async ({ input }) => {
+        const comments = await db.getPostComments(input.postId);
+        // Enrich comments with user data
+        const enrichedComments = await Promise.all(
+          comments.map(async (comment: any) => {
+            const user = await db.getUserById(comment.userId);
+            const profile = await db.getUserProfile(comment.userId);
+            return {
+              ...comment,
+              authorName: user?.name || 'Unknown',
+              authorUsername: user?.username || 'unknown',
+              authorAvatar: profile?.profilePhoto || null,
+            };
+          })
+        );
+        return enrichedComments;
+      }),
+  }),
+
+  // Notifications
+  notifications: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUserNotifications(ctx.user.id);
+    }),
+
+    markAsRead: protectedProcedure
+      .input(z.object({ notificationId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.markNotificationAsRead(input.notificationId);
+        return { success: true };
       }),
   }),
 

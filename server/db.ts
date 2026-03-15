@@ -336,3 +336,20 @@ export async function markNotificationAsRead(notificationId: number) {
   if (!db) return;
   await db.update(notifications).set({ read: 1 }).where(eq(notifications.id, notificationId));
 }
+
+
+// User Functions
+export async function getUserById(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return result[0] || null;
+}
+
+// Community Post Functions
+export async function getCommunityPost(postId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(communityPosts).where(eq(communityPosts.id, postId)).limit(1);
+  return result[0] || null;
+}
