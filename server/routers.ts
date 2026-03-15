@@ -392,9 +392,27 @@ export const appRouter = router({
     updateName: protectedProcedure
       .input(z.object({ name: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        // Update user name in database
+        await db.updateUserName(ctx.user.id, input.name);
         return { success: true };
       }),
+
+    updateProfilePhoto: protectedProcedure
+      .input(z.object({ photoBase64: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateProfilePhoto(ctx.user.id, input.photoBase64);
+        return { success: true };
+      }),
+
+    getProfile: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await db.getUserProfile(ctx.user.id);
+      const user = await db.getUserById(ctx.user.id);
+      return {
+        ...profile,
+        username: user?.username,
+        name: user?.name,
+        email: user?.email,
+      };
+    }),
   }),
 });
 

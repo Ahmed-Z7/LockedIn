@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE `users` ADD COLUMN `username` varchar(100);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3MPyvgV7nQ6B3B2.root --database 4gjy5uiLEs8ZP3C8PJwXuU --execute ALTER TABLE `users` ADD COLUMN `username` varchar(100);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 1: Duplicate column name 'username'"
+  ]
+}

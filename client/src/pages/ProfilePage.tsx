@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Edit2, Star, Crown, Settings, Save, X, Zap, Award } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Edit2, Star, Crown, Settings, Save, X, Zap, Award, Upload } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
@@ -12,8 +12,14 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState(user?.name || '');
   const [tempName, setTempName] = useState(user?.name || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   const updateNameMutation = trpc.user.updateName.useMutation();
+  const updatePhotoMutation = trpc.user.updateProfilePhoto.useMutation();
+  const getProfileQuery = trpc.user.getProfile.useQuery();
 
   useEffect(() => {
     if (user?.name) {
@@ -21,6 +27,15 @@ export default function ProfilePage() {
       setTempName(user.name);
     }
   }, [user?.name]);
+
+  useEffect(() => {
+    if (getProfileQuery.data) {
+      setUserProfile(getProfileQuery.data);
+      if (getProfileQuery.data.profilePhoto) {
+        setProfilePhoto(getProfileQuery.data.profilePhoto);
+      }
+    }
+  }, [getProfileQuery.data]);
 
   const handleSaveName = async () => {
     if (!tempName.trim()) {
@@ -48,6 +63,43 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setTempName(displayName);
     setIsEditingName(false);
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        await updatePhotoMutation.mutateAsync({
+          photoBase64: base64,
+        });
+        setProfilePhoto(base64);
+        toast.success('Profile photo updated successfully!');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error('Failed to upload photo');
+      console.error(error);
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   return (
@@ -83,16 +135,33 @@ export default function ProfilePage() {
             className="relative -mt-24"
           >
             <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#9945ce] to-[#5053bf] dark:from-[#5053bf] dark:to-[#9945ce] p-1">
-              <div className="w-full h-full rounded-2xl bg-[#FFFFFF] dark:bg-background flex items-center justify-center text-6xl">
-                👤
+              <div className="w-full h-full rounded-2xl bg-[#FFFFFF] dark:bg-background flex items-center justify-center text-6xl overflow-hidden">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  '👤'
+                )}
               </div>
             </div>
             <motion.button
               whileHover={{ scale: 1.1 }}
-              className="absolute bottom-0 right-0 p-3 bg-[#9945ce] dark:bg-[#5053bf] rounded-full text-foreground hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingPhoto}
+              className="absolute bottom-0 right-0 p-3 bg-[#9945ce] dark:bg-[#5053bf] rounded-full text-foreground hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors disabled:opacity-50"
             >
-              <Edit2 className="w-5 h-5" />
+              {isUploadingPhoto ? (
+                <div className="w-5 h-5 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Upload className="w-5 h-5" />
+              )}
             </motion.button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
           </motion.div>
 
           {/* Profile Details */}
@@ -130,7 +199,7 @@ export default function ProfilePage() {
                     <h1 className="text-4xl font-bold text-foreground dark:text-foreground mb-1">
                       {displayName || user?.email || 'User'}
                     </h1>
-                    <p className="text-gray-400 dark:text-muted-foreground">@{displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+                    <p className="text-gray-400 dark:text-muted-foreground">@{userProfile?.username || user?.email?.split('@')[0] || 'user'}</p>
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -163,19 +232,19 @@ export default function ProfilePage() {
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4">
               <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-[#9945ce] dark:text-[#5053bf]">42</div>
+                <div className="text-2xl font-bold text-[#9945ce] dark:text-[#5053bf]">{userProfile?.level || 0}</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">Level</div>
               </div>
               <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-[#6e68dd] dark:text-[#6e68dd]">8.7K</div>
+                <div className="text-2xl font-bold text-[#6e68dd] dark:text-[#6e68dd]">{userProfile?.xp || 0}</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">XP</div>
               </div>
               <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-[#7a5fd4] dark:text-[#7a5fd4]">28</div>
+                <div className="text-2xl font-bold text-[#7a5fd4] dark:text-[#7a5fd4]">{userProfile?.streak || 0}</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">Streak</div>
               </div>
               <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-[#7566dc] dark:text-[#7566dc]">12</div>
+                <div className="text-2xl font-bold text-[#7566dc] dark:text-[#7566dc]">{userProfile?.badgesCount || 0}</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">Badges</div>
               </div>
             </div>

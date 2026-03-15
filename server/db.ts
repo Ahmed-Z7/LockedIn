@@ -353,3 +353,23 @@ export async function getCommunityPost(postId: number) {
   const result = await db.select().from(communityPosts).where(eq(communityPosts.id, postId)).limit(1);
   return result[0] || null;
 }
+
+export async function updateUserName(userId: number, name: string) {
+  const db = await getDb();
+  if (!db) return;
+  const user = await getUserById(userId);
+  if (user) {
+    await db.update(users).set({ name }).where(eq(users.id, userId));
+  }
+}
+
+export async function updateProfilePhoto(userId: number, photoBase64: string) {
+  const db = await getDb();
+  if (!db) return;
+  const profile = await getUserProfile(userId);
+  if (profile) {
+    await db.update(userProfiles).set({ profilePhoto: photoBase64 }).where(eq(userProfiles.userId, userId));
+  } else {
+    await db.insert(userProfiles).values({ userId, profilePhoto: photoBase64 });
+  }
+}
