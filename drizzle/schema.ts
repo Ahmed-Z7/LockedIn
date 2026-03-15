@@ -15,6 +15,8 @@ export const users = mysqlTable("users", {
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
+  /** Username generated from email - NOT editable by user */
+  username: varchar("username", { length: 100 }).unique(),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -30,11 +32,12 @@ export const userProfiles = mysqlTable("userProfiles", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id),
   xp: int("xp").default(0).notNull(),
-  level: int("level").default(1).notNull(),
+  level: int("level").default(0).notNull(),
   streak: int("streak").default(0).notNull(),
   totalStudyTime: int("totalStudyTime").default(0).notNull(), // in minutes
+  badgesCount: int("badgesCount").default(0).notNull(),
   bio: text("bio"),
-  avatar: varchar("avatar", { length: 500 }),
+  profilePhoto: varchar("profilePhoto", { length: 500 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -161,7 +164,6 @@ export const postComments = mysqlTable("postComments", {
   postId: int("postId").notNull().references(() => communityPosts.id),
   userId: int("userId").notNull().references(() => users.id),
   content: text("content").notNull(),
-  likes: int("likes").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -179,3 +181,18 @@ export const postLikes = mysqlTable("postLikes", {
 
 export type PostLike = typeof postLikes.$inferSelect;
 export type InsertPostLike = typeof postLikes.$inferInsert;
+
+// Notifications
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  fromUserId: int("fromUserId").notNull().references(() => users.id),
+  postId: int("postId").references(() => communityPosts.id),
+  commentId: int("commentId").references(() => postComments.id),
+  type: mysqlEnum("type", ["like", "comment", "follow"]).notNull(),
+  read: int("read").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;

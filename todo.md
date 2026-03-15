@@ -70,3 +70,19 @@
 - [x] Add Post Page
 - [x] Notifications Page
 - [x] Color Palette Update
+
+
+## User Profile System (جديد)
+- [ ] نظام اسم المستخدم - توليد تلقائي من الإيميل
+- [ ] تحديث قاعدة البيانات - إضافة حقول Profile (username, bio, profilePhoto, etc)
+- [ ] صفحة Profile - عرض البيانات الكاملة
+- [ ] نظام تحميل الصورة الشخصية (S3 Upload)
+- [ ] نظام تعديل Profile - حفظ فوري
+- [ ] إحصائيات المستخدم (XP, Level, Badges, Study Time)
+
+## Community Interaction System (جديد)
+- [ ] نظام Posts - ربط مع بيانات المستخدم (displayName, username, profilePhoto)
+- [ ] نظام Comments - إصلاح وتفعيل كامل
+- [ ] نظام Likes - إصلاح وتفعيل كامل
+- [ ] نظام Notifications - إشعارات للـ Likes والـ Comments
+- [ ] عرض اسم صاحب الحساب على كل تفاعل

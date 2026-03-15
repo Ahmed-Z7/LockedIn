@@ -12,7 +12,8 @@ import {
   aiChatHistory, InsertAIChatHistory,
   communityPosts, InsertCommunityPost,
   postComments, InsertPostComment,
-  postLikes, InsertPostLike
+  postLikes, InsertPostLike,
+  notifications, InsertNotification
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -31,6 +32,13 @@ export async function getDb() {
   return _db;
 }
 
+// Generate username from email
+function generateUsername(email: string): string {
+  if (!email) return `user_${Date.now()}`;
+  const emailName = email.split('@')[0];
+  return emailName.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+}
+
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
@@ -43,8 +51,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 
   try {
+    // Generate username from email if not provided
+    const username = user.username || (user.email ? generateUsername(user.email) : `user_${Date.now()}`);
+    
     const values: InsertUser = {
       openId: user.openId,
+      username: username,
     };
     const updateSet: Record<string, unknown> = {};
 
@@ -304,4 +316,23 @@ export async function hasUserLikedPost(postId: number, userId: number) {
   if (!db) return false;
   const result = await db.select().from(postLikes).where(eq(postLikes.postId, postId) && eq(postLikes.userId, userId)).limit(1);
   return result.length > 0;
+}
+
+// Notifications Functions
+export async function createNotification(data: InsertNotification) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(notifications).values(data);
+}
+
+export async function getUserNotifications(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+}
+
+export async function markNotificationAsRead(notificationId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(notifications).set({ read: 1 }).where(eq(notifications.id, notificationId));
 }
