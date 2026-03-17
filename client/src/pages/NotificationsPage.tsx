@@ -1,62 +1,31 @@
-import { motion } from 'framer-motion';
-import { Bell, Heart, MessageCircle, Award, Users, Trash2, Check } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bell, Heart, MessageCircle, Award, Users, Trash2, Check, Loader2 } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'achievement',
-      title: 'New Badge Unlocked!',
-      message: 'You earned the "Week Warrior" badge for 7-day streak',
-      avatar: '🏆',
-      timestamp: '2 hours ago',
-      read: false,
-    },
-    {
-      id: 2,
-      type: 'social',
-      title: 'Sarah liked your post',
-      message: 'Your post about study techniques got 15 likes',
-      avatar: '❤️',
-      timestamp: '4 hours ago',
-      read: false,
-    },
-    {
-      id: 3,
-      type: 'message',
-      title: 'New message from AI Coach',
-      message: 'Your study schedule is ready for tomorrow',
-      avatar: '🤖',
-      timestamp: '6 hours ago',
-      read: true,
-    },
-    {
-      id: 4,
-      type: 'community',
-      title: 'You gained 100 XP',
-      message: 'Completed 5 focus sessions today',
-      avatar: '⚡',
-      timestamp: '8 hours ago',
-      read: true,
-    },
-    {
-      id: 5,
-      type: 'challenge',
-      title: 'Challenge reminder',
-      message: 'You have 2 days left to complete the "Master Learner" challenge',
-      avatar: '🎯',
-      timestamp: '1 day ago',
-      read: true,
-    },
-  ]);
+  const { isAuthenticated } = useAuth();
+  const utils = trpc.useUtils();
+  
+  const { data: notificationsData, isLoading } = trpc.notifications.list.useQuery(undefined, {
+    enabled: isAuthenticated
+  });
 
-  const markAsRead = (id: number) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+  const markAsReadMutation = trpc.notifications.markAsRead.useMutation({
+    onSuccess: () => utils.notifications.list.invalidate()
+  });
+
+  const markAsRead = async (id: number) => {
+    await markAsReadMutation.mutateAsync({ notificationId: id });
   };
 
   const deleteNotification = (id: number) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+    // Note: The backend schema doesn't seem to have a delete endpoint yet, so we just mark read for now 
+    // or add a delete endpoint if needed. For now, we simulate removal locally if needed, 
+    // but typically we'd call an API. Since we don't have deleteNotification in trpc, let's just mark read.
+    markAsRead(id);
   };
 
   const getTypeColor = (type: string) => {
@@ -122,7 +91,15 @@ export default function NotificationsPage() {
       {/* Notifications List */}
       <div className="container max-w-2xl">
         <div className="space-y-4">
-          {notifications.length === 0 ? (
+          {!isAuthenticated ? (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg">Please log in to see your notifications</p>
+            </div>
+          ) : isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            </div>
+          ) : !notificationsData || notificationsData.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -132,43 +109,67 @@ export default function NotificationsPage() {
               <p className="text-gray-400 text-lg">No notifications yet</p>
             </motion.div>
           ) : (
-            notifications.map((notif, idx) => {
-              const TypeIcon = getTypeIcon(notif.type);
-              return (
-                <motion.div
-                  key={notif.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={`bg-card border ${
-                    notif.read ? 'border-gray-700/50' : 'border-purple-500/50'
-                  } rounded-xl p-4 hover:border-purple-500/70 transition-all ${
-                    !notif.read ? 'bg-purple-500/10' : ''
-                  }`}
-                >
+            <AnimatePresence>
+              {notificationsData.map((notif, idx) => {
+                const TypeIcon = getTypeIcon(notif.type);
+                
+                // Construct a message based on notification type
+                let title = '';
+                let message = '';
+                let avatar = '';
+                if (notif.type === 'like') {
+                  title = 'New Like';
+                  message = 'Someone liked your post';
+                  avatar = '❤️';
+                } else if (notif.type === 'comment') {
+                  title = 'New Comment';
+                  message = 'Someone commented on your post';
+                  avatar = '💬';
+                } else if (notif.type === 'follow') {
+                  title = 'New Follower';
+                  message = 'Someone started following you';
+                  avatar = '👥';
+                } else {
+                  title = 'Notification';
+                  message = 'You have a new update';
+                  avatar = '🔔';
+                }
+
+                return (
+                  <motion.div
+                    key={notif.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`bg-card border ${
+                      notif.read ? 'border-gray-700/50' : 'border-purple-500/50'
+                    } rounded-xl p-4 hover:border-purple-500/70 transition-all ${
+                      !notif.read ? 'bg-purple-500/10' : ''
+                    }`}
+                  >
                   <div className="flex items-start gap-4">
-                    {/* Avatar */}
+                    {/* Icon */}
                     <motion.div
                       whileHover={{ scale: 1.1 }}
                       className={`w-12 h-12 rounded-full bg-gradient-to-br ${getTypeColor(
                         notif.type
                       )} flex items-center justify-center text-xl flex-shrink-0`}
                     >
-                      {notif.avatar}
+                      <TypeIcon className="w-6 h-6 text-white" />
                     </motion.div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h3 className={`font-semibold ${notif.read ? 'text-gray-300' : 'text-foreground'}`}>
-                          {notif.title}
+                          {title}
                         </h3>
                         {!notif.read && (
                           <div className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0 mt-2" />
                         )}
                       </div>
-                      <p className="text-gray-400 text-sm mb-2">{notif.message}</p>
-                      <p className="text-xs text-gray-500">{notif.timestamp}</p>
+                      <p className="text-gray-400 text-sm mb-2">{message}</p>
+                      <p className="text-xs text-gray-500">{formatDistanceToNow(new Date(notif.createdAt))} ago</p>
                     </div>
 
                     {/* Actions */}
@@ -193,9 +194,10 @@ export default function NotificationsPage() {
                       </motion.button>
                     </div>
                   </div>
-                </motion.div>
-              );
-            })
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           )}
         </div>
       </div>

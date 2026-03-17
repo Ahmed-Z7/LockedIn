@@ -1,9 +1,9 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { motion } from "framer-motion";
-import { Send, MessageCircle, Loader2 } from "lucide-react";
+import { Send, MessageCircle, Loader2, Upload, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 
 export default function AICoachPage() {
@@ -12,7 +12,10 @@ export default function AICoachPage() {
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const [input, setInput] = useState("");
   const [topic, setTopic] = useState("");
+  const [documentContext, setDocumentContext] = useState("");
+  const [fileName, setFileName] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const chatMutation = trpc.aiCoach.chat.useMutation();
   const { data: history } = trpc.aiCoach.getHistory.useQuery(undefined, { enabled: isAuthenticated });
 
@@ -45,12 +48,43 @@ export default function AICoachPage() {
       const response = await chatMutation.mutateAsync({
         message: userMessage,
         topic: topic || undefined,
+        documentContext: documentContext || undefined,
       });
       setMessages(prev => [...prev, { role: "assistant", content: response.response }]);
     } catch (error) {
       console.error("Chat error:", error);
       setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error. Please try again." }]);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File is too large. Max size is 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result;
+      if (typeof text === 'string') {
+        setDocumentContext(text);
+        setFileName(file.name);
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const clearDocument = () => {
+    setDocumentContext("");
+    setFileName("");
   };
 
   return (
@@ -71,12 +105,12 @@ export default function AICoachPage() {
           <p className="text-foreground/60">Ask anything about your studies. I'm here to help! 🤖</p>
         </motion.div>
 
-        {/* Topic Input */}
+        {/* Topic Input and File Upload */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mb-6"
+          className="mb-6 space-y-4"
         >
           <input
             type="text"
@@ -85,6 +119,37 @@ export default function AICoachPage() {
             onChange={(e) => setTopic(e.target.value)}
             className="w-full bg-background border border-indigo-500/30 rounded-lg px-4 py-3 text-foreground placeholder-foreground/40 focus:outline-none focus:border-indigo-500/60 transition-all duration-300"
           />
+          
+          <div className="flex items-center gap-4">
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".txt,.md,.mdx,.csv"
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              className="border-indigo-500/30 hover:bg-indigo-500/10 text-indigo-400 gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Upload Study Material (.txt, .md)
+            </Button>
+            
+            {fileName && (
+              <div className="flex items-center gap-2 bg-indigo-500/10 text-indigo-300 px-3 py-1.5 rounded-full text-sm border border-indigo-500/20">
+                <FileText className="w-4 h-4" />
+                <span className="truncate max-w-[200px]">{fileName}</span>
+                <button 
+                  onClick={clearDocument}
+                  className="hover:text-red-400 transition-colors ml-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* Chat Container */}

@@ -1,4 +1,4 @@
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -307,14 +307,14 @@ export async function likePost(postId: number, userId: number) {
 export async function unlikePost(postId: number, userId: number) {
   const db = await getDb();
   if (!db) return;
-  await db.delete(postLikes).where(eq(postLikes.postId, postId) && eq(postLikes.userId, userId));
+  await db.delete(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId)));
   await db.update(communityPosts).set({ likes: sql`${communityPosts.likes} - 1` }).where(eq(communityPosts.id, postId));
 }
 
 export async function hasUserLikedPost(postId: number, userId: number) {
   const db = await getDb();
   if (!db) return false;
-  const result = await db.select().from(postLikes).where(eq(postLikes.postId, postId) && eq(postLikes.userId, userId)).limit(1);
+  const result = await db.select().from(postLikes).where(and(eq(postLikes.postId, postId), eq(postLikes.userId, userId))).limit(1);
   return result.length > 0;
 }
 

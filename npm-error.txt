@@ -1,0 +1,71 @@
+﻿node.exe : node:intern
+al/modules/package_jso
+n_reader:83
+At C:\Program Files\no
+dejs\npm.ps1:13 
+char:14
++ $NPM_PREFIX=(& 
+$NODE_EXE 
+$NPM_PREFIX_JS)
++              ~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (node:inter   
+ nal/m..._json_rea    
+der:83:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+  const parsed = modul
+esBinding.readPackageJ
+SON(
+                      
+          ^
+
+Error: Invalid 
+package config 
+\\?\C:\Program Files\n
+odejs\node_modules\npm
+\node_modules\ci-info\
+package.json.
+    at read (node:inte
+rnal/modules/package_j
+son_reader:83:33)
+    at readPackage (no
+de:internal/modules/pa
+ckage_json_reader:101:
+10)
+    at resolveExports 
+(node:internal/modules
+/cjs/loader:636:15)
+    at 
+Function._findPath (no
+de:internal/modules/cj
+s/loader:748:31)
+    at Function._resol
+veFilename (node:inter
+nal/modules/cjs/loader
+:1235:27)
+    at Function._load 
+(node:internal/modules
+/cjs/loader:1075:27)
+    at TracingChannel.
+traceSync (node:diagno
+stics_channel:322:14)
+    at wrapModuleLoad 
+(node:internal/modules
+/cjs/loader:219:24)
+    at Module.require 
+(node:internal/modules
+/cjs/loader:1340:12)
+    at require (node:i
+nternal/modules/helper
+s:138:16) {
+  code: 'ERR_INVALID_P
+ACKAGE_CONFIG'
+}
+
+Node.js v22.12.0

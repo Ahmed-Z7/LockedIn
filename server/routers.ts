@@ -45,7 +45,10 @@ export const appRouter = router({
         avatar: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        await db.createOrUpdateUserProfile(ctx.user.id, input);
+        await db.createOrUpdateUserProfile(ctx.user.id, {
+          ...(input.bio !== undefined && { bio: input.bio }),
+          ...(input.avatar !== undefined && { profilePhoto: input.avatar }),
+        });
         return { success: true };
       }),
   }),
@@ -208,14 +211,21 @@ export const appRouter = router({
       .input(z.object({
         message: z.string(),
         topic: z.string().optional(),
+        documentContext: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         try {
+          let systemContent = "You are LOCKEDIN's AI Study Coach. Help students learn effectively with personalized guidance, explanations, and study strategies. Be encouraging and supportive.";
+          
+          if (input.documentContext) {
+            systemContent += "\n\nUse the following document context to help the student:\n" + input.documentContext;
+          }
+
           const response = await invokeLLM({
             messages: [
               {
                 role: "system",
-                content: "You are LOCKEDIN's AI Study Coach. Help students learn effectively with personalized guidance, explanations, and study strategies. Be encouraging and supportive.",
+                content: systemContent,
               },
               {
                 role: "user",
@@ -266,7 +276,7 @@ export const appRouter = router({
       const posts = await db.getAllCommunityPosts();
       // Enrich posts with user data
       const enrichedPosts = await Promise.all(
-        posts.map(async (post: any) => {
+        posts.map(async (post) => {
           const user = await db.getUserById(post.userId);
           const profile = await db.getUserProfile(post.userId);
           return {
@@ -309,6 +319,19 @@ export const appRouter = router({
       .input(z.object({ postId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await db.likePost(input.postId, ctx.user.id);
+
+        // Create notification for post author
+        const post = await db.getCommunityPost(input.postId);
+        if (post && post.userId !== ctx.user.id) {
+          await db.createNotification({
+            userId: post.userId,
+            type: 'like',
+            fromUserId: ctx.user.id,
+            postId: input.postId,
+            createdAt: new Date(),
+          });
+        }
+        
         return { success: true };
       }),
 
@@ -358,7 +381,7 @@ export const appRouter = router({
         const comments = await db.getPostComments(input.postId);
         // Enrich comments with user data
         const enrichedComments = await Promise.all(
-          comments.map(async (comment: any) => {
+          comments.map(async (comment) => {
             const user = await db.getUserById(comment.userId);
             const profile = await db.getUserProfile(comment.userId);
             return {

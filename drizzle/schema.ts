@@ -189,7 +189,7 @@ export const notifications = mysqlTable("notifications", {
   fromUserId: int("fromUserId").notNull().references(() => users.id),
   postId: int("postId").references(() => communityPosts.id),
   commentId: int("commentId").references(() => postComments.id),
-  type: mysqlEnum("type", ["like", "comment", "follow"]).notNull(),
+  type: mysqlEnum("type", ["like", "comment", "follow", "badge", "study_session"]).notNull(),
   read: int("read").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

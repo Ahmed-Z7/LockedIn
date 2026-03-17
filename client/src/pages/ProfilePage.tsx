@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Edit2, Star, Crown, Settings, Save, X, Zap, Award, Upload } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
@@ -14,10 +14,13 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [tempBio, setTempBio] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateNameMutation = trpc.user.updateName.useMutation();
+  const updateProfileMutation = trpc.profile.update.useMutation();
   const updatePhotoMutation = trpc.user.updateProfilePhoto.useMutation();
   const getProfileQuery = trpc.user.getProfile.useQuery();
 
@@ -33,6 +36,9 @@ export default function ProfilePage() {
       setUserProfile(getProfileQuery.data);
       if (getProfileQuery.data.profilePhoto) {
         setProfilePhoto(getProfileQuery.data.profilePhoto);
+      }
+      if (getProfileQuery.data.bio !== undefined && getProfileQuery.data.bio !== null) {
+        setTempBio(getProfileQuery.data.bio);
       }
     }
   }, [getProfileQuery.data]);
@@ -60,12 +66,35 @@ export default function ProfilePage() {
     }
   };
 
-  const handleCancel = () => {
+  const handleCancelName = () => {
     setTempName(displayName);
     setIsEditingName(false);
   };
+  
+  const handleSaveBio = async () => {
+    setIsSaving(true);
+    try {
+      await updateProfileMutation.mutateAsync({
+        bio: tempBio.trim() || undefined,
+      });
+      setUserProfile((prev: any) => ({ ...prev, bio: tempBio.trim() }));
+      setIsEditingBio(false);
+      toast.success('Bio updated successfully!');
+    } catch (error) {
+      toast.error('Failed to update bio');
+      console.error(error);
+      setTempBio(userProfile?.bio || '');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCancelBio = () => {
+    setTempBio(userProfile?.bio || '');
+    setIsEditingBio(false);
+  };
+
+  const handlePhotoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -187,7 +216,7 @@ export default function ProfilePage() {
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
-                    onClick={handleCancel}
+                    onClick={handleCancelName}
                     className="p-2 bg-gray-600 dark:bg-gray-400 rounded-lg text-foreground hover:bg-card dark:hover:bg-[#EEF2FF]0 transition-colors"
                   >
                     <X className="w-5 h-5" />
@@ -225,9 +254,45 @@ export default function ProfilePage() {
             </div>
 
             {/* Bio */}
-            <p className="text-gray-300 dark:text-muted-foreground mb-6">
-              Focused learner | LOCKEDIN mode activated 🔒
-            </p>
+            {isEditingBio ? (
+              <div className="mb-6 space-y-2">
+                <textarea
+                  value={tempBio}
+                  onChange={(e) => setTempBio(e.target.value)}
+                  maxLength={160}
+                  rows={2}
+                  className="w-full bg-[#1d2952] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg px-4 py-2 text-foreground dark:text-foreground focus:outline-none focus:border-[#9945ce] dark:focus:border-[#9945ce] resize-none"
+                  placeholder="Focused learner | LOCKEDIN mode activated 🔒"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={handleSaveBio}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-[#9945ce] dark:bg-[#5053bf] rounded-lg text-foreground text-sm hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors disabled:opacity-50"
+                  >
+                    Save Bio
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={handleCancelBio}
+                    className="px-4 py-2 bg-gray-600 dark:bg-gray-400 rounded-lg text-foreground text-sm hover:bg-card dark:hover:bg-[#EEF2FF]0 transition-colors"
+                  >
+                    Cancel
+                  </motion.button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 mb-6 group cursor-pointer" onClick={() => setIsEditingBio(true)}>
+                <p className="text-gray-300 dark:text-muted-foreground">
+                  {userProfile?.bio || "Focused learner | LOCKEDIN mode activated 🔒"}
+                </p>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Edit2 className="w-4 h-4 text-gray-400" />
+                </div>
+              </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4">
