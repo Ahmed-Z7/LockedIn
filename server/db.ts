@@ -13,7 +13,8 @@ import {
   communityPosts, InsertCommunityPost,
   postComments, InsertPostComment,
   postLikes, InsertPostLike,
-  notifications, InsertNotification
+  notifications, InsertNotification,
+  userSettings, InsertUserSetting
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -332,13 +333,61 @@ export async function createNotification(data: InsertNotification) {
 export async function getUserNotifications(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+  
+  const result = await db.select({
+    id: notifications.id,
+    userId: notifications.userId,
+    fromUserId: notifications.fromUserId,
+    postId: notifications.postId,
+    commentId: notifications.commentId,
+    type: notifications.type,
+    read: notifications.read,
+    createdAt: notifications.createdAt,
+    fromUserName: users.name,
+    fromUserAvatar: userProfiles.profilePhoto
+  })
+  .from(notifications)
+  .leftJoin(users, eq(notifications.fromUserId, users.id))
+  .leftJoin(userProfiles, eq(notifications.fromUserId, userProfiles.userId))
+  .where(eq(notifications.userId, userId))
+  .orderBy(desc(notifications.createdAt));
+  
+  return result;
 }
 
-export async function markNotificationAsRead(notificationId: number) {
+export async function deleteNotification(notificationId: number) {
   const db = await getDb();
   if (!db) return;
-  await db.update(notifications).set({ read: 1 }).where(eq(notifications.id, notificationId));
+  await db.delete(notifications).where(eq(notifications.id, notificationId));
+}
+
+// User Settings Functions
+export async function getUserSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function upsertUserSettings(userId: number, data: Partial<InsertUserSetting>) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await getUserSettings(userId);
+  if (existing) {
+    await db.update(userSettings).set(data).where(eq(userSettings.userId, userId));
+  } else {
+    await db.insert(userSettings).values({ userId, ...data });
+  }
+}
+
+export async function markNotificationAsRead(userId: number, notificationId: number) {
+  const db = await getDb();
+  if (!db) return;
+  if (notificationId === -1) {
+    await db.update(notifications).set({ read: 1 }).where(eq(notifications.userId, userId));
+  } else {
+    await db.update(notifications).set({ read: 1 }).where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
+  }
 }
 
 
@@ -376,4 +425,13 @@ export async function updateProfilePhoto(userId: number, photoBase64: string) {
   } else {
     await db.insert(userProfiles).values({ userId, profilePhoto: photoBase64 });
   }
+}
+
+export async function getUnreadNotificationsCount(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select({ count: sql<number>`count(*)` })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), eq(notifications.read, 0)));
+  return result[0]?.count || 0;
 }

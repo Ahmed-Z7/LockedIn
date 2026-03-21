@@ -9,6 +9,10 @@ import ThemeSwitcher from './ThemeSwitcher';
 export default function Navbar() {
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
+  const { data: unreadCount } = trpc.notifications.unreadCount.useQuery(undefined, {
+    enabled: isAuthenticated,
+    refetchInterval: 30000 // Refetch every 30s
+  });
   return (
     <motion.nav
       initial={{ y: -100 }}
@@ -85,8 +89,10 @@ export default function Navbar() {
                 className="p-2 hover:bg-[#F1F3FF] dark:hover:bg-card rounded-lg transition-colors text-[#64748B] dark:text-gray-400 hover:text-[#6366F1] dark:hover:text-purple-400 relative"
                 title="Notifications"
               >
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                <Bell className={`w-5 h-5 transition-colors ${unreadCount && unreadCount > 0 ? 'text-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]' : ''}`} />
+                {unreadCount && unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-black animate-pulse" />
+                )}
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.1 }}

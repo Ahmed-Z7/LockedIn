@@ -196,3 +196,18 @@ export const notifications = mysqlTable("notifications", {
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+
+// User Settings
+export const userSettings = mysqlTable("userSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique().references(() => users.id),
+  achievementNotifications: int("achievementNotifications").default(1),
+  socialNotifications: int("socialNotifications").default(1),
+  messageNotifications: int("messageNotifications").default(1),
+  challengeReminders: int("challengeReminders").default(1),
+  weeklyDigest: int("weeklyDigest").default(1),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserSetting = typeof userSettings.$inferSelect;
+export type InsertUserSetting = typeof userSettings.$inferInsert;

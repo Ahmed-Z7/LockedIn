@@ -404,10 +404,48 @@ export const appRouter = router({
 
     markAsRead: protectedProcedure
       .input(z.object({ notificationId: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.markNotificationAsRead(input.notificationId);
+      .mutation(async ({ ctx, input }) => {
+        await db.markNotificationAsRead(ctx.user.id, input.notificationId);
         return { success: true };
       }),
+
+    delete: protectedProcedure
+      .input(z.object({ notificationId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteNotification(input.notificationId);
+        return { success: true };
+      }),
+
+    getSettings: protectedProcedure.query(async ({ ctx }) => {
+      const settings = await db.getUserSettings(ctx.user.id);
+      if (!settings) {
+        return {
+          achievementNotifications: 1,
+          socialNotifications: 1,
+          messageNotifications: 1,
+          challengeReminders: 1,
+          weeklyDigest: 1,
+        };
+      }
+      return settings;
+    }),
+
+    updateSettings: protectedProcedure
+      .input(z.object({
+        achievementNotifications: z.number().optional(),
+        socialNotifications: z.number().optional(),
+        messageNotifications: z.number().optional(),
+        challengeReminders: z.number().optional(),
+        weeklyDigest: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.upsertUserSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUnreadNotificationsCount(ctx.user.id);
+    }),
   }),
 
   // User Profile Update
