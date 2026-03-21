@@ -19,6 +19,7 @@ interface Post {
   createdAt: Date;
   updatedAt?: Date;
   authorUsername?: string;
+  authorName?: string;
   authorAvatar?: string | null;
   author?: {
     name: string;

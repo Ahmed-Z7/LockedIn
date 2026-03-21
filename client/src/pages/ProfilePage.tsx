@@ -132,7 +132,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F6F7FF] via-[#EEF2FF] to-[#F6F7FF] text-foreground dark:from-[#F6F7FF] dark:via-[#EEF2FF] dark:to-[#F6F7FF] dark:text-foreground pt-24">
+    <div className="min-h-screen bg-background text-foreground pt-24">
       {/* Profile Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -163,8 +163,8 @@ export default function ProfilePage() {
             animate={{ scale: 1 }}
             className="relative -mt-24"
           >
-            <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#9945ce] to-[#5053bf] dark:from-[#5053bf] dark:to-[#9945ce] p-1">
-              <div className="w-full h-full rounded-2xl bg-[#FFFFFF] dark:bg-background flex items-center justify-center text-6xl overflow-hidden">
+            <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 p-1">
+              <div className="w-full h-full rounded-2xl bg-card flex items-center justify-center text-6xl overflow-hidden shadow-inner">
                 {profilePhoto ? (
                   <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
@@ -176,7 +176,7 @@ export default function ProfilePage() {
               whileHover={{ scale: 1.1 }}
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploadingPhoto}
-              className="absolute bottom-0 right-0 p-3 bg-[#9945ce] dark:bg-[#5053bf] rounded-full text-foreground hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors disabled:opacity-50"
+              className="absolute bottom-0 right-0 p-3 bg-purple-600 rounded-full text-white hover:bg-purple-700 transition-colors shadow-lg disabled:opacity-50"
             >
               {isUploadingPhoto ? (
                 <div className="w-5 h-5 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
@@ -203,21 +203,21 @@ export default function ProfilePage() {
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
                     maxLength={50}
-                    className="bg-[#1d2952] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg px-4 py-2 text-foreground dark:text-foreground focus:outline-none focus:border-[#9945ce] dark:focus:border-[#9945ce]"
+                    className="bg-secondary border border-border rounded-lg px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                     autoFocus
                   />
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={handleSaveName}
                     disabled={isSaving}
-                    className="p-2 bg-[#9945ce] dark:bg-[#5053bf] rounded-lg text-foreground hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors disabled:opacity-50"
+                    className="p-2 bg-purple-600 rounded-lg text-white hover:bg-purple-700 transition-colors disabled:opacity-50"
                   >
                     <Save className="w-5 h-5" />
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={handleCancelName}
-                    className="p-2 bg-gray-600 dark:bg-gray-400 rounded-lg text-foreground hover:bg-card dark:hover:bg-[#EEF2FF]0 transition-colors"
+                    className="p-2 bg-muted rounded-lg text-muted-foreground hover:bg-muted/80 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </motion.button>
@@ -228,12 +228,12 @@ export default function ProfilePage() {
                     <h1 className="text-4xl font-bold text-foreground dark:text-foreground mb-1">
                       {displayName || user?.email || 'User'}
                     </h1>
-                    <p className="text-gray-400 dark:text-muted-foreground">@{userProfile?.username || user?.email?.split('@')[0] || 'user'}</p>
+                    <p className="text-muted-foreground">@{userProfile?.username || user?.email?.split('@')[0] || 'user'}</p>
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={() => setIsEditingName(true)}
-                    className="p-2 bg-[#5053bf] dark:bg-[#9945ce] rounded-lg text-foreground hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] transition-colors"
+                    className="p-2 bg-purple-600/10 text-purple-600 rounded-lg hover:bg-purple-600/20 transition-colors"
                   >
                     <Edit2 className="w-5 h-5" />
                   </motion.button>
@@ -246,7 +246,7 @@ export default function ProfilePage() {
               <motion.div
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="px-4 py-2 bg-gradient-to-r from-[#9945ce] to-[#6e68dd] dark:from-[#5053bf] dark:to-[#6e68dd] rounded-full text-foreground text-sm font-semibold flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full text-white text-sm font-semibold flex items-center gap-2 shadow-md"
               >
                 <Crown className="w-4 h-4" />
                 NITRO Active
@@ -261,7 +261,7 @@ export default function ProfilePage() {
                   onChange={(e) => setTempBio(e.target.value)}
                   maxLength={160}
                   rows={2}
-                  className="w-full bg-[#1d2952] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg px-4 py-2 text-foreground dark:text-foreground focus:outline-none focus:border-[#9945ce] dark:focus:border-[#9945ce] resize-none"
+                  className="w-full bg-secondary border border-border rounded-lg px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none"
                   placeholder="Focused learner | LOCKEDIN mode activated 🔒"
                   autoFocus
                 />
@@ -270,14 +270,14 @@ export default function ProfilePage() {
                     whileHover={{ scale: 1.05 }}
                     onClick={handleSaveBio}
                     disabled={isSaving}
-                    className="px-4 py-2 bg-[#9945ce] dark:bg-[#5053bf] rounded-lg text-foreground text-sm hover:bg-[#7a5fd4] dark:hover:bg-[#6059d2] transition-colors disabled:opacity-50"
+                    className="px-4 py-2 bg-purple-600 rounded-lg text-white text-sm hover:bg-purple-700 transition-colors disabled:opacity-50"
                   >
                     Save Bio
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     onClick={handleCancelBio}
-                    className="px-4 py-2 bg-gray-600 dark:bg-gray-400 rounded-lg text-foreground text-sm hover:bg-card dark:hover:bg-[#EEF2FF]0 transition-colors"
+                    className="px-4 py-2 bg-muted rounded-lg text-muted-foreground text-sm hover:bg-muted/80 transition-colors"
                   >
                     Cancel
                   </motion.button>
@@ -285,30 +285,30 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="flex items-center gap-2 mb-6 group cursor-pointer" onClick={() => setIsEditingBio(true)}>
-                <p className="text-gray-300 dark:text-muted-foreground">
+                <p className="text-muted-foreground">
                   {userProfile?.bio || "Focused learner | LOCKEDIN mode activated 🔒"}
                 </p>
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Edit2 className="w-4 h-4 text-gray-400" />
+                  <Edit2 className="w-4 h-4 text-purple-500" />
                 </div>
               </div>
             )}
 
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4">
-              <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-[#9945ce] dark:text-[#5053bf]">{userProfile?.level || 0}</div>
+              <div className="bg-card border border-border rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{userProfile?.level || 0}</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">Level</div>
               </div>
-              <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
+              <div className="bg-card border border-border rounded-lg p-4 text-center group hover:border-purple-500 transition-all">
                 <div className="text-2xl font-bold text-[#6e68dd] dark:text-[#6e68dd]">{userProfile?.xp || 0}</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">XP</div>
               </div>
-              <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
+              <div className="bg-card border border-border rounded-lg p-4 text-center group hover:border-purple-500 transition-all">
                 <div className="text-2xl font-bold text-[#7a5fd4] dark:text-[#7a5fd4]">{userProfile?.streak || 0}</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">Streak</div>
               </div>
-              <div className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center">
+              <div className="bg-card border border-border rounded-lg p-4 text-center group hover:border-purple-500 transition-all">
                 <div className="text-2xl font-bold text-[#7566dc] dark:text-[#7566dc]">{userProfile?.badgesCount || 0}</div>
                 <div className="text-xs text-gray-400 dark:text-muted-foreground">Badges</div>
               </div>
@@ -339,7 +339,7 @@ export default function ProfilePage() {
               className="bg-[#FFFFFF] dark:bg-card border border-[#5053bf] dark:border-border rounded-lg p-4 text-center hover:border-[#9945ce] dark:hover:border-[#9945ce] transition-colors"
             >
               <div className="text-4xl mb-2">{badge.icon}</div>
-              <p className="text-sm text-gray-300 dark:text-muted-foreground">{badge.label}</p>
+              <p className="text-sm text-muted-foreground">{badge.label}</p>
             </motion.div>
           ))}
         </div>
@@ -351,30 +351,30 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          className="bg-[#FFFFFF] dark:bg-background border border-[#5053bf] dark:border-border rounded-lg p-6"
+          className="bg-card border border-border rounded-lg p-6"
         >
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-4 border-b border-[#5053bf] dark:border-border">
               <div className="flex items-center gap-3">
-                <Settings className="w-5 h-5 text-[#9945ce] dark:text-[#5053bf]" />
+                <Settings className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 <div>
                   <p className="font-semibold text-foreground dark:text-foreground">Notifications</p>
                   <p className="text-xs text-gray-400 dark:text-muted-foreground">Manage notification preferences</p>
                 </div>
               </div>
-              <Button className="bg-[#5053bf] dark:bg-[#9945ce] hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] text-foreground">
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
                 Configure
               </Button>
             </div>
             <div className="flex items-center justify-between pb-4 border-b border-[#5053bf] dark:border-border">
               <div className="flex items-center gap-3">
-                <Zap className="w-5 h-5 text-[#6e68dd] dark:text-[#6e68dd]" />
+                <Zap className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 <div>
                   <p className="font-semibold text-foreground dark:text-foreground">Privacy</p>
                   <p className="text-xs text-gray-400 dark:text-muted-foreground">Control who can see your profile</p>
                 </div>
               </div>
-              <Button className="bg-[#5053bf] dark:bg-[#9945ce] hover:bg-[#6059d2] dark:hover:bg-[#7a5fd4] text-foreground">
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
                 Configure
               </Button>
             </div>

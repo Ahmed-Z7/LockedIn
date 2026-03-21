@@ -288,6 +288,10 @@ export async function addPostComment(data: InsertPostComment) {
   const db = await getDb();
   if (!db) return;
   await db.insert(postComments).values(data);
+  // Increment comment count
+  await db.update(communityPosts).set({ 
+    commentsCount: sql`${communityPosts.commentsCount} + 1` 
+  }).where(eq(communityPosts.id, data.postId));
 }
 
 export async function getPostComments(postId: number) {

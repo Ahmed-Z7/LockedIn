@@ -37,7 +37,7 @@ export const userProfiles = mysqlTable("userProfiles", {
   totalStudyTime: int("totalStudyTime").default(0).notNull(), // in minutes
   badgesCount: int("badgesCount").default(0).notNull(),
   bio: text("bio"),
-  profilePhoto: varchar("profilePhoto", { length: 500 }),
+  profilePhoto: text("profilePhoto"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

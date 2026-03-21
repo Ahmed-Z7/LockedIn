@@ -77,7 +77,7 @@ export default function NotificationsPage() {
                 Notifications
               </span>
             </h1>
-            <p className="text-gray-400">Stay updated with your LOCKEDIN activity</p>
+            <p className="text-muted-foreground">Stay updated with your LOCKEDIN activity</p>
           </div>
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -93,7 +93,7 @@ export default function NotificationsPage() {
         <div className="space-y-4">
           {!isAuthenticated ? (
             <div className="text-center py-12">
-              <p className="text-gray-400 text-lg">Please log in to see your notifications</p>
+              <p className="text-muted-foreground text-lg">Please log in to see your notifications</p>
             </div>
           ) : isLoading ? (
             <div className="flex justify-center py-12">
@@ -106,7 +106,7 @@ export default function NotificationsPage() {
               className="text-center py-12"
             >
               <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">No notifications yet</p>
+              <p className="text-muted-foreground text-lg">No notifications yet</p>
             </motion.div>
           ) : (
             <AnimatePresence>
@@ -142,9 +142,9 @@ export default function NotificationsPage() {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ delay: idx * 0.05 }}
                     className={`bg-card border ${
-                      notif.read ? 'border-gray-700/50' : 'border-purple-500/50'
+                      notif.read ? 'border-border/50' : 'border-purple-500/50'
                     } rounded-xl p-4 hover:border-purple-500/70 transition-all ${
-                      !notif.read ? 'bg-purple-500/10' : ''
+                      !notif.read ? 'bg-secondary/50' : ''
                     }`}
                   >
                   <div className="flex items-start gap-4">
@@ -161,15 +161,15 @@ export default function NotificationsPage() {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className={`font-semibold ${notif.read ? 'text-gray-300' : 'text-foreground'}`}>
+                        <h3 className={`font-semibold ${notif.read ? 'text-muted-foreground' : 'text-foreground'}`}>
                           {title}
                         </h3>
                         {!notif.read && (
                           <div className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0 mt-2" />
                         )}
                       </div>
-                      <p className="text-gray-400 text-sm mb-2">{message}</p>
-                      <p className="text-xs text-gray-500">{formatDistanceToNow(new Date(notif.createdAt))} ago</p>
+                      <p className="text-muted-foreground text-sm mb-2">{message}</p>
+                      <p className="text-xs text-muted-foreground/70">{formatDistanceToNow(new Date(notif.createdAt))} ago</p>
                     </div>
 
                     {/* Actions */}
@@ -178,7 +178,7 @@ export default function NotificationsPage() {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           onClick={() => markAsRead(notif.id)}
-                          className="p-2 hover:bg-card rounded-lg transition-colors text-gray-400 hover:text-green-400"
+                          className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-green-400"
                           title="Mark as read"
                         >
                           <Check className="w-4 h-4" />
@@ -187,7 +187,7 @@ export default function NotificationsPage() {
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         onClick={() => deleteNotification(notif.id)}
-                        className="p-2 hover:bg-card rounded-lg transition-colors text-gray-400 hover:text-red-400"
+                        className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-red-400"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
