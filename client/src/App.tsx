@@ -37,6 +37,10 @@ function Router() {
       <Route path="/chat" component={ChatPage} />
       <Route path="/challenges" component={ChallengesPage} />
       <Route path="/profile" component={ProfilePage} />
+      <Route path="/profile/:id" component={ProfilePage} />
+      <Route path="/messages" component={CommunityPage} />
+      <Route path="/groups" component={CommunityPage} />
+      <Route path="/groups/:id" component={CommunityPage} />
       <Route path="/add-post" component={AddPostPage} />
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/start-learning" component={StartLearningPage} />

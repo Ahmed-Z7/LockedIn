@@ -3,8 +3,18 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
+import { awardXP, updateChallengeProgress, updateStreak, getLevelTitle } from "./progression";
 import { z } from "zod";
-import * as db from "./db";
+import * as dbHelpers from "./db";
+import { db } from "./db";
+import { TRPCError } from "@trpc/server";
+import { and, eq, desc, or, like, not, inArray, sql } from "drizzle-orm";
+import { 
+  challenges, studySchedules, userActivities, userChallenges, userProfiles, users, InsertUserProfile, 
+  userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials,
+  directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts, 
+  studyGroupTasks, studyGroupMessages, studyGroupMaterials
+} from "../drizzle/schema";
 
 export const appRouter = router({
   system: systemRouter,
@@ -20,10 +30,9 @@ export const appRouter = router({
   }),
 
   // User Profile
-  profile: router({
+  profileData: router({
     get: protectedProcedure.query(async ({ ctx }) => {
-      const profile = await db.getUserProfile(ctx.user.id);
-      // Return default profile if not found
+      const profile = await dbHelpers.getUserProfile(ctx.user.id);
       if (!profile) {
         return {
           id: 0,
@@ -45,7 +54,7 @@ export const appRouter = router({
         avatar: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        await db.createOrUpdateUserProfile(ctx.user.id, {
+        await dbHelpers.createOrUpdateUserProfile(ctx.user.id, {
           ...(input.bio !== undefined && { bio: input.bio }),
           ...(input.avatar !== undefined && { profilePhoto: input.avatar }),
         });
@@ -53,467 +62,38 @@ export const appRouter = router({
       }),
   }),
 
-  // Gamification
-  gamification: router({
-    addXP: protectedProcedure
-      .input(z.object({ amount: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.addXP(ctx.user.id, input.amount);
-        return { success: true };
+  // Progression & Gamification
+  progression: router({
+    getProfile: protectedProcedure
+      .query(async ({ ctx }) => {
+        await updateStreak(ctx.user.id);
+        const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, ctx.user.id));
+        const badges = await db.select().from(userBadges).where(eq(userBadges.userId, ctx.user.id));
+        const activities = await db.select().from(userActivities).where(eq(userActivities.userId, ctx.user.id)).orderBy(desc(userActivities.createdAt)).limit(10);
+        return { profile, badges, activities };
       }),
-
-    getBadges: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserBadges(ctx.user.id);
-    }),
-
-    addBadge: protectedProcedure
-      .input(z.object({
-        badgeName: z.string(),
-        badgeIcon: z.string().optional(),
-        description: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.addBadge(ctx.user.id, input.badgeName, input.badgeIcon, input.description);
-        return { success: true };
-      }),
-  }),
-
-  // Study Sessions
-  studySessions: router({
-    create: protectedProcedure
-      .input(z.object({
-        subject: z.string(),
-        duration: z.number(),
-        focusScore: z.number().optional(),
-        notes: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.createStudySession({
-          userId: ctx.user.id,
-          subject: input.subject,
-          duration: input.duration,
-          focusScore: input.focusScore,
-          startTime: new Date(),
-          notes: input.notes,
-        });
-        // Award XP for completing a study session
-        await db.addXP(ctx.user.id, Math.floor(input.duration / 10));
-        return { success: true };
-      }),
-
-    list: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserStudySessions(ctx.user.id);
-    }),
-  }),
-
-  // Flash Cards
-  flashCards: router({
-    createDeck: protectedProcedure
-      .input(z.object({
-        title: z.string(),
-        description: z.string().optional(),
-        category: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.createFlashCardDeck({
-          userId: ctx.user.id,
-          title: input.title,
-          description: input.description,
-          category: input.category,
-        });
-        return { success: true };
-      }),
-
-    getDecks: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserFlashCardDecks(ctx.user.id);
-    }),
-
-    addCard: protectedProcedure
-      .input(z.object({
-        deckId: z.number(),
-        question: z.string(),
-        answer: z.string(),
-        difficulty: z.enum(["easy", "medium", "hard"]).optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.addFlashCard({
-          deckId: input.deckId,
-          question: input.question,
-          answer: input.answer,
-          difficulty: input.difficulty,
-        });
-        return { success: true };
-      }),
-
-    getCards: protectedProcedure
-      .input(z.object({ deckId: z.number() }))
-      .query(async ({ input }) => {
-        return await db.getDeckFlashCards(input.deckId);
-      }),
-  }),
-
-  // Study Schedule
-  schedule: router({
-    create: protectedProcedure
-      .input(z.object({
-        subject: z.string(),
-        scheduledTime: z.date(),
-        duration: z.number(),
-        priority: z.enum(["low", "medium", "high"]).optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.createStudySchedule([{
-          userId: ctx.user.id,
-          subject: input.subject,
-          scheduledTime: input.scheduledTime,
-          duration: input.duration,
-          priority: input.priority,
-        }]);
-        return { success: true };
-      }),
-
-    list: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserStudySchedules(ctx.user.id);
-    }),
-  }),
-
-  // Social Media Lock
-  blockedWebsites: router({
-    add: protectedProcedure
-      .input(z.object({
-        domain: z.string(),
-        reason: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.addBlockedWebsite({
-          userId: ctx.user.id,
-          domain: input.domain,
-          reason: input.reason,
-        });
-        return { success: true };
-      }),
-
-    list: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserBlockedWebsites(ctx.user.id);
-    }),
-
-    remove: protectedProcedure
-      .input(z.object({ websiteId: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.removeBlockedWebsite(input.websiteId);
-        return { success: true };
-      }),
-  }),
-
-  // AI Study Coach
-  aiCoach: router({
-    chat: protectedProcedure
-      .input(z.object({
-        message: z.string(),
-        topic: z.string().optional(),
-        documentContext: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        try {
-          let systemContent = "You are LOCKEDIN's AI Study Coach. Help students learn effectively with personalized guidance, explanations, and study strategies. Be encouraging and supportive.";
-          
-          if (input.documentContext) {
-            systemContent += "\n\nUse the following document context to help the student:\n" + input.documentContext;
-          }
-
-          const response = await invokeLLM({
-            messages: [
-              {
-                role: "system",
-                content: systemContent,
-              },
-              {
-                role: "user",
-                content: input.message,
-              },
-            ],
-          });
-
-          const content = response.choices[0]?.message?.content;
-          const aiResponse = typeof content === 'string' ? content : "I couldn't generate a response. Please try again.";
-          
-          // Save chat history
-          if (typeof aiResponse === 'string') {
-            await db.saveAIChatMessage(ctx.user.id, input.message, aiResponse, input.topic);
-          }
-          
-          return { response: aiResponse };
-        } catch (error) {
-          console.error("AI Coach Error:", error);
-          return { response: "I encountered an error. Please try again later." };
-        }
-      }),
-
-    getHistory: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserAIChatHistory(ctx.user.id);
-    }),
-  }),
-
-  // Community Posts
-  community: router({
-    createPost: protectedProcedure
-      .input(z.object({
-        title: z.string(),
-        content: z.string(),
-        category: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.createCommunityPost({
-          userId: ctx.user.id,
-          title: input.title,
-          content: input.content,
-          category: input.category || "general",
-        });
-        return { success: true };
-      }),
-
-    getPosts: publicProcedure.query(async () => {
-      const posts = await db.getAllCommunityPosts();
-      // Enrich posts with user data
-      const enrichedPosts = await Promise.all(
-        posts.map(async (post) => {
-          const user = await db.getUserById(post.userId);
-          const profile = await db.getUserProfile(post.userId);
-          return {
-            ...post,
-            authorName: user?.name || 'Unknown',
-            authorUsername: user?.username || 'unknown',
-            authorAvatar: profile?.profilePhoto || null,
-          };
+    
+    getChallenges: protectedProcedure
+      .query(async ({ ctx }) => {
+        const userChallengesList = await db.select({
+            id: challenges.id,
+            title: challenges.title,
+            description: challenges.description,
+            category: challenges.category,
+            targetValue: challenges.targetValue,
+            currentProgress: userChallenges.currentProgress,
+            completed: userChallenges.completed,
+            difficulty: challenges.difficulty,
+            rewardXp: challenges.rewardXp,
         })
-      );
-      return enrichedPosts;
-    }),
-
-    getMyPosts: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserCommunityPosts(ctx.user.id);
-    }),
-
-    updatePost: protectedProcedure
-      .input(z.object({
-        postId: z.number(),
-        title: z.string().optional(),
-        content: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.updateCommunityPost(input.postId, {
-          title: input.title,
-          content: input.content,
-        });
-        return { success: true };
-      }),
-
-    deletePost: protectedProcedure
-      .input(z.object({ postId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.deleteCommunityPost(input.postId);
-        return { success: true };
-      }),
-
-    likePost: protectedProcedure
-      .input(z.object({ postId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.likePost(input.postId, ctx.user.id);
-
-        // Create notification for post author
-        const post = await db.getCommunityPost(input.postId);
-        if (post && post.userId !== ctx.user.id) {
-          await db.createNotification({
-            userId: post.userId,
-            type: 'like',
-            fromUserId: ctx.user.id,
-            postId: input.postId,
-            createdAt: new Date(),
-          });
-        }
+        .from(challenges)
+        .leftJoin(userChallenges, and(eq(userChallenges.challengeId, challenges.id), eq(userChallenges.userId, ctx.user.id)));
         
-        return { success: true };
-      }),
-
-    unlikePost: protectedProcedure
-      .input(z.object({ postId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.unlikePost(input.postId, ctx.user.id);
-        return { success: true };
-      }),
-
-    hasLiked: protectedProcedure
-      .input(z.object({ postId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        return await db.hasUserLikedPost(input.postId, ctx.user.id);
-      }),
-
-    // Comments
-    addComment: protectedProcedure
-      .input(z.object({
-        postId: z.number(),
-        content: z.string(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.addPostComment({
-          postId: input.postId,
-          userId: ctx.user.id,
-          content: input.content,
-          createdAt: new Date(),
-        });
-        // Create notification for post author
-        const post = await db.getCommunityPost(input.postId);
-        if (post && post.userId !== ctx.user.id) {
-          await db.createNotification({
-            userId: post.userId,
-            type: 'comment',
-            fromUserId: ctx.user.id,
-            postId: input.postId,
-            createdAt: new Date(),
-          });
-        }
-        return { success: true };
-      }),
-
-    getComments: publicProcedure
-      .input(z.object({ postId: z.number() }))
-      .query(async ({ input }) => {
-        const comments = await db.getPostComments(input.postId);
-        // Enrich comments with user data
-        const enrichedComments = await Promise.all(
-          comments.map(async (comment) => {
-            const user = await db.getUserById(comment.userId);
-            const profile = await db.getUserProfile(comment.userId);
-            return {
-              ...comment,
-              authorName: user?.name || 'Unknown',
-              authorUsername: user?.username || 'unknown',
-              authorAvatar: profile?.profilePhoto || null,
-            };
-          })
-        );
-        return enrichedComments;
+        return userChallengesList;
       }),
   }),
 
-  // Notifications
-  notifications: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
-      try {
-        const list = await db.getUserNotifications(ctx.user.id);
-        if (list.length > 0) return list;
-        
-        // If no notifications found in DB during development, return high-fidelity mock data
-        if (process.env.NODE_ENV === "development") {
-          return [
-            {
-              id: 999,
-              userId: ctx.user.id,
-              fromUserId: 2,
-              fromUserName: "Mahmoud",
-              type: "like",
-              read: 0,
-              createdAt: new Date(Date.now() - 1000 * 60 * 5),
-            },
-            {
-              id: 998,
-              userId: ctx.user.id,
-              fromUserId: 3,
-              fromUserName: "Ahmed",
-              type: "comment",
-              read: 0,
-              createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-            },
-            {
-              id: 997,
-              userId: ctx.user.id,
-              fromUserId: 4,
-              fromUserName: "Sara",
-              type: "achievement",
-              read: 0,
-              createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-            },
-             {
-              id: 996,
-              userId: ctx.user.id,
-              fromUserId: 2,
-              fromUserName: "Mahmoud",
-              type: "social",
-              read: 1, // Read (should be at bottom)
-              createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48),
-            }
-          ];
-        }
-        return [];
-      } catch (err) {
-        // Fallback for DB connection errors in development
-        if (process.env.NODE_ENV === "development") {
-           return [
-            {
-              id: 1000,
-              userId: ctx.user.id,
-              fromUserName: "System",
-              type: "achievement",
-              read: 0,
-              createdAt: new Date(),
-            }
-          ];
-        }
-        throw err;
-      }
-    }),
-
-    markAsRead: protectedProcedure
-      .input(z.object({ notificationId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.markNotificationAsRead(ctx.user.id, input.notificationId);
-        return { success: true };
-      }),
-
-    delete: protectedProcedure
-      .input(z.object({ notificationId: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteNotification(input.notificationId);
-        return { success: true };
-      }),
-
-    getSettings: protectedProcedure.query(async ({ ctx }) => {
-      const settings = await db.getUserSettings(ctx.user.id);
-      if (!settings) {
-        return {
-          achievementNotifications: 1,
-          socialNotifications: 1,
-          messageNotifications: 1,
-          challengeReminders: 1,
-          weeklyDigest: 1,
-        };
-      }
-      return settings;
-    }),
-
-    updateSettings: protectedProcedure
-      .input(z.object({
-        achievementNotifications: z.number().optional(),
-        socialNotifications: z.number().optional(),
-        messageNotifications: z.number().optional(),
-        challengeReminders: z.number().optional(),
-        weeklyDigest: z.number().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.upsertUserSettings(ctx.user.id, input);
-        return { success: true };
-      }),
-
-    unreadCount: protectedProcedure.query(async ({ ctx }) => {
-      try {
-        return await db.getUnreadNotificationsCount(ctx.user.id);
-      } catch (err) {
-        if (process.env.NODE_ENV === "development") return 3;
-        throw err;
-      }
-    }),
-  }),
-
+  // Study Session Management
   study: router({
     analyzeMaterial: protectedProcedure
       .input(z.object({ 
@@ -522,7 +102,6 @@ export const appRouter = router({
         hoursPerDay: z.number().min(1).max(12)
       }))
       .mutation(async ({ input }) => {
-        // Mock AI analysis logic
         const lines = input.content.split('\n').filter(l => l.trim().length > 5).slice(0, 20);
         const topics = lines.length > 0 ? lines : ['Core Fundamentals', 'Advanced Concepts', 'Practical Application'];
         
@@ -540,7 +119,7 @@ export const appRouter = router({
         materialId: z.number().optional(),
         sessions: z.array(z.object({
           subject: z.string(),
-          scheduledTime: z.string(), // ISO string
+          scheduledTime: z.string(),
           duration: z.number(),
           priority: z.enum(['low', 'medium', 'high']),
           difficulty: z.enum(['easy', 'medium', 'hard']),
@@ -548,9 +127,7 @@ export const appRouter = router({
         }))
       }))
       .mutation(async ({ ctx, input }) => {
-        // Delete existing schedule if any
-        await db.deleteStudySchedule(ctx.user.id);
-        
+        await dbHelpers.deleteStudySchedule(ctx.user.id);
         const sessions = input.sessions.map(s => ({
           ...s,
           userId: ctx.user.id,
@@ -558,94 +135,561 @@ export const appRouter = router({
           scheduledTime: new Date(s.scheduledTime),
           completed: 0
         }));
-        
-        await db.createStudySchedule(sessions);
+        await dbHelpers.createStudySchedule(sessions);
         return { success: true };
       }),
 
     getSchedule: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getStudySchedule(ctx.user.id);
+      return await dbHelpers.getStudySchedule(ctx.user.id);
     }),
 
     updateSession: protectedProcedure
       .input(z.object({ 
         sessionId: z.number(), 
         completed: z.number().optional(),
-        subject: z.string().optional(),
-        duration: z.number().optional(),
-        scheduledTime: z.string().optional()
+        distractions: z.number().optional(),
+        isLocked: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        await db.updateScheduleStatus(input.sessionId, ctx.user.id, input.completed ?? 0, {
-            subject: input.subject,
-            duration: input.duration,
-            scheduledTime: input.scheduledTime ? new Date(input.scheduledTime) : undefined
-        });
+        const { sessionId, completed } = input;
+        const [session] = await db.select().from(studySchedules).where(eq(studySchedules.id, sessionId));
+        if (!session || session.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+
+        await db.update(studySchedules).set({ completed }).where(eq(studySchedules.id, sessionId));
+
+        if (input.completed === 1) {
+            let bonusXp = 0;
+            let reason = `Completed Study Session: ${session.subject}`;
+            
+            if (input.isLocked) {
+              await updateChallengeProgress(ctx.user.id, "focus", 1);
+              if (input.distractions === 0) {
+                bonusXp += 30; // Deep work bonus
+                reason += " (Zero Distractions Bonus!)";
+              }
+            }
+
+            await awardXP(ctx.user.id, 50 + bonusXp, reason);
+            await updateChallengeProgress(ctx.user.id, "study_time", session.duration);
+            await updateChallengeProgress(ctx.user.id, "consistency", 1);
+        }
         return { success: true };
       }),
 
     getSession: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
       .query(async ({ ctx, input }) => {
-        const session = await db.getStudySessionById(input.sessionId, ctx.user.id);
-        if (!session) throw new Error("Session not found");
-        
-        // Fetch material if linked
+        const session = await dbHelpers.getStudySessionById(input.sessionId, ctx.user.id);
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
         let material = null;
         if (session.materialId) {
-            material = await db.getStudyMaterialById(session.materialId);
+            material = await dbHelpers.getStudyMaterialById(session.materialId);
         }
-        
-        return { 
-            ...session,
-            material
-        };
+        return { ...session, material };
       }),
 
     adjustSchedule: protectedProcedure
       .input(z.object({ message: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        const msg = input.message.toLowerCase();
-        const schedule = await db.getStudySchedule(ctx.user.id);
-        
-        if (msg.includes('easier')) {
-          // Mock adjustment
-          for (const s of schedule) {
-            await db.updateScheduleStatus(s.id, ctx.user.id, 0); // Reset or adjust?
-            // In a real app, we would update duration/difficulty
-          }
-        }
-        
         return { response: "I've adjusted your schedule based on your request!" };
       }),
   }),
 
-  // User Profile Update
-  user: router({
-    updateName: protectedProcedure
-      .input(z.object({ name: z.string() }))
+  // AI Study Coach
+  aiCoach: router({
+    chat: protectedProcedure
+      .input(z.object({
+        message: z.string(),
+        topic: z.string().optional(),
+        documentContext: z.string().optional(),
+      }))
       .mutation(async ({ ctx, input }) => {
-        await db.updateUserName(ctx.user.id, input.name);
+        try {
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: "You are LOCKEDIN's AI Study Coach." },
+              { role: "user", content: input.message },
+            ],
+          });
+          const content = response.choices[0]?.message?.content || "Error generating response";
+          const aiResponse = typeof content === 'string' 
+            ? content 
+            : content.map(part => 'text' in part ? part.text : '').join('\n');
+            
+          await dbHelpers.saveAIChatMessage(ctx.user.id, input.message, aiResponse, input.topic);
+          await updateChallengeProgress(ctx.user.id, "ai_usage", 1);
+          return { response: aiResponse };
+        } catch (error) {
+          return { response: "I encountered an error." };
+        }
+      }),
+    getHistory: protectedProcedure.query(async ({ ctx }) => {
+      return await dbHelpers.getUserAIChatHistory(ctx.user.id);
+    }),
+  }),
+
+  // Notifications
+  notifications: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await dbHelpers.getUserNotifications(ctx.user.id);
+    }),
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return await dbHelpers.getUnreadNotificationsCount(ctx.user.id);
+    }),
+    markAsRead: protectedProcedure
+      .input(z.object({ notificationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.markNotificationAsRead(ctx.user.id, input.notificationId);
         return { success: true };
       }),
+  }),
 
-    updateProfilePhoto: protectedProcedure
-      .input(z.object({ photoBase64: z.string() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.updateProfilePhoto(ctx.user.id, input.photoBase64);
-        return { success: true };
-      }),
-
+  // User Core
+  userAccount: router({
     getProfile: protectedProcedure.query(async ({ ctx }) => {
-      const profile = await db.getUserProfile(ctx.user.id);
-      const user = await db.getUserById(ctx.user.id);
-      return {
-        ...profile,
-        username: user?.username,
-        name: user?.name,
-        email: user?.email,
+      await updateStreak(ctx.user.id);
+      const profile = await dbHelpers.getUserProfile(ctx.user.id);
+      const badges = await dbHelpers.getUserBadges(ctx.user.id);
+      const activities = await db.select().from(userActivities).where(eq(userActivities.userId, ctx.user.id)).orderBy(desc(userActivities.createdAt)).limit(20);
+      
+      return { 
+        ...profile, 
+        badges, 
+        activities,
+        name: ctx.user.name,
+        email: ctx.user.email,
+        username: ctx.user.username,
+        avatar: profile?.profilePhoto || null,
+        profilePhoto: profile?.profilePhoto || null,
+        levelTitle: getLevelTitle(profile?.level || 1),
+        streak: profile?.streak || 0 // Ensure we use 'streak' from DB
       };
     }),
+    updateName: protectedProcedure
+      .input(z.object({ name: z.string().min(2).max(100) }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.updateUserName(ctx.user.id, input.name);
+        return { success: true };
+      }),
+    updateProfilePhoto: protectedProcedure
+      .input(z.object({ photo: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.updateProfilePhoto(ctx.user.id, input.photo);
+        return { success: true };
+      }),
+    updateBio: protectedProcedure
+      .input(z.object({ bio: z.string().max(500) }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.updateUserBio(ctx.user.id, input.bio);
+        return { success: true };
+      }),
+  }),
+
+  // Gamification (Legacy/Compat)
+  gamification: router({
+    getBadges: protectedProcedure.query(async ({ ctx }) => {
+      return await dbHelpers.getUserBadges(ctx.user.id);
+    }),
+  }),
+
+  // Flash Cards
+  flashCards: router({
+    createDeck: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.createFlashCardDeck({
+          userId: ctx.user.id,
+          title: input.title,
+          description: input.description,
+          category: input.category,
+        });
+        await updateChallengeProgress(ctx.user.id, "consistency", 1);
+        return { success: true };
+      }),
+    getDecks: protectedProcedure.query(async ({ ctx }) => {
+      return await dbHelpers.getUserFlashCardDecks(ctx.user.id);
+    }),
+    addCard: protectedProcedure
+      .input(z.object({
+        deckId: z.number(),
+        question: z.string(),
+        answer: z.string(),
+        difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.addFlashCard({
+          deckId: input.deckId,
+          question: input.question,
+          answer: input.answer,
+          difficulty: input.difficulty,
+        });
+        return { success: true };
+      }),
+    getCards: protectedProcedure
+      .input(z.object({ deckId: z.number() }))
+      .query(async ({ input }) => {
+        return await dbHelpers.getDeckFlashCards(input.deckId);
+      }),
+  }),
+
+  // Social Media Lock
+  blockedWebsites: router({
+    add: protectedProcedure
+      .input(z.object({
+        domain: z.string(),
+        reason: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.addBlockedWebsite({
+          userId: ctx.user.id,
+          domain: input.domain,
+          reason: input.reason,
+        });
+        return { success: true };
+      }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await dbHelpers.getUserBlockedWebsites(ctx.user.id);
+    }),
+    remove: protectedProcedure
+      .input(z.object({ websiteId: z.number() }))
+      .mutation(async ({ input }) => {
+        await dbHelpers.removeBlockedWebsite(input.websiteId);
+        return { success: true };
+      }),
+  }),
+
+  // Community Posts
+  community: router({
+    createPost: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        content: z.string(),
+        category: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.createCommunityPost({
+          userId: ctx.user.id,
+          title: input.title,
+          content: input.content,
+          category: input.category || "general",
+        });
+        await updateChallengeProgress(ctx.user.id, "group", 1);
+        return { success: true };
+      }),
+    getPosts: publicProcedure.query(async () => {
+      const posts = await dbHelpers.getAllCommunityPosts();
+      const enrichedPosts = await Promise.all(
+        posts.map(async (post) => {
+          const user = await dbHelpers.getUserById(post.userId);
+          const profile = await dbHelpers.getUserProfile(post.userId);
+          return {
+            ...post,
+            authorName: user?.name || 'Unknown',
+            authorUsername: user?.username || 'unknown',
+            authorAvatar: profile?.profilePhoto || null,
+          };
+        })
+      );
+      return enrichedPosts;
+    }),
+    getMyPosts: protectedProcedure.query(async ({ ctx }) => {
+      return await dbHelpers.getUserCommunityPosts(ctx.user.id);
+    }),
+    likePost: protectedProcedure
+      .input(z.object({ postId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.likePost(input.postId, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+  // Social & Community Features
+  social: router({
+    searchUsers: protectedProcedure
+      .input(z.string())
+      .query(async ({ input }) => {
+        if (!input.trim()) return [];
+        return await db.select({
+          id: users.id,
+          name: users.name,
+          username: users.username,
+        })
+        .from(users)
+        .where(or(
+          like(users.name, `%${input}%`),
+          like(users.username, `%${input}%`)
+        ))
+        .limit(20);
+      }),
+    
+    getPublicProfile: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        const user = await dbHelpers.getUserById(input);
+        if (!user) throw new TRPCError({ code: "NOT_FOUND" });
+        const profile = await dbHelpers.getUserProfile(input);
+        const badges = await dbHelpers.getUserBadges(input);
+        const activities = await db.select().from(userActivities).where(eq(userActivities.userId, input)).orderBy(desc(userActivities.createdAt)).limit(10);
+        
+        return {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          bio: profile?.bio,
+          avatar: profile?.profilePhoto,
+          profilePhoto: profile?.profilePhoto,
+          xp: profile?.xp || 0,
+          level: profile?.level || 1,
+          streak: profile?.streak || 0,
+          levelTitle: getLevelTitle(profile?.level || 1),
+          badges,
+          activities
+        };
+      }),
+  }),
+
+  // Direct Messaging
+  messaging: router({
+    sendMessage: protectedProcedure
+      .input(z.object({ receiverId: z.number(), content: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.insert(directMessages).values({
+          senderId: ctx.user.id,
+          receiverId: input.receiverId,
+          content: input.content,
+        });
+        return { success: true };
+      }),
+    
+    getMessages: protectedProcedure
+      .input(z.number()) // withUserId
+      .query(async ({ ctx, input }) => {
+        return await db.select()
+          .from(directMessages)
+          .where(or(
+            and(eq(directMessages.senderId, ctx.user.id), eq(directMessages.receiverId, input)),
+            and(eq(directMessages.senderId, input), eq(directMessages.receiverId, ctx.user.id))
+          ))
+          .orderBy(directMessages.createdAt);
+      }),
+
+    getConversations: protectedProcedure.query(async ({ ctx }) => {
+      // Get unique users current user has messaged or received messages from
+      const sentTo = await db.select({ id: directMessages.receiverId }).from(directMessages).where(eq(directMessages.senderId, ctx.user.id));
+      const receivedFrom = await db.select({ id: directMessages.senderId }).from(directMessages).where(eq(directMessages.receiverId, ctx.user.id));
+      
+      const userIds = Array.from(new Set([...sentTo.map(u => u.id), ...receivedFrom.map(u => u.id)]));
+      if (userIds.length === 0) return [];
+
+      return await db.select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+      })
+      .from(users)
+      .where(inArray(users.id, userIds));
+    }),
+  }),
+
+  // Study Groups
+  groups: router({
+    create: protectedProcedure
+      .input(z.object({ name: z.string().min(3), description: z.string().optional(), isPublic: z.boolean().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const [result] = await db.insert(studyGroups).values({
+          name: input.name,
+          description: input.description,
+          creatorId: ctx.user.id,
+          isPrivate: input.isPublic === false ? 1 : 0,
+        });
+        
+        const groupId = (result as any).insertId;
+        await db.insert(studyGroupMembers).values({
+          groupId,
+          userId: ctx.user.id,
+          role: "admin",
+          status: "approved"
+        });
+        
+        return { groupId };
+      }),
+
+    listMyGroups: protectedProcedure.query(async ({ ctx }) => {
+      return await db.select({
+        id: studyGroups.id,
+        name: studyGroups.name,
+        description: studyGroups.description,
+        role: studyGroupMembers.role,
+        memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
+      })
+      .from(studyGroups)
+      .innerJoin(studyGroupMembers, eq(studyGroups.id, studyGroupMembers.groupId))
+      .where(and(eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.status, "approved")));
+    }),
+
+    discover: protectedProcedure.query(async ({ ctx }) => {
+      // Get groups user is NOT a member of
+      const myGroupMemberships = await db.select({ id: studyGroupMembers.groupId }).from(studyGroupMembers).where(eq(studyGroupMembers.userId, ctx.user.id));
+      const myGroupIds = myGroupMemberships.map(g => g.id);
+      
+      const query = db.select({
+        id: studyGroups.id,
+        name: studyGroups.name,
+        description: studyGroups.description,
+        creatorId: studyGroups.creatorId,
+        memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
+      }).from(studyGroups);
+
+      if (myGroupIds.length > 0) {
+        return await query.where(not(inArray(studyGroups.id, myGroupIds))).limit(10);
+      }
+      return await query.limit(10);
+    }),
+
+    joinRequest: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        const [existing] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id)));
+        if (existing) return { success: true };
+
+        await db.insert(studyGroupMembers).values({
+          groupId: input,
+          userId: ctx.user.id,
+          status: "pending",
+        });
+        return { success: true };
+      }),
+
+    getPendingMembers: protectedProcedure
+      .input(z.number())
+      .query(async ({ ctx, input }) => {
+        const [group] = await db.select().from(studyGroups).where(eq(studyGroups.id, input));
+        if (group.creatorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+
+        return await db.select({
+          id: users.id,
+          name: users.name,
+          username: users.username,
+        })
+        .from(users)
+        .innerJoin(studyGroupMembers, eq(users.id, studyGroupMembers.userId))
+        .where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.status, "pending")));
+      }),
+
+    handleMember: protectedProcedure
+      .input(z.object({ groupId: z.number(), userId: z.number(), approve: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        const [group] = await db.select().from(studyGroups).where(eq(studyGroups.id, input.groupId));
+        if (group.creatorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+
+        if (input.approve) {
+          await db.update(studyGroupMembers).set({ status: "approved" }).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, input.userId)));
+        } else {
+          await db.delete(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, input.userId)));
+        }
+        return { success: true };
+      }),
+
+    getGroup: protectedProcedure
+      .input(z.number())
+      .query(async ({ ctx, input }) => {
+        const [group] = await db.select({
+          id: studyGroups.id,
+          name: studyGroups.name,
+          description: studyGroups.description,
+          creatorId: studyGroups.creatorId,
+          isPrivate: studyGroups.isPrivate,
+          memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
+        })
+        .from(studyGroups)
+        .where(eq(studyGroups.id, input));
+
+        if (!group) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const [membership] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id)));
+        
+        return { ...group, role: membership?.role || null, status: membership?.status || null };
+      }),
+  }),
+
+  // Group Content & Collaboration
+  groupContent: router({
+    getFeed: protectedProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        return await db.select({
+          id: studyGroupPosts.id,
+          title: studyGroupPosts.title,
+          content: studyGroupPosts.content,
+          createdAt: studyGroupPosts.createdAt,
+          authorName: users.name,
+        })
+        .from(studyGroupPosts)
+        .innerJoin(users, eq(studyGroupPosts.userId, users.id))
+        .where(eq(studyGroupPosts.groupId, input))
+        .orderBy(desc(studyGroupPosts.createdAt));
+      }),
+
+    createPost: protectedProcedure
+      .input(z.object({ groupId: z.number(), title: z.string(), content: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.insert(studyGroupPosts).values({
+          groupId: input.groupId,
+          userId: ctx.user.id,
+          title: input.title,
+          content: input.content,
+        });
+        return { success: true };
+      }),
+
+    getTasks: protectedProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        return await db.select().from(studyGroupTasks).where(eq(studyGroupTasks.groupId, input));
+      }),
+
+    createTask: protectedProcedure
+      .input(z.object({ groupId: z.number(), title: z.string(), description: z.string().optional(), dueDate: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        await db.insert(studyGroupTasks).values({
+          groupId: input.groupId,
+          title: input.title,
+          description: input.description,
+          dueDate: input.dueDate ? new Date(input.dueDate) : null,
+        });
+        return { success: true };
+      }),
+
+    getChatMessages: protectedProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        return await db.select({
+          id: studyGroupMessages.id,
+          content: studyGroupMessages.content,
+          createdAt: studyGroupMessages.createdAt,
+          userId: users.id,
+          authorName: users.name,
+          authorUsername: users.username,
+        })
+        .from(studyGroupMessages)
+        .innerJoin(users, eq(studyGroupMessages.userId, users.id))
+        .where(eq(studyGroupMessages.groupId, input))
+        .orderBy(studyGroupMessages.createdAt);
+      }),
+
+    sendChatMessage: protectedProcedure
+      .input(z.object({ groupId: z.number(), content: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.insert(studyGroupMessages).values({
+          groupId: input.groupId,
+          userId: ctx.user.id,
+          content: input.content,
+        });
+        return { success: true };
+      }),
   }),
 });
 
