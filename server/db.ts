@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { eq, desc, sql, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
