@@ -1,192 +1,261 @@
-import { motion } from 'framer-motion';
-import { Trophy, Users, Clock, Zap, Target } from 'lucide-react';
-import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Trophy, Users, Clock, Zap, Target, 
+  CheckCircle2, Flame, Brain, Shield, 
+  Info, Filter, Star, Sparkles, ChevronRight,
+  Lock, ArrowUpRight, Activity
+} from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { trpc } from '@/lib/trpc';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { toast } from 'sonner';
+
+const CATEGORY_MAP: Record<string, { icon: any, label: string, color: string, gradient: string }> = {
+  study_time: { icon: Clock, label: 'Study Time', color: 'text-blue-400', gradient: 'from-blue-600/20 to-cyan-500/5' },
+  streak: { icon: Flame, label: 'Streak', color: 'text-orange-400', gradient: 'from-orange-600/20 to-red-500/5' },
+  focus: { icon: Target, label: 'Focus', color: 'text-purple-400', gradient: 'from-purple-600/20 to-indigo-500/5' },
+  consistency: { icon: Shield, label: 'Consistency', color: 'text-green-400', gradient: 'from-green-600/20 to-emerald-500/5' },
+  ai_usage: { icon: Brain, label: 'AI Usage', color: 'text-indigo-400', gradient: 'from-indigo-600/20 to-purple-500/5' },
+  group: { icon: Users, label: 'Group Study', color: 'text-pink-400', gradient: 'from-pink-600/20 to-rose-500/5' },
+};
 
 export default function ChallengesPage() {
-  const [challenges] = useState([
-    {
-      id: 1,
-      title: '7-Day Focus Challenge',
-      description: 'Maintain focus for 7 consecutive days without breaking your streak',
-      reward: '500 XP + Golden Badge',
-      participants: 2341,
-      daysLeft: 3,
-      progress: 4,
-      totalDays: 7,
-      difficulty: 'Easy',
-    },
-    {
-      id: 2,
-      title: 'Master Learner Challenge',
-      description: 'Complete 10 AI-generated quizzes with 90% accuracy or higher',
-      reward: '1000 XP + Platinum Badge',
-      participants: 1856,
-      daysLeft: 5,
-      progress: 6,
-      totalDays: 10,
-      difficulty: 'Hard',
-    },
-    {
-      id: 3,
-      title: 'Community Helper Challenge',
-      description: 'Help 5 community members solve their study problems',
-      reward: '750 XP + Helper Badge',
-      participants: 934,
-      daysLeft: 7,
-      progress: 2,
-      totalDays: 5,
-      difficulty: 'Medium',
-    },
-    {
-      id: 4,
-      title: 'Speed Learner Challenge',
-      description: 'Complete 20 hours of focused study in one week',
-      reward: '800 XP + Speed Badge',
-      participants: 1523,
-      daysLeft: 2,
-      progress: 18,
-      totalDays: 20,
-      difficulty: 'Hard',
-    },
-  ]);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const challengesQuery = trpc.progression.getChallenges.useQuery();
+  const profileQuery = trpc.progression.getProfile.useQuery();
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy':
-        return 'text-green-400';
-      case 'Medium':
-        return 'text-yellow-400';
-      case 'Hard':
-        return 'text-red-400';
-      default:
-        return 'text-gray-400';
-    }
-  };
+  const challenges = challengesQuery.data ?? [];
+  const profile = profileQuery.data?.profile;
 
-  return (
-    <div className="min-h-screen bg-background text-foreground pt-24">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="container text-center mb-16"
-      >
-        <h1 className="text-5xl md:text-6xl font-bold mb-6">
-          <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Member Challenges
-          </span>
-        </h1>
-        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-          Compete with the community, earn rewards, and unlock exclusive badges
-        </p>
-      </motion.div>
+  const filteredChallenges = useMemo(() => {
+    if (activeCategory === 'all') return challenges;
+    return challenges.filter(c => c.category === activeCategory);
+  }, [challenges, activeCategory]);
 
-      {/* Challenges Grid */}
-      <div className="container mb-20">
-        <div className="space-y-6">
-          {challenges.map((challenge, idx) => (
-            <motion.div
-              key={challenge.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-              className="bg-background border border-gray-700/50 rounded-2xl p-8 backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300"
-            >
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-2xl font-bold text-foreground">{challenge.title}</h3>
-                    <span className={`text-sm font-semibold px-3 py-1 rounded-full border ${getDifficultyColor(challenge.difficulty)} border-current/30`}>
-                      {challenge.difficulty}
-                    </span>
-                  </div>
-                  <p className="text-gray-400">{challenge.description}</p>
-                </div>
-                <Trophy className="w-8 h-8 text-yellow-400 flex-shrink-0" />
-              </div>
+  const stats = useMemo(() => {
+    const active = challenges.filter(c => (c.currentProgress || 0) > 0 && (c.completed || 0) === 0).length;
+    const completed = challenges.filter(c => (c.completed || 0) === 1).length;
+    const totalXp = profile?.xp ?? 0;
+    return { active, completed, xp: totalXp };
+  }, [challenges, profile]);
 
-              {/* Progress Bar */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Progress</span>
-                  <span className="text-sm font-semibold text-purple-400">{challenge.progress}/{challenge.totalDays}</span>
-                </div>
-                <div className="h-2 bg-card rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-purple-600 to-blue-600"
-                    initial={{ width: 0 }}
-                    whileInView={{ width: `${(challenge.progress / challenge.totalDays) * 100}%` }}
-                    transition={{ duration: 1, delay: 0.2 }}
-                  />
-                </div>
-              </div>
+  if (challengesQuery.isLoading) {
+    return (
+      <div className="min-h-screen bg-background text-white pt-24 pb-20 relative overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[70vw] h-[70vw] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16 animate-pulse">
+            <div className="space-y-4">
+              <div className="h-6 w-40 bg-white/5 rounded-full" />
+              <div className="h-20 w-96 bg-white/5 rounded-2xl" />
+              <div className="h-10 w-80 bg-white/5 rounded-lg mt-4" />
+            </div>
+            <div className="flex gap-4">
+               <div className="w-[160px] h-32 bg-card/30 rounded-[2rem] border border-white/5" />
+               <div className="w-[160px] h-32 bg-card/30 rounded-[2rem] border border-white/5" />
+            </div>
+          </header>
 
-              {/* Info Grid */}
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">Participants</p>
-                    <p className="font-semibold text-foreground">{challenge.participants.toLocaleString()}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">Days Left</p>
-                    <p className="font-semibold text-foreground">{challenge.daysLeft}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">Reward</p>
-                    <p className="font-semibold text-purple-400">{challenge.reward}</p>
-                  </div>
-                </div>
-              </div>
+          <div className="flex flex-wrap items-center gap-3 mb-12">
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} className="h-12 w-32 bg-white/5 rounded-2xl animate-pulse" />
+            ))}
+          </div>
 
-              {/* CTA Button */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-foreground font-semibold transition-all duration-300 glow-purple flex items-center justify-center gap-2"
-              >
-                <Target className="w-5 h-5" />
-                Join Challenge
-              </motion.button>
-            </motion.div>
-          ))}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} className="h-96 bg-card/40 border border-white/10 rounded-[2.5rem] animate-pulse" />
+            ))}
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Stats Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        className="container bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-2xl p-8 mb-20"
-      >
-        <h2 className="text-2xl font-bold text-foreground mb-6">Your Challenge Stats</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-purple-400 mb-2">3</p>
-            <p className="text-gray-400">Active Challenges</p>
+  return (
+    <div className="min-h-screen bg-background text-white pt-24 pb-20 relative overflow-hidden selection:bg-purple-500/30">
+      
+      {/* ── AMBIENT BACKGROUND ── */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[70vw] h-[70vw] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        
+        {/* ── HEADER ── */}
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+              <Sparkles className="w-3 h-3" /> System Progression
+            </div>
+            <h1 className="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
+              <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent drop-shadow-sm">NEURAL TASKS</span> <br/> 
+              <span className="text-white/20 hover:text-white transition-colors cursor-default">LEVEL UP YOUR LIFE</span>
+            </h1>
+            <p className="text-white/40 text-lg max-w-xl font-medium tracking-tight">
+              Transform your daily discipline into measurable growth. Complete global challenges to earn XP and unlock legendary neural badges.
+            </p>
+          </motion.div>
+
+          {/* QUICK STATS */}
+          <div className="flex gap-4">
+             {[
+               { label: 'In Progress', value: stats.active, icon: Activity, bg: 'bg-purple-500/10' },
+               { label: 'Mastered', value: stats.completed, icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+             ].map((stat, i) => (
+               <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
+                 className="p-8 rounded-[2rem] bg-card/30 backdrop-blur-3xl border border-white/5 flex flex-col items-center justify-center min-w-[160px] group hover:bg-white/[0.05] transition-all shadow-xl shadow-purple-500/5">
+                 <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-4">{stat.label}</p>
+                 <div className="flex items-center gap-3">
+                   <p className={cn("text-4xl font-black", stat.color || "text-white")}>{stat.value}</p>
+                   <div className={cn("p-2 rounded-lg", stat.bg)}>
+                     <stat.icon className={cn("w-5 h-5", stat.color || "text-white/40")} />
+                   </div>
+                 </div>
+               </motion.div>
+             ))}
           </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-blue-400 mb-2">12</p>
-            <p className="text-gray-400">Completed</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-yellow-400 mb-2">8</p>
-            <p className="text-gray-400">Badges Earned</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-green-400 mb-2">4,250</p>
-            <p className="text-gray-400">Total XP</p>
-          </div>
+        </header>
+
+        {/* ── FILTERS ── */}
+        <div className="flex flex-wrap items-center gap-3 mb-12">
+          <Button variant={activeCategory === 'all' ? 'default' : 'outline'} onClick={() => setActiveCategory('all')} 
+            className={cn(
+              "rounded-2xl px-8 h-12 font-bold transition-all", 
+              activeCategory === 'all' 
+                ? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-xl shadow-purple-500/30 border-none" 
+                : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:bg-white/10"
+            )}>
+            All Segments
+          </Button>
+          {Object.entries(CATEGORY_MAP).map(([slug, meta]) => (
+            <Button key={slug} onClick={() => setActiveCategory(slug)} 
+              className={cn(
+                "rounded-2xl px-6 h-12 font-bold flex items-center gap-2 transition-all border",
+                activeCategory === slug 
+                  ? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-xl shadow-cyan-500/30 border-none" 
+                  : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:bg-white/10"
+              )}>
+              <meta.icon className="w-4 h-4" /> {meta.label}
+            </Button>
+          ))}
         </div>
-      </motion.div>
+
+        {/* ── CHALLENGES GRID ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+          <AnimatePresence mode="popLayout">
+            {filteredChallenges.map((challenge, idx) => {
+              const meta = CATEGORY_MAP[challenge.category] || { icon: Target, label: challenge.category, color: 'text-gray-400', gradient: 'from-gray-500/10 to-transparent' };
+              const Icon = meta.icon;
+              const progressRaw = challenge.currentProgress || 0;
+              const target = challenge.targetValue || 1;
+              const progressPercent = Math.min(100, Math.round((progressRaw / target) * 100));
+              const isCompleted = (challenge.completed || 0) === 1;
+
+              return (
+                <motion.div key={challenge.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                  className={cn(
+                    "relative group bg-card/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10 overflow-hidden",
+                    isCompleted && "border-cyan-500/30 shadow-cyan-500/5 bg-cyan-500/[0.02]"
+                  )}>
+                  
+                  {/* Category Accent */}
+                  <div className={cn("absolute inset-0 bg-gradient-to-br transition-opacity duration-700 opacity-0 group-hover:opacity-100 pointer-events-none", meta.gradient)} />
+
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-8">
+                       <div className={cn("p-4 rounded-2xl bg-white/5 shadow-inner transition-transform group-hover:scale-110", meta.color)}>
+                          <Icon className="w-8 h-8" />
+                       </div>
+                       {isCompleted ? (
+                         <div className="flex items-center gap-1.5 font-black text-[10px] text-cyan-400 bg-cyan-400/10 px-3 py-1.5 rounded-full border border-cyan-400/20 uppercase tracking-widest shadow-lg shadow-cyan-500/10">
+                           <CheckCircle2 className="w-3.5 h-3.5" /> Synchronized
+                         </div>
+                       ) : (
+                         <div className="flex items-center gap-1.5 font-black text-[10px] text-white/30 uppercase tracking-widest border border-white/5 px-3 py-1.5 rounded-full bg-white/5">
+                           <Activity className="w-3.5 h-3.5" /> Active
+                         </div>
+                       )}
+                    </div>
+
+                    <h3 className="text-2xl font-black mb-3 tracking-tight leading-tight group-hover:text-purple-400 transition-colors uppercase">{challenge.title}</h3>
+                    <p className="text-white/40 text-sm leading-relaxed font-bold mb-8 h-10 overflow-hidden line-clamp-2">{challenge.description}</p>
+
+                    <div className="space-y-4 mb-10">
+                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/20">
+                        <span>Neural Progress</span>
+                        <span className={cn("font-mono", isCompleted ? "text-emerald-400" : "text-white")}>
+                          {progressRaw.toLocaleString()} / {target.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="h-4 bg-white/5 rounded-full overflow-hidden p-[2px] border border-white/10 shadow-inner relative">
+                        <motion.div className={cn("h-full rounded-full bg-gradient-to-r transition-all duration-1000 relative overflow-hidden shadow-[0_0_15px_rgba(6,182,212,0.4)]", 
+                            isCompleted ? "from-cyan-400 to-blue-600" : "from-purple-600 via-indigo-500 to-cyan-500"
+                        )}
+                          initial={{ width: 0 }} 
+                          animate={{ width: `${progressPercent}%` }}
+                        >
+                          <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.3)_50%,transparent_100%)] animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
+                        </motion.div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                      <div className="flex gap-4">
+                        <div>
+                          <p className="text-[8px] font-black text-white/20 uppercase tracking-tighter mb-1">XP Reward</p>
+                          <p className="text-sm font-black text-yellow-500/80 tracking-tight flex items-center gap-1">
+                            <Zap className="w-3 h-3 fill-yellow-500" /> +{challenge.rewardXp}
+                          </p>
+                        </div>
+                        <div className="w-px h-8 bg-white/5" />
+                        <div>
+                          <p className="text-[8px] font-black text-white/20 uppercase tracking-tighter mb-1">Difficulty</p>
+                          <p className={cn("text-sm font-black tracking-tight capitalize", 
+                            challenge.difficulty === 'hard' ? 'text-red-400/80' : 
+                            challenge.difficulty === 'medium' ? 'text-orange-400/80' : 'text-emerald-400/80'
+                          )}>
+                             {challenge.difficulty}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button 
+                        disabled={isCompleted}
+                        className={cn(
+                          "rounded-xl px-6 font-bold h-10 text-[10px] uppercase tracking-widest transition-all",
+                          isCompleted ? "bg-emerald-500/10 text-emerald-400/40 border border-emerald-500/20" : "bg-white/5 hover:bg-white/10 text-white border border-white/10 active:scale-95"
+                        )}
+                      >
+                        {isCompleted ? "MASTERED" : "REINFORCE"}
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+
+        {filteredChallenges.length === 0 && (
+          <div className="text-center py-32 bg-white/[0.01] rounded-[3rem] border border-dashed border-white/5">
+            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8">
+               <Lock className="w-8 h-8 text-white/10" />
+            </div>
+            <p className="text-white/20 font-black uppercase tracking-[0.2em]">No neural matches found in this segment.</p>
+          </div>
+        )}
+
+      </div>
     </div>
   );
+}
+
+// Utility function
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
 }

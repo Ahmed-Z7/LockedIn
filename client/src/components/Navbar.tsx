@@ -53,6 +53,7 @@ export default function Navbar() {
             { label: 'Learning', action: () => setLocation('/start-learning') },
             { label: 'Schedule', action: () => setLocation('/schedule') },
             { label: 'AI Coach', action: () => setLocation('/ai-coach') },
+            { label: 'Challenges', action: () => setLocation('/challenges') },
             { label: 'Analytics', action: () => setLocation('/analytics') },
             { label: 'Community', action: () => setLocation('/community') },
           ].map((item) => (
