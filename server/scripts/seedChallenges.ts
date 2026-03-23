@@ -1,54 +1,101 @@
 import "dotenv/config";
-import { drizzle } from "drizzle-orm/mysql2";
+import { db } from "../db";
 import { challenges } from "../../drizzle/schema";
 
-if (!process.env.DATABASE_URL) {
-    console.error("❌ DATABASE_URL is not set in .env");
-    process.exit(1);
+// Valid categories from schema: study_time | streak | focus | group | ai_usage | consistency
+const challengeData: any[] = [];
+
+// 1. Study Time (10 Challenges)
+for (let i = 1; i <= 10; i++) {
+  const hours = [1, 5, 10, 25, 50, 100, 250, 500, 750, 1000][i-1];
+  challengeData.push({
+    title: `Study Marathon Lvl ${i}`,
+    description: `Log a total of ${hours} hours of focused study time.`,
+    category: 'study_time',
+    targetValue: hours * 60, // in minutes
+    rewardXp: hours * 10,
+    difficulty: hours > 100 ? 'hard' : (hours > 20 ? 'medium' : 'easy'),
+  });
 }
 
-const db = drizzle(process.env.DATABASE_URL);
+// 2. Streak (10 Challenges)
+for (let i = 1; i <= 10; i++) {
+  const days = [3, 7, 14, 30, 60, 90, 150, 200, 300, 365][i-1];
+  challengeData.push({
+    title: `Persistence Lvl ${i}`,
+    description: `Maintain a study streak for ${days} consecutive days.`,
+    category: 'streak',
+    targetValue: days,
+    rewardXp: days * 15,
+    difficulty: days > 60 ? 'hard' : (days > 14 ? 'medium' : 'easy'),
+  });
+}
 
-// Valid categories from schema: study_time | streak | focus | group | ai_usage | consistency
-const challengeData = [
-    // ───── STUDY TIME ─────
-    { title: "Study Starter", description: "Study for a total of 1 hour.", category: "study_time", targetValue: 60, difficulty: "easy", rewardXp: 100 },
-    { title: "Dedicated Learner", description: "Study for a total of 10 hours.", category: "study_time", targetValue: 600, difficulty: "medium", rewardXp: 500 },
-    { title: "Academic Weapon", description: "Study for a total of 50 hours.", category: "study_time", targetValue: 3000, difficulty: "hard", rewardXp: 1500 },
-    { title: "Knowledge Sponge", description: "Study for a total of 100 hours.", category: "study_time", targetValue: 6000, difficulty: "hard", rewardXp: 3000 },
-    { title: "Study Machine", description: "Study for a total of 250 hours.", category: "study_time", targetValue: 15000, difficulty: "hard", rewardXp: 5000, rewardBadgeName: "Study Monk" },
-    { title: "50 Sessions Grind", description: "Complete 50 study sessions.", category: "study_time", targetValue: 50, difficulty: "hard", rewardXp: 1000, rewardBadgeName: "Knowledge Sponge" },
+// 3. Focus (10 Challenges)
+for (let i = 1; i <= 10; i++) {
+  const sessions = [5, 10, 25, 50, 75, 100, 150, 200, 300, 500][i-1];
+  challengeData.push({
+    title: `Focus Depth Lvl ${i}`,
+    description: `Complete ${sessions} deep work sessions without distraction.`,
+    category: 'focus',
+    targetValue: sessions,
+    rewardXp: sessions * 20,
+    difficulty: sessions > 100 ? 'hard' : (sessions > 25 ? 'medium' : 'easy'),
+  });
+}
 
-    // ───── STREAKS ─────
-    { title: "Consistent King", description: "Maintain a 30-day study streak.", category: "streak", targetValue: 30, difficulty: "hard", rewardXp: 2000, rewardBadgeName: "Consistency King" },
-    { title: "Unstoppable", description: "Maintain a 60-day study streak.", category: "streak", targetValue: 60, difficulty: "hard", rewardXp: 5000, rewardBadgeName: "Habit Former" },
+// 4. Consistency (10 Challenges)
+const consistencyTypes = ['Early Bird', 'Night Owl', 'Weekend Warrior', 'Noon Ninja', 'Dawn Patrol', 'Twilight Scholar', 'System Sync', 'Heartbeat', 'Iron Will', 'Unstoppable'];
+for (let i = 1; i <= 10; i++) {
+   challengeData.push({
+     title: `${consistencyTypes[i-1]} Mastery`,
+     description: `Maintain high performance in your specific study window for ${i * 10} sessions.`,
+     category: 'consistency',
+     targetValue: i * 10,
+     rewardXp: i * 100,
+     difficulty: i > 7 ? 'hard' : (i > 3 ? 'medium' : 'easy'),
+   });
+}
 
-    // ───── FOCUS ─────
-    { title: "Deep Work Master", description: "Complete 25 sessions in Focus Lock mode.", category: "focus", targetValue: 25, difficulty: "hard", rewardXp: 1000, rewardBadgeName: "Focus Legend" },
-    { title: "Laser Vision", description: "Complete 10 sessions with 0 distractions.", category: "focus", targetValue: 10, difficulty: "hard", rewardXp: 800, rewardBadgeName: "Neural Link" },
+// 5. AI Usage (10 Challenges)
+for (let i = 1; i <= 10; i++) {
+  const prompts = [10, 25, 50, 100, 200, 400, 600, 800, 1000, 2000][i-1];
+  challengeData.push({
+    title: `Neural Prompting Lvl ${i}`,
+    description: `Interact with the AI Coach ${prompts} times to refine your learning.`,
+    category: 'ai_usage',
+    targetValue: prompts,
+    rewardXp: Math.floor(prompts * 2.5),
+    difficulty: prompts > 500 ? 'hard' : (prompts > 50 ? 'medium' : 'easy'),
+  });
+}
 
-    // ───── CONSISTENCY ─────
-    { title: "Productivity God", description: "Complete all scheduled sessions in a week.", category: "consistency", targetValue: 7, difficulty: "medium", rewardXp: 1000, rewardBadgeName: "Plan Follower" },
-    { title: "Deck Master", description: "Create 20 different flashcard decks.", category: "consistency", targetValue: 20, difficulty: "hard", rewardXp: 800, rewardBadgeName: "Deck Master" },
-
-    // ───── AI USAGE ─────
-    { title: "Digital Mentor", description: "Ask the AI Coach 100 questions.", category: "ai_usage", targetValue: 100, difficulty: "hard", rewardXp: 1000, rewardBadgeName: "AI Collaborator" },
-    { title: "Quiz Legend", description: "Complete 50 AI-generated quizzes.", category: "ai_usage", targetValue: 50, difficulty: "hard", rewardXp: 1500, rewardBadgeName: "Neural Link" },
-
-    // ───── GROUP STUDY ─────
-    { title: "Group Legend", description: "Complete 20 group study sessions.", category: "group", targetValue: 20, difficulty: "hard", rewardXp: 1200, rewardBadgeName: "Social Learner" },
-    { title: "Community Leader", description: "Make 25 community posts.", category: "group", targetValue: 25, difficulty: "hard", rewardXp: 600, rewardBadgeName: "The Helper" },
-];
+// 6. Group Study (13 Challenges to reach 63)
+for (let i = 1; i <= 13; i++) {
+  const groupActions = [1, 3, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100][i-1];
+  challengeData.push({
+    title: `Collective Sync Lvl ${i}`,
+    description: `Participate in ${groupActions} group study sessions or collective discussions.`,
+    category: 'group',
+    targetValue: groupActions,
+    rewardXp: groupActions * 30,
+    difficulty: groupActions > 50 ? 'hard' : (groupActions > 10 ? 'medium' : 'easy'),
+  });
+}
 
 
 export async function seed() {
     console.log(`🌱 Seeding ${challengeData.length} challenges...`);
     let count = 0;
     for (const challenge of challengeData) {
-        await db.insert(challenges).values(challenge as any).onDuplicateKeyUpdate({
-            set: { description: (challenge as any).description }
-        });
-        count++;
+        try {
+            await db.insert(challenges).values(challenge).onDuplicateKeyUpdate({
+                set: { description: challenge.description }
+            });
+            count++;
+        } catch (e) {
+            console.error(`Error seeding ${challenge.title}:`, e);
+        }
     }
     console.log(`✅ Done! Seeded ${count} challenges.`);
 }
