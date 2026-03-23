@@ -5,7 +5,7 @@ import {
   Brain, BookOpen, Lightbulb, MessageSquare, 
   CheckCircle, AlertCircle, Timer, Gamepad2, 
   ArrowLeft, Layout, Sparkles, ChevronRight,
-  FlipCw, Send, Loader2, X
+  FlipCw, Send, Loader2, X, Zap
 } from "lucide-react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
