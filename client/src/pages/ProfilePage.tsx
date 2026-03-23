@@ -188,13 +188,16 @@ export default function ProfilePage() {
               </div>
 
               <div className="text-center md:text-left flex-1">
-                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-2">
+                <div className="flex flex-col items-center md:items-start gap-1 mb-2">
                   <h1 className="text-4xl md:text-5xl font-black tracking-tighter bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 bg-clip-text text-transparent">
-                    {profile?.name || profile?.username}
+                    {profile?.name}
                   </h1>
-                  <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] uppercase font-black tracking-widest">
-                    {profile?.levelTitle || 'Fresh Initiate'}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white/40 font-bold tracking-tight text-lg">@{profile?.username}</span>
+                    <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] uppercase font-black tracking-widest">
+                      {profile?.levelTitle || 'Fresh Initiate'}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-white/40 font-medium mb-6 text-sm">{profile?.email}</p>
                 
