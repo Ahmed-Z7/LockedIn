@@ -443,6 +443,13 @@ export async function getStudyMaterials(userId: number) {
   return await db.select().from(studyMaterials).where(eq(studyMaterials.userId, userId)).orderBy(desc(studyMaterials.createdAt));
 }
 
+export async function getStudyMaterialById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(studyMaterials).where(eq(studyMaterials.id, id)).limit(1);
+  return result[0] || null;
+}
+
 export async function createStudySchedule(sessions: InsertStudySchedule[]) {
   const db = await getDb();
   if (!db || sessions.length === 0) return;
@@ -469,4 +476,13 @@ export async function updateScheduleStatus(id: number, userId: number, completed
   await db.update(studySchedules)
     .set({ completed, ...meta })
     .where(and(eq(studySchedules.id, id), eq(studySchedules.userId, userId)));
+}
+
+export async function getStudySessionById(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(studySchedules)
+    .where(and(eq(studySchedules.id, id), eq(studySchedules.userId, userId)))
+    .limit(1);
+  return result[0] || null;
 }

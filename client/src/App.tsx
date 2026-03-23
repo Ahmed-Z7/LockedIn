@@ -20,6 +20,7 @@ import AddPostPage from "./pages/AddPostPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import StartLearningPage from "./pages/StartLearningPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import StudySessionPage from "./pages/StudySessionPage";
 
 function Router() {
   return (
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/start-learning" component={StartLearningPage} />
       <Route path="/analytics" component={AnalyticsPage} />
+      <Route path="/study-session/:id" component={StudySessionPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

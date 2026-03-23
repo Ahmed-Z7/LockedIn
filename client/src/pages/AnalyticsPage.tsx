@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Book, CheckCircle2, Clock, Zap, TrendingUp, BarChart3, PieChart, Target, BrainCircuit } from 'lucide-react';
+import { Book, CheckCircle2, Clock, Zap, TrendingUp, BarChart3, PieChart, Target, BrainCircuit, Sparkles } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import Navbar from '@/components/Navbar';

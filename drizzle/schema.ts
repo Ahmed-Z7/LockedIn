@@ -113,6 +113,7 @@ export const studySchedules = mysqlTable("studySchedules", {
   difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).default("medium"),
   sessionType: mysqlEnum("sessionType", ["study", "review"]).default("study"),
   completed: int("completed").default(0),
+  materialId: int("materialId").references(() => studyMaterials.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

@@ -554,6 +554,7 @@ export const appRouter = router({
         const sessions = input.sessions.map(s => ({
           ...s,
           userId: ctx.user.id,
+          materialId: input.materialId,
           scheduledTime: new Date(s.scheduledTime),
           completed: 0
         }));
@@ -581,6 +582,24 @@ export const appRouter = router({
             scheduledTime: input.scheduledTime ? new Date(input.scheduledTime) : undefined
         });
         return { success: true };
+      }),
+
+    getSession: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const session = await db.getStudySessionById(input.sessionId, ctx.user.id);
+        if (!session) throw new Error("Session not found");
+        
+        // Fetch material if linked
+        let material = null;
+        if (session.materialId) {
+            material = await db.getStudyMaterialById(session.materialId);
+        }
+        
+        return { 
+            ...session,
+            material
+        };
       }),
 
     adjustSchedule: protectedProcedure

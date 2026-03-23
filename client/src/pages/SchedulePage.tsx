@@ -188,8 +188,11 @@ export default function SchedulePage() {
                             <Settings className="w-4 h-4" />
                             </Button>
                             {!session.completed && (
-                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-purple-500/10 text-purple-400">
-                                <Play className="w-4 h-4" />
+                                <Button 
+                                    onClick={() => setLocation(`/study-session/${session.id}`)}
+                                    size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full hover:bg-purple-500/10 text-purple-400"
+                                >
+                                    <Play className="w-4 h-4" />
                                 </Button>
                             )}
                         </>
