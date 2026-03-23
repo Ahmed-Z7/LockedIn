@@ -5,6 +5,8 @@ import { useAuth } from '@/_core/hooks/useAuth';
 import { getLoginUrl } from '@/const';
 import GlowButton from './GlowButton';
 import ThemeSwitcher from './ThemeSwitcher';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 export default function Navbar() {
   const [, setLocation] = useLocation();
@@ -48,10 +50,11 @@ export default function Navbar() {
         {/* Navigation Links */}
         <div className="hidden md:flex items-center gap-8">
           {[
-            { label: 'Features', action: () => setLocation('/core-benefits') },
+            { label: 'Learning', action: () => setLocation('/start-learning') },
+            { label: 'Schedule', action: () => setLocation('/schedule') },
+            { label: 'AI Coach', action: () => setLocation('/ai-coach') },
+            { label: 'Analytics', action: () => setLocation('/analytics') },
             { label: 'Community', action: () => setLocation('/community') },
-            { label: 'Challenges', action: () => setLocation('/challenges') },
-            { label: 'Dashboard', action: () => setLocation('/dashboard') },
           ].map((item) => (
             <motion.button
               key={item.label}
@@ -89,9 +92,14 @@ export default function Navbar() {
                 className="p-2 hover:bg-[#F1F3FF] dark:hover:bg-card rounded-lg transition-colors text-[#64748B] dark:text-gray-400 hover:text-[#6366F1] dark:hover:text-purple-400 relative"
                 title="Notifications"
               >
-                <Bell className={`w-5 h-5 transition-colors ${unreadCount && unreadCount > 0 ? 'text-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]' : ''}`} />
+                <Bell className={cn(
+                    "w-5 h-5 transition-all duration-500",
+                    unreadCount && unreadCount > 0 
+                      ? "text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] animate-pulse" 
+                      : "text-slate-400 group-hover:text-purple-400"
+                )} />
                 {unreadCount && unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-black animate-pulse" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-pink-500 rounded-full border border-background shadow-[0_0_10px_rgba(236,72,153,0.8)]" />
                 )}
               </motion.button>
               <motion.button

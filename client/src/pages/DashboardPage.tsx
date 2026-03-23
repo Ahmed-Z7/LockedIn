@@ -1,209 +1,152 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { motion } from "framer-motion";
-import { Award, Flame, Zap, BookOpen, Clock, TrendingUp } from "lucide-react";
+import { Award, Flame, Zap, Clock, TrendingUp, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import Navbar from "@/components/Navbar";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const { data: profile } = trpc.profile.get.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: badges } = trpc.gamification.getBadges.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: sessions } = trpc.studySessions.list.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: sessions } = trpc.study.getSchedule.useQuery(undefined, { enabled: isAuthenticated });
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-4">Dashboard</h1>
-          <p className="text-foreground/60 mb-8">Please log in to access your dashboard</p>
-          <Button onClick={() => setLocation("/")} className="bg-indigo-600 hover:bg-indigo-700">
-            Go Home
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const totalStudyTime = sessions?.reduce((acc, session) => acc + session.duration, 0) || 0;
-  const xp = profile?.xp || 0;
-  const level = profile?.level || 1;
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5 },
-    },
-  };
+  if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <Navbar />
+      
+      {/* Background Blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-purple-500/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+
+      <main className="max-w-6xl mx-auto pt-28 pb-20 px-4 relative z-10">
+        {/* Header Section */}
+        <motion.header 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-12"
+          className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6"
         >
-          <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-indigo-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent">
-            Welcome back, {user?.name || "Learner"}! 👋
-          </h1>
-          <p className="text-foreground/60 text-lg">Keep up your learning streak and reach new heights</p>
-        </motion.div>
+          <div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2">
+              Hello, <span className="bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 bg-clip-text text-transparent">{user?.name || "Alex"}</span> 👋
+            </h1>
+            <p className="text-foreground/40 font-medium text-lg">Stay locked in — your goals are waiting.</p>
+          </div>
+        </motion.header>
 
-        {/* Stats Grid */}
+        {/* Hero Card */}
         <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-card/30 backdrop-blur-3xl border border-white/5 p-12 rounded-[2.5rem] mb-12 relative overflow-hidden group border-purple-500/20 shadow-2xl shadow-purple-500/10"
         >
-          {/* XP Card */}
-          <motion.div
-            variants={itemVariants}
-            className="relative group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative bg-background border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-sm hover:border-indigo-500/60 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-foreground/60 font-semibold">Total XP</h3>
-                <Zap className="w-6 h-6 text-indigo-400" />
-              </div>
-              <p className="text-4xl font-bold text-indigo-400 mb-2">{xp.toLocaleString()}</p>
-              <p className="text-sm text-foreground/40">Keep studying to earn more</p>
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-blue-500/10 opacity-50 group-hover:opacity-100 transition-opacity" />
+          
+          <div className="relative z-10 text-center max-w-2xl mx-auto">
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-none mb-6">
+              Study Smarter with <span className="text-purple-400 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">AI-Powered</span> Learning
+            </h2>
+            <p className="text-foreground/60 text-lg font-medium mb-10 leading-relaxed">
+              Upload your study materials and let LOCKEDIN build your personalized study schedule in seconds.
+            </p>
+            
+            <div className="flex flex-wrap justify-center gap-4">
+              <Button 
+                onClick={() => setLocation("/start-learning")}
+                size="lg"
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl px-8 py-7 text-lg font-bold shadow-xl shadow-purple-500/20 group hover:scale-105 transition-all"
+              >
+                <Zap className="w-5 h-5 mr-2 fill-white" />
+                Start Learning
+              </Button>
+              <Button 
+                onClick={() => setLocation("/schedule")}
+                variant="outline"
+                size="lg"
+                className="border-white/10 bg-white/5 hover:bg-white/10 rounded-2xl px-8 py-7 text-lg font-bold backdrop-blur-xl group hover:scale-105 transition-all"
+              >
+                <Clock className="w-5 h-5 mr-2" />
+                View Schedule
+              </Button>
             </div>
-          </motion.div>
 
-          {/* Level Card */}
-          <motion.div
-            variants={itemVariants}
-            className="relative group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-violet-600 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative bg-background border border-cyan-500/30 rounded-2xl p-6 backdrop-blur-sm hover:border-cyan-500/60 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-foreground/60 font-semibold">Level</h3>
-                <TrendingUp className="w-6 h-6 text-cyan-400" />
-              </div>
-              <p className="text-4xl font-bold text-cyan-400 mb-2">{level}</p>
-              <p className="text-sm text-foreground/40">{Math.floor((xp % 1000) / 10)}% to next level</p>
+            <div className="mt-12 flex justify-center gap-12 border-t border-white/5 pt-12">
+               <div className="text-center">
+                 <div className="text-2xl font-black text-purple-400">50K+</div>
+                 <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">Active Users</div>
+               </div>
+               <div className="text-center border-x border-white/5 px-12">
+                 <div className="text-2xl font-black text-emerald-400">95%</div>
+                 <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">Success Rate</div>
+               </div>
+               <div className="text-center">
+                 <div className="text-2xl font-black text-blue-400">24/7</div>
+                 <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">AI Support</div>
+               </div>
             </div>
-          </motion.div>
-
-          {/* Study Time Card */}
-          <motion.div
-            variants={itemVariants}
-            className="relative group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative bg-background border border-violet-500/30 rounded-2xl p-6 backdrop-blur-sm hover:border-violet-500/60 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-foreground/60 font-semibold">Study Time</h3>
-                <Clock className="w-6 h-6 text-violet-400" />
-              </div>
-              <p className="text-4xl font-bold text-violet-400 mb-2">{Math.floor(totalStudyTime / 60)}h</p>
-              <p className="text-sm text-foreground/40">{totalStudyTime % 60}m this month</p>
-            </div>
-          </motion.div>
-
-          {/* Badges Card */}
-          <motion.div
-            variants={itemVariants}
-            className="relative group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-cyan-600 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative bg-background border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-sm hover:border-indigo-500/60 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-foreground/60 font-semibold">Badges</h3>
-                <Award className="w-6 h-6 text-indigo-400" />
-              </div>
-              <p className="text-4xl font-bold text-indigo-400 mb-2">{badges?.length || 0}</p>
-              <p className="text-sm text-foreground/40">Achievements unlocked</p>
-            </div>
-          </motion.div>
+          </div>
         </motion.div>
 
-        {/* Recent Sessions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-background border border-indigo-500/20 rounded-2xl p-8 backdrop-blur-sm"
-        >
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-indigo-400" />
-            Recent Study Sessions
-          </h2>
-          {sessions && sessions.length > 0 ? (
-            <div className="space-y-4">
-              {sessions.slice(0, 5).map((session, index) => (
-                <motion.div
-                  key={session.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between p-4 bg-background/50 border border-indigo-500/10 rounded-lg hover:border-indigo-500/30 transition-all duration-300"
-                >
-                  <div>
-                    <p className="font-semibold text-foreground">{session.subject}</p>
-                    <p className="text-sm text-foreground/60">
-                      {new Date(session.startTime).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-cyan-400">{session.duration} min</p>
-                    <p className="text-sm text-foreground/60">Focus: {session.focusScore}%</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-foreground/60">No study sessions yet. Start studying to see your progress!</p>
-          )}
-        </motion.div>
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            {[
+              { label: 'Day Streak', value: profile?.streak || 0, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+              { label: 'Sessions Done', value: sessions?.filter(s => s.completed === 1).length || 0, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+              { label: 'Overall Progress', value: `${sessions?.length ? Math.round((sessions?.filter(s => s.completed === 1).length / sessions.length) * 100) : 0}%`, icon: TrendingUp, color: 'text-pink-400', bg: 'bg-pink-500/10' },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-card/30 backdrop-blur-xl border border-white/5 p-6 rounded-3xl group hover:border-purple-500/30 transition-all shadow-lg"
+              >
+                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110", stat.bg)}>
+                  <stat.icon className={cn("w-6 h-6", stat.color)} />
+                </div>
+                <div className="text-3xl font-black mb-1">{stat.value}</div>
+                <div className="text-sm font-bold text-foreground/40 uppercase tracking-widest">{stat.label}</div>
+              </motion.div>
+            ))}
+        </div>
 
-        {/* Quick Actions */}
+        {/* Progress Tracker Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="bg-card/30 backdrop-blur-xl border border-white/10 p-8 rounded-[2rem] shadow-2xl"
         >
-          <Button
-            onClick={() => setLocation("/ai-coach")}
-            className="bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-foreground py-6 text-lg"
-          >
-            Chat with AI Coach
-          </Button>
-          <Button
-            onClick={() => setLocation("/flash-cards")}
-            className="bg-gradient-to-r from-cyan-600 to-violet-600 hover:from-cyan-700 hover:to-violet-700 text-foreground py-6 text-lg"
-          >
-            Study Flash Cards
-          </Button>
-          <Button
-            onClick={() => setLocation("/schedule")}
-            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-foreground py-6 text-lg"
-          >
-            Plan Your Study
-          </Button>
+          <div className="flex justify-between items-end mb-6">
+            <div>
+               <h3 className="text-xl font-bold mb-1">Weekly Objective</h3>
+               <p className="text-foreground/40 text-sm font-medium">
+                 {sessions?.length ? `${sessions?.filter(s => s.completed === 1).length} of ${sessions.length} sessions completed` : "No active goals in system memory."}
+               </p>
+            </div>
+            <div className="text-2xl font-black text-purple-400">
+               {sessions?.length ? Math.round((sessions?.filter(s => s.completed === 1).length / sessions.length) * 100) : 0}%
+            </div>
+          </div>
+          
+          <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-white/5 p-1 relative">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${sessions?.length ? (sessions?.filter(s => s.completed === 1).length / sessions.length) * 100 : 0}%` }}
+              className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 rounded-full relative"
+            >
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.3)_50%,transparent_100%)] animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
+            </motion.div>
+          </div>
+          
+          <p className="mt-6 text-foreground/30 text-xs font-semibold uppercase tracking-[0.2em] text-center">
+            Neural Synchronicity at {sessions?.length ? Math.round((sessions?.filter(s => s.status === 'done').length / sessions.length) * 100) : 0}% Optimization
+          </p>
         </motion.div>
-      </div>
+      </main>
     </div>
   );
 }

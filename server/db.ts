@@ -14,7 +14,8 @@ import {
   postComments, InsertPostComment,
   postLikes, InsertPostLike,
   notifications, InsertNotification,
-  userSettings, InsertUserSetting
+  userSettings, InsertUserSetting,
+  studyMaterials, InsertStudyMaterial
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -195,13 +196,6 @@ export async function getDeckFlashCards(deckId: number) {
   const db = await getDb();
   if (!db) return [];
   return await db.select().from(flashCards).where(eq(flashCards.deckId, deckId));
-}
-
-// Study Schedule Functions
-export async function createStudySchedule(data: InsertStudySchedule) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(studySchedules).values(data);
 }
 
 export async function getUserStudySchedules(userId: number) {
@@ -434,4 +428,45 @@ export async function getUnreadNotificationsCount(userId: number) {
     .from(notifications)
     .where(and(eq(notifications.userId, userId), eq(notifications.read, 0)));
   return result[0]?.count || 0;
+}
+
+export async function createStudyMaterial(material: InsertStudyMaterial) {
+  const db = await getDb();
+  if (!db) return;
+  const [result] = await db.insert(studyMaterials).values(material);
+  return result.insertId;
+}
+
+export async function getStudyMaterials(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(studyMaterials).where(eq(studyMaterials.userId, userId)).orderBy(desc(studyMaterials.createdAt));
+}
+
+export async function createStudySchedule(sessions: InsertStudySchedule[]) {
+  const db = await getDb();
+  if (!db || sessions.length === 0) return;
+  await db.insert(studySchedules).values(sessions);
+}
+
+export async function deleteStudySchedule(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(studySchedules).where(eq(studySchedules.userId, userId));
+}
+
+export async function getStudySchedule(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(studySchedules)
+    .where(eq(studySchedules.userId, userId))
+    .orderBy(studySchedules.scheduledTime);
+}
+
+export async function updateScheduleStatus(id: number, userId: number, completed: number, meta?: { subject?: string, duration?: number, scheduledTime?: Date }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(studySchedules)
+    .set({ completed, ...meta })
+    .where(and(eq(studySchedules.id, id), eq(studySchedules.userId, userId)));
 }

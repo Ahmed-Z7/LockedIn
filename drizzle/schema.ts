@@ -110,12 +110,28 @@ export const studySchedules = mysqlTable("studySchedules", {
   scheduledTime: timestamp("scheduledTime").notNull(),
   duration: int("duration").notNull(), // in minutes
   priority: mysqlEnum("priority", ["low", "medium", "high"]).default("medium"),
+  difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).default("medium"),
+  sessionType: mysqlEnum("sessionType", ["study", "review"]).default("study"),
   completed: int("completed").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export type StudySchedule = typeof studySchedules.$inferSelect;
 export type InsertStudySchedule = typeof studySchedules.$inferInsert;
+
+// Study Material
+export const studyMaterials = mysqlTable("studyMaterials", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  title: varchar("title", { length: 200 }).notNull(),
+  content: text("content"),
+  fileUrl: varchar("fileUrl", { length: 500 }),
+  type: varchar("type", { length: 50 }).notNull(), // pdf, docx, text
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type StudyMaterial = typeof studyMaterials.$inferSelect;
+export type InsertStudyMaterial = typeof studyMaterials.$inferInsert;
 
 // Blocked Websites
 export const blockedWebsites = mysqlTable("blockedWebsites", {

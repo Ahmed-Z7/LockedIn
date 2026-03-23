@@ -6,7 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import DashboardPage from "./pages/DashboardPage";
-import AICoachPage from "./pages/AICoacPage";
+import AICoachPage from "./pages/AICoachPage";
 import FlashCardsPage from "./pages/FlashCardsPage";
 import SchedulePage from "./pages/SchedulePage";
 import BlockedWebsitesPage from "./pages/BlockedWebsitesPage";
@@ -18,6 +18,8 @@ import ChallengesPage from "./pages/ChallengesPage";
 import ProfilePage from "./pages/ProfilePage";
 import AddPostPage from "./pages/AddPostPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import StartLearningPage from "./pages/StartLearningPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 
 function Router() {
   return (
@@ -36,6 +38,8 @@ function Router() {
       <Route path="/profile" component={ProfilePage} />
       <Route path="/add-post" component={AddPostPage} />
       <Route path="/notifications" component={NotificationsPage} />
+      <Route path="/start-learning" component={StartLearningPage} />
+      <Route path="/analytics" component={AnalyticsPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
