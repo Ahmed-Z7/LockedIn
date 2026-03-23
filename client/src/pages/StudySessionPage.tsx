@@ -328,7 +328,12 @@ export default function StudySessionPage() {
                     onClick={() => {
                         setIsLocked(false);
                         if (document.exitFullscreen) document.exitFullscreen();
-                        updateStatus.mutate({ sessionId, completed: 1 });
+                        updateStatus.mutate({ 
+                          sessionId, 
+                          completed: 1,
+                          distractions: distractions,
+                          isLocked: isLocked 
+                        });
                         setIsCompleted(true);
                         toast.success("Session synchronized with network.");
                     }}

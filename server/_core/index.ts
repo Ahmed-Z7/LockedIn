@@ -7,6 +7,10 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { seed as seedChallenges } from "../scripts/seedChallenges";
+import { db } from "../db";
+import { challenges } from "../../drizzle/schema";
+import { sql } from "drizzle-orm";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -60,6 +64,17 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+
+  // Auto-seed challenges if table is empty
+  try {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(challenges);
+    if (result[0].count === 0) {
+      console.log("No challenges found in database. Running auto-seed...");
+      await seedChallenges();
+    }
+  } catch (err) {
+    console.error("Failed to check/seed challenges:", err);
+  }
 }
 
 startServer().catch(console.error);

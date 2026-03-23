@@ -1,9 +1,9 @@
 import { eq, desc, sql, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
-  InsertUser, users, 
+  users, 
   userProfiles, InsertUserProfile,
-  badges, InsertBadge,
+  userBadges, InsertUserBadge,
   studySessions, InsertStudySession,
   flashCardDecks, InsertFlashCardDeck,
   flashCards, InsertFlashCard,
@@ -19,19 +19,15 @@ import {
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
-let _db: ReturnType<typeof drizzle> | null = null;
+export let db: ReturnType<typeof drizzle>;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
+if (process.env.DATABASE_URL) {
+  db = drizzle(process.env.DATABASE_URL);
+}
+
+// Lazily create the drizzle instance (legacy helper)
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
-  }
-  return _db;
+  return db;
 }
 
 // Generate username from email
@@ -135,28 +131,28 @@ export async function createOrUpdateUserProfile(userId: number, data: Partial<In
   }
 }
 
-// Gamification Functions
 export async function addXP(userId: number, xpAmount: number) {
-  const db = await getDb();
-  if (!db) return;
+  const dbStatus = await getDb();
+  if (!dbStatus) return;
   const profile = await getUserProfile(userId);
   if (profile) {
     const newXP = profile.xp + xpAmount;
+    // Simple level formula for backward compatibility
     const newLevel = Math.floor(newXP / 1000) + 1;
-    await db.update(userProfiles).set({ xp: newXP, level: newLevel }).where(eq(userProfiles.userId, userId));
+    await dbStatus.update(userProfiles).set({ xp: newXP, level: newLevel }).where(eq(userProfiles.userId, userId));
   }
 }
 
 export async function getUserBadges(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  return await db.select().from(badges).where(eq(badges.userId, userId));
+  const dbStatus = await getDb();
+  if (!dbStatus) return [];
+  return await dbStatus.select().from(userBadges).where(eq(userBadges.userId, userId));
 }
 
 export async function addBadge(userId: number, badgeName: string, badgeIcon?: string, description?: string) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(badges).values({ userId, badgeName, badgeIcon, description });
+  const dbStatus = await getDb();
+  if (!dbStatus) return;
+  await dbStatus.insert(userBadges).values({ userId, badgeName, badgeIcon: badgeIcon || "🏆", description });
 }
 
 // Study Session Functions
@@ -328,7 +324,7 @@ export async function getUserNotifications(userId: number) {
   const db = await getDb();
   if (!db) return [];
   
-  const result = await db.select({
+  const result = await dbStatus.select({
     id: notifications.id,
     userId: notifications.userId,
     fromUserId: notifications.fromUserId,
@@ -415,9 +411,20 @@ export async function updateProfilePhoto(userId: number, photoBase64: string) {
   if (!db) return;
   const profile = await getUserProfile(userId);
   if (profile) {
-    await db.update(userProfiles).set({ profilePhoto: photoBase64 }).where(eq(userProfiles.userId, userId));
+    await db.update(userProfiles).set({ profilePhoto: photoBase64, updatedAt: new Date() }).where(eq(userProfiles.userId, userId));
   } else {
     await db.insert(userProfiles).values({ userId, profilePhoto: photoBase64 });
+  }
+}
+
+export async function updateUserBio(userId: number, bio: string) {
+  const db = await getDb();
+  if (!db) return;
+  const profile = await getUserProfile(userId);
+  if (profile) {
+    await db.update(userProfiles).set({ bio, updatedAt: new Date() }).where(eq(userProfiles.userId, userId));
+  } else {
+    await db.insert(userProfiles).values({ userId, bio });
   }
 }
 

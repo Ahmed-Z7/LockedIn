@@ -32,12 +32,14 @@ export const userProfiles = mysqlTable("userProfiles", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id),
   xp: int("xp").default(0).notNull(),
-  level: int("level").default(0).notNull(),
+  level: int("level").default(1).notNull(),
   streak: int("streak").default(0).notNull(),
+  streakLongest: int("streakLongest").default(0).notNull(),
   totalStudyTime: int("totalStudyTime").default(0).notNull(), // in minutes
-  badgesCount: int("badgesCount").default(0).notNull(),
+  lastStudyDate: timestamp("lastStudyDate"),
   bio: text("bio"),
   profilePhoto: text("profilePhoto"),
+  rank: varchar("rank", { length: 100 }).default("Focused Beginner"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -45,18 +47,61 @@ export const userProfiles = mysqlTable("userProfiles", {
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type InsertUserProfile = typeof userProfiles.$inferInsert;
 
-// Badges & Achievements
-export const badges = mysqlTable("badges", {
+// Static Challenge Definitions
+export const challenges = mysqlTable("challenges", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description").notNull(),
+  category: mysqlEnum("category", ["study_time", "streak", "focus", "group", "ai_usage", "consistency"]).notNull(),
+  targetValue: int("targetValue").notNull(),
+  rewardXp: int("rewardXp").notNull(),
+  rewardBadgeName: varchar("rewardBadgeName", { length: 100 }),
+  difficulty: mysqlEnum("difficulty", ["easy", "medium", "hard"]).default("easy"),
+});
+
+export type Challenge = typeof challenges.$inferSelect;
+export type InsertChallenge = typeof challenges.$inferInsert;
+
+// User Progress on Challenges
+export const userChallenges = mysqlTable("userChallenges", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  challengeId: int("challengeId").notNull().references(() => challenges.id),
+  currentProgress: int("currentProgress").default(0).notNull(),
+  completed: int("completed").default(0).notNull(), // 0 or 1
+  completedAt: timestamp("completedAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserChallenge = typeof userChallenges.$inferSelect;
+export type InsertUserChallenge = typeof userChallenges.$inferInsert;
+
+// Earned Badges
+export const userBadges = mysqlTable("userBadges", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id),
   badgeName: varchar("badgeName", { length: 100 }).notNull(),
-  badgeIcon: varchar("badgeIcon", { length: 500 }),
+  badgeIcon: varchar("badgeIcon", { length: 100 }).notNull(),
+  rarity: mysqlEnum("rarity", ["common", "rare", "epic", "legendary"]).default("common"),
   description: text("description"),
   earnedAt: timestamp("earnedAt").defaultNow().notNull(),
 });
 
-export type Badge = typeof badges.$inferSelect;
-export type InsertBadge = typeof badges.$inferInsert;
+export type UserBadge = typeof userBadges.$inferSelect;
+export type InsertUserBadge = typeof userBadges.$inferInsert;
+
+// User Activity Log (for Timeline)
+export const userActivities = mysqlTable("userActivities", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  type: varchar("type", { length: 50 }).notNull(), // study_session, challenge_complete, badge_earned, level_up
+  description: text("description").notNull(),
+  xpGain: int("xpGain").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserActivity = typeof userActivities.$inferSelect;
+export type InsertUserActivity = typeof userActivities.$inferInsert;
 
 // Study Sessions
 export const studySessions = mysqlTable("studySessions", {
@@ -228,3 +273,105 @@ export const userSettings = mysqlTable("userSettings", {
 
 export type UserSetting = typeof userSettings.$inferSelect;
 export type InsertUserSetting = typeof userSettings.$inferInsert;
+// ── NEW: DIRECT MESSAGING SYSTEM ──
+export const directMessages = mysqlTable("directMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  senderId: int("senderId").notNull().references(() => users.id),
+  receiverId: int("receiverId").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  read: int("read").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DirectMessage = typeof directMessages.$inferSelect;
+export type InsertDirectMessage = typeof directMessages.$inferInsert;
+
+// ── NEW: STUDY GROUPS SYSTEM ──
+export const studyGroups = mysqlTable("studyGroups", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  creatorId: int("creatorId").notNull().references(() => users.id),
+  avatar: text("avatar"),
+  isPrivate: int("isPrivate").default(0), // 0 for public, 1 for private
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudyGroup = typeof studyGroups.$inferSelect;
+export type InsertStudyGroup = typeof studyGroups.$inferInsert;
+
+export const studyGroupMembers = mysqlTable("studyGroupMembers", {
+  id: int("id").autoincrement().primaryKey(),
+  groupId: int("groupId").notNull().references(() => studyGroups.id),
+  userId: int("userId").notNull().references(() => users.id),
+  role: mysqlEnum("role", ["admin", "member"]).default("member").notNull(),
+  status: mysqlEnum("status", ["pending", "approved"]).default("approved").notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+});
+
+export type StudyGroupMember = typeof studyGroupMembers.$inferSelect;
+export type InsertStudyGroupMember = typeof studyGroupMembers.$inferInsert;
+
+export const studyGroupInvitations = mysqlTable("studyGroupInvitations", {
+  id: int("id").autoincrement().primaryKey(),
+  groupId: int("groupId").notNull().references(() => studyGroups.id),
+  senderId: int("senderId").notNull().references(() => users.id),
+  receiverId: int("receiverId").notNull().references(() => users.id),
+  status: mysqlEnum("status", ["pending", "accepted", "declined"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type StudyGroupInvitation = typeof studyGroupInvitations.$inferSelect;
+export type InsertStudyGroupInvitation = typeof studyGroupInvitations.$inferInsert;
+
+// ── NEW: GROUP CONTENT & COLLABORATION ──
+export const studyGroupPosts = mysqlTable("studyGroupPosts", {
+  id: int("id").autoincrement().primaryKey(),
+  groupId: int("groupId").notNull().references(() => studyGroups.id),
+  userId: int("userId").notNull().references(() => users.id),
+  title: varchar("title", { length: 200 }).notNull(),
+  content: text("content").notNull(),
+  likes: int("likes").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudyGroupPost = typeof studyGroupPosts.$inferSelect;
+export type InsertStudyGroupPost = typeof studyGroupPosts.$inferInsert;
+
+export const studyGroupTasks = mysqlTable("studyGroupTasks", {
+  id: int("id").autoincrement().primaryKey(),
+  groupId: int("groupId").notNull().references(() => studyGroups.id),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["open", "completed"]).default("open").notNull(),
+  dueDate: timestamp("dueDate"),
+  assignedTo: int("assignedTo").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type StudyGroupTask = typeof studyGroupTasks.$inferSelect;
+export type InsertStudyGroupTask = typeof studyGroupTasks.$inferInsert;
+
+export const studyGroupMessages = mysqlTable("studyGroupMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  groupId: int("groupId").notNull().references(() => studyGroups.id),
+  userId: int("userId").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type StudyGroupMessage = typeof studyGroupMessages.$inferSelect;
+export type InsertStudyGroupMessage = typeof studyGroupMessages.$inferInsert;
+
+export const studyGroupMaterials = mysqlTable("studyGroupMaterials", {
+  id: int("id").autoincrement().primaryKey(),
+  groupId: int("groupId").notNull().references(() => studyGroups.id),
+  materialId: int("materialId").notNull().references(() => studyMaterials.id),
+  uploadedBy: int("uploadedBy").notNull().references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type StudyGroupMaterial = typeof studyGroupMaterials.$inferSelect;
+export type InsertStudyGroupMaterial = typeof studyGroupMaterials.$inferInsert;

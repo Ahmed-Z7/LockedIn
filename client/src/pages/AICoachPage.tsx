@@ -29,7 +29,7 @@ export default function AICoachPage() {
         utils.study.getSchedule.invalidate();
     }
   });
-  const { data: profile } = trpc.profile.get.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: profile } = trpc.userAccount.getProfile.useQuery(undefined, { enabled: isAuthenticated });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

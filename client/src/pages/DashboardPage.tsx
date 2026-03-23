@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { motion } from "framer-motion";
-import { Award, Flame, Zap, Clock, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Award, Flame, Zap, Clock, TrendingUp, CheckCircle2, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 export default function DashboardPage() {
   const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const { data: profile } = trpc.profile.get.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: profile } = trpc.userAccount.getProfile.useQuery(undefined, { enabled: isAuthenticated });
   const { data: sessions } = trpc.study.getSchedule.useQuery(undefined, { enabled: isAuthenticated });
 
   if (!isAuthenticated) return null;
@@ -19,9 +19,9 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background relative overflow-hidden">
       <Navbar />
       
-      {/* Background Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-purple-500/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
+      {/* Background Blobs - Unified with Home Page */}
+      <div className="absolute top-[-10%] left-[-10%] w-[70vw] h-[70vw] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
 
       <main className="max-w-6xl mx-auto pt-28 pb-20 px-4 relative z-10">
         {/* Header Section */}
@@ -92,24 +92,33 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
               { label: 'Day Streak', value: profile?.streak || 0, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
               { label: 'Sessions Done', value: sessions?.filter(s => s.completed === 1).length || 0, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-              { label: 'Overall Progress', value: `${sessions?.length ? Math.round((sessions?.filter(s => s.completed === 1).length / sessions.length) * 100) : 0}%`, icon: TrendingUp, color: 'text-pink-400', bg: 'bg-pink-500/10' },
+              { label: 'Neural XP', value: profile?.xp || 0, icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+              { label: 'Active Challenges', value: 'View All', icon: Award, color: 'text-purple-400', bg: 'bg-purple-500/10', path: '/challenges' },
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-card/30 backdrop-blur-xl border border-white/5 p-6 rounded-3xl group hover:border-purple-500/30 transition-all shadow-lg"
+                onClick={() => stat.path && setLocation(stat.path)}
+                className={cn(
+                  "bg-card/40 backdrop-blur-3xl border border-white/10 p-6 rounded-3xl group transition-all shadow-xl hover:scale-105",
+                  i === 0 ? "border-cyan-500/30 shadow-cyan-500/10" : "border-white/5",
+                  stat.path && "cursor-pointer hover:bg-white/[0.05]"
+                )}
               >
                 <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110", stat.bg)}>
                   <stat.icon className={cn("w-6 h-6", stat.color)} />
                 </div>
                 <div className="text-3xl font-black mb-1">{stat.value}</div>
-                <div className="text-sm font-bold text-foreground/40 uppercase tracking-widest">{stat.label}</div>
+                <div className="text-sm font-bold text-foreground/40 uppercase tracking-widest flex items-center gap-2">
+                  {stat.label}
+                  {stat.path && <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />}
+                </div>
               </motion.div>
             ))}
         </div>
@@ -143,7 +152,7 @@ export default function DashboardPage() {
           </div>
           
           <p className="mt-6 text-foreground/30 text-xs font-semibold uppercase tracking-[0.2em] text-center">
-            Neural Synchronicity at {sessions?.length ? Math.round((sessions?.filter(s => s.status === 'done').length / sessions.length) * 100) : 0}% Optimization
+            Neural Synchronicity at {sessions?.length ? Math.round((sessions?.filter(s => s.completed === 1).length / sessions.length) * 100) : 0}% Optimization
           </p>
         </motion.div>
       </main>
