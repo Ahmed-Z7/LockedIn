@@ -46,6 +46,11 @@ export default function StudySessionPage() {
   const [memoryCards, setMemoryCards] = useState<any[]>([]);
   const [flippedCards, setFlippedCards] = useState<number[]>([]);
   const [matchedPairs, setMatchedPairs] = useState<number[]>([]);
+  const [isFocusKickingIn, setIsFocusKickingIn] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [distractions, setDistractions] = useState(0);
+  const [isExceptionAsking, setIsExceptionAsking] = useState(false);
+  const [exceptionTimeLeft, setExceptionTimeLeft] = useState(0);
   
   const chatMutation = trpc.aiCoach.chat.useMutation();
   
@@ -55,13 +60,48 @@ export default function StudySessionPage() {
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
-        if (!isBreak) setTotalWorkTime(prev => prev + 1);
+        if (!isBreak && !exceptionTimeLeft) setTotalWorkTime(prev => prev + 1);
+        if (exceptionTimeLeft > 0) setExceptionTimeLeft(prev => prev - 1);
       }, 1000);
     } else if (timeLeft === 0 && isActive) {
       handlePhaseComplete();
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, isBreak]);
+  }, [isActive, timeLeft, isBreak, exceptionTimeLeft]);
+
+  // Focus Lock Logic
+  useEffect(() => {
+    if (isLocked && !isBreak && !exceptionTimeLeft) {
+        const handleVisibility = () => {
+            if (document.hidden) {
+                setDistractions(prev => prev + 1);
+                toast.error("FOCUS COMPROMISED. RETURN TO SESSION IMMEDIATELY.", {
+                    duration: 5000,
+                    icon: <AlertCircle className="text-red-500" />
+                });
+            }
+        };
+
+        const handleBlur = () => {
+            setDistractions(prev => prev + 1);
+        };
+
+        const preventExit = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            e.returnValue = "";
+        };
+
+        document.addEventListener("visibilitychange", handleVisibility);
+        window.addEventListener("blur", handleBlur);
+        window.addEventListener("beforeunload", preventExit);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibility);
+            window.removeEventListener("blur", handleBlur);
+            window.removeEventListener("beforeunload", preventExit);
+        };
+    }
+  }, [isLocked, isBreak, exceptionTimeLeft]);
 
   const handlePhaseComplete = () => {
     setIsActive(false);
@@ -81,11 +121,46 @@ export default function StudySessionPage() {
     // Auto-resume? Let's keep it manual for user control
   };
 
-  const startSession = (m: any) => {
+  const startSession = async (m: any) => {
     setMethod(m.id as StudyMethod);
     setTimeLeft(m.work * 60);
-    setIsActive(true);
-    setChatMessages([{ role: 'ai', content: `Neural link established for ${m.title}. I've prepared your materials. Ready to begin?` }]);
+    
+    // Trigger Focus Kicks In Animation
+    setIsFocusKickingIn(true);
+    
+    // Try Fullscreen
+    try {
+        if (document.documentElement.requestFullscreen) {
+            await document.documentElement.requestFullscreen();
+        }
+    } catch (err) {
+        console.error("Fullscreen link failed:", err);
+    }
+
+    setTimeout(() => {
+        setIsFocusKickingIn(false);
+        setIsActive(true);
+        setIsLocked(true);
+        setChatMessages([{ role: 'ai', content: `Neural link established for ${m.title}. Focus Lock system active. I've prepared your materials. Ready to begin?` }]);
+    }, 4500); // Animation duration
+  };
+
+  const handleExceptionSubmit = async (reason: string) => {
+    if (!reason.trim()) return;
+    try {
+        const res = await chatMutation.mutateAsync({ 
+            message: `URGENT FOCUS EXCEPTION REQUEST: "${reason}". Evaluate if this is a valid emergency. Reply ONLY with "APPROVED" or "REJECTED: [reason]".` 
+        });
+        if (res.response.includes("APPROVED")) {
+            setIsExceptionAsking(false);
+            setExceptionTimeLeft(7 * 60);
+            toast.success("AI EVALUATION: REASON ACCEPTED. 7 MINUTES REMAINING.");
+        } else {
+            toast.error(res.response.replace("REJECTED:", "SYSTEM DENIAL:"));
+        }
+    } catch (e) {
+        toast.error("Telemetry link unstable. Reverting to lock.");
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -251,6 +326,8 @@ export default function StudySessionPage() {
                     variant="outline" 
                     className="border-white/5 bg-white/5 hover:bg-white/10 rounded-xl px-6 text-xs font-bold"
                     onClick={() => {
+                        setIsLocked(false);
+                        if (document.exitFullscreen) document.exitFullscreen();
                         updateStatus.mutate({ sessionId, completed: 1 });
                         setIsCompleted(true);
                         toast.success("Session synchronized with network.");
@@ -260,6 +337,40 @@ export default function StudySessionPage() {
                 </Button>
             </div>
         </header>
+
+        {/* Focus Mode Indicator */}
+        {isLocked && !isBreak && !exceptionTimeLeft && (
+            <motion.div 
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 bg-purple-600/90 backdrop-blur-md rounded-full border border-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.4)] flex items-center gap-3"
+            >
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white">Focus Locked</span>
+                </div>
+                <div className="w-px h-3 bg-white/20" />
+                <div className="flex items-center gap-2 text-[10px] text-white/70 font-bold">
+                    <AlertCircle className="w-3 h-3" /> Distractions: {distractions}
+                </div>
+                {!exceptionTimeLeft && (
+                    <button 
+                        onClick={() => setIsExceptionAsking(true)}
+                        className="ml-2 text-[9px] font-black bg-white/10 hover:bg-white/20 px-2 py-1 rounded-lg transition-colors border border-white/10"
+                    >
+                        REQUEST ACCESS
+                    </button>
+                )}
+            </motion.div>
+        )}
+
+        {/* Temporary Access Overlay */}
+        {exceptionTimeLeft > 0 && (
+            <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 bg-amber-500 rounded-full shadow-xl flex items-center gap-4">
+                <Clock className="w-4 h-4 text-white animate-spin-slow" />
+                <span className="text-sm font-black text-white italic tracking-tight">TEMPORARY ACCESS GRANTED: {formatTime(exceptionTimeLeft)}</span>
+            </div>
+        )}
 
         <main className="flex-1 flex overflow-hidden">
             {/* Left: Content Area */}
@@ -525,16 +636,26 @@ export default function StudySessionPage() {
                         <h2 className="text-4xl font-black mb-2 tracking-tight uppercase">Session Locked</h2>
                         <p className="text-foreground/40 mb-10 font-medium">Neural pathways reinforced successfully.</p>
                         
-                        <div className="grid grid-cols-2 gap-4 mb-10">
+                        <div className="grid grid-cols-2 gap-4 mb-8">
                             <div className="p-6 bg-white/5 rounded-2xl border border-white/5">
-                                <div className="text-3xl font-black text-purple-400">+{Math.round(totalWorkTime / 60) * 10}</div>
+                                <div className="text-3xl font-black text-purple-400">
+                                    +{Math.max(0, (Math.round(totalWorkTime / 60) * 10) - (distractions * 15))}
+                                </div>
                                 <div className="text-[10px] uppercase tracking-widest font-black text-foreground/20">XP Gained</div>
                             </div>
                             <div className="p-6 bg-white/5 rounded-2xl border border-white/5">
-                                <div className="text-3xl font-black text-blue-400">{Math.round(totalWorkTime / 60)}m</div>
-                                <div className="text-[10px] uppercase tracking-widest font-black text-foreground/20">Focus Time</div>
+                                <div className={cn("text-3xl font-black", distractions > 0 ? "text-red-400" : "text-emerald-400")}>
+                                    {distractions}
+                                </div>
+                                <div className="text-[10px] uppercase tracking-widest font-black text-foreground/20">Distractions</div>
                             </div>
                         </div>
+
+                        {distractions > 0 && (
+                            <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                                <p className="text-xs text-red-400 font-bold">Neural instability detected. XP penalized for focus violations.</p>
+                            </div>
+                        )}
 
                         <Button 
                             onClick={() => window.location.href = '/dashboard'}
@@ -542,6 +663,132 @@ export default function StudySessionPage() {
                         >
                             Return to Command
                         </Button>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* Focus Kicks In Overlay */}
+        <AnimatePresence>
+            {isFocusKickingIn && (
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[1000] bg-background flex flex-col items-center justify-center overflow-hidden"
+                >
+                    {/* Glowing Particles/Blobs */}
+                    <div className="absolute inset-0">
+                        <motion.div 
+                            animate={{ 
+                                scale: [1, 1.2, 1],
+                                opacity: [0.3, 0.6, 0.3],
+                                rotate: [0, 90, 0]
+                            }}
+                            transition={{ duration: 4, repeat: Infinity }}
+                            className="absolute top-1/4 left-1/4 w-[60vw] h-[60vw] bg-purple-600/20 rounded-full blur-[120px]" 
+                        />
+                        <motion.div 
+                            animate={{ 
+                                scale: [1, 1.3, 1],
+                                opacity: [0.2, 0.5, 0.2],
+                                rotate: [0, -90, 0]
+                            }}
+                            transition={{ duration: 5, repeat: Infinity }}
+                            className="absolute bottom-1/4 right-1/4 w-[50vw] h-[50vw] bg-indigo-600/20 rounded-full blur-[120px]" 
+                        />
+                    </div>
+
+                    <div className="relative z-10 text-center space-y-8">
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.5, type: "spring" }}
+                            className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mx-auto shadow-[0_0_80px_rgba(168,85,247,0.4)]"
+                        >
+                            <Brain className="w-16 h-16 text-white" />
+                        </motion.div>
+                        
+                        <div className="space-y-2">
+                            <motion.p 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 1.2 }}
+                                className="text-purple-400 font-black tracking-[0.5em] uppercase text-xs"
+                             >
+                                Neural Link Synchronized
+                            </motion.p>
+                            <motion.h2 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 1.8 }}
+                                className="text-5xl font-black tracking-tighter max-w-lg leading-[0.9]"
+                            >
+                                Focus Kicks In... <br/>
+                                <span className="text-indigo-400">the Moment You're</span> <br/>
+                                <span className="bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">LOCKEDIN</span>
+                            </motion.h2>
+                        </div>
+                    </div>
+
+                    {/* Scanner Effect */}
+                    <motion.div 
+                        initial={{ top: "-10%" }}
+                        animate={{ top: "110%" }}
+                        transition={{ duration: 2.5, ease: "linear", repeat: 1 }}
+                        className="absolute left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_20px_purple]"
+                    />
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* Exception Request Modal */}
+        <AnimatePresence>
+            {isExceptionAsking && (
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[500] bg-background/90 backdrop-blur-xl flex items-center justify-center p-6"
+                >
+                    <motion.div 
+                        initial={{ scale: 0.9, y: 20 }}
+                        animate={{ scale: 1, y: 0 }}
+                        className="bg-card border border-white/10 rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl space-y-8"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-500/10 rounded-xl">
+                                    <AlertCircle className="w-5 h-5 text-amber-500" />
+                                </div>
+                                <h3 className="text-xl font-bold">Emergency Access</h3>
+                            </div>
+                            <Button variant="ghost" className="rounded-full w-8 h-8 p-0" onClick={() => setIsExceptionAsking(false)}>
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </div>
+                        
+                        <p className="text-sm text-foreground/40 leading-relaxed">
+                            Requesting temporary access will freeze your study timers and unlock the browser for <strong className="text-amber-500">7 minutes</strong>. Nex AI will evaluate your reason.
+                        </p>
+
+                        <div className="space-y-4">
+                            <textarea 
+                                id="exception-reason"
+                                className="w-full h-32 bg-white/5 border border-white/10 rounded-2xl p-4 text-xs focus:outline-none focus:border-amber-500/50 transition-all"
+                                placeholder="Why do you need to break focus?"
+                            />
+                            <Button 
+                                disabled={chatMutation.isLoading}
+                                className="w-full h-14 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-lg shadow-amber-500/20"
+                                onClick={() => {
+                                    const val = (document.getElementById('exception-reason') as HTMLTextAreaElement).value;
+                                    handleExceptionSubmit(val);
+                                }}
+                            >
+                                {chatMutation.isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit Request"}
+                            </Button>
+                        </div>
                     </motion.div>
                 </motion.div>
             )}
