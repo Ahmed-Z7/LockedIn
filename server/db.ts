@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { eq, desc, sql, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
-  users, 
+  users, InsertUser,
   userProfiles, InsertUserProfile,
   userBadges, InsertUserBadge,
   studySessions, InsertStudySession,
@@ -325,7 +325,7 @@ export async function getUserNotifications(userId: number) {
   const db = await getDb();
   if (!db) return [];
   
-  const result = await dbStatus.select({
+  const result = await db.select({
     id: notifications.id,
     userId: notifications.userId,
     fromUserId: notifications.fromUserId,

@@ -36,42 +36,12 @@ async function seed() {
   // await db.delete(notifications).where(eq(notifications.userId, 1));
 
   // 4. Add mock notifications
-  const mockNotifs = [
-    {
-      userId: 1,
-      fromUserId: 2,
-      type: "like",
-      read: 0,
-      createdAt: new Date(Date.now() - 1000 * 60 * 5), // 5 mins ago
-    },
-    {
-      userId: 1,
-      fromUserId: 3,
-      type: "comment",
-      read: 0,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
-    },
-    {
-      userId: 1,
-      fromUserId: 4,
-      type: "achievement",
-      read: 0,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-    },
-    {
-      userId: 1,
-      fromUserId: 2,
-      type: "social",
-      read: 1, // Read (should be at bottom)
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-    },
-     {
-      userId: 1,
-      fromUserId: 3,
-      type: "like",
-      read: 1, // Read
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 25), // 25 hours ago
-    },
+  const mockNotifs: { userId: number; fromUserId: number; type: "like" | "comment" | "follow" | "badge" | "study_session"; read: number; createdAt: Date }[] = [
+    { userId: 1, fromUserId: 2, type: "like", read: 0, createdAt: new Date(Date.now() - 1000 * 60 * 5) },
+    { userId: 1, fromUserId: 3, type: "comment", read: 0, createdAt: new Date(Date.now() - 1000 * 60 * 60) },
+    { userId: 1, fromUserId: 4, type: "badge", read: 0, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2) },
+    { userId: 1, fromUserId: 2, type: "follow", read: 1, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24) },
+    { userId: 1, fromUserId: 3, type: "like", read: 1, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 25) },
   ];
 
   for (const notif of mockNotifs) {

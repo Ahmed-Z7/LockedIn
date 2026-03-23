@@ -5,7 +5,8 @@ import { useLocation, useParams } from 'wouter';
 import { 
   Hash, Users, MessageSquare, Search, Plus, 
   Settings, ChevronRight, Send, Heart, MessageCircle,
-  Shield, BookOpen, Clock, Layout, UserPlus, CheckCircle2
+  Shield, BookOpen, Clock, Layout, UserPlus, CheckCircle2,
+  Award, Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -273,7 +274,7 @@ export default function CommunityPage() {
             {activeTab === 'groups' && !selectedGroupId && (
               <GroupsHub 
                 myGroups={myGroups.data || []} 
-                onSelectGroup={(id) => { setSelectedGroupId(id); setLocation(`/groups/${id}`); }}
+                onSelectGroup={(id: number) => { setSelectedGroupId(id); setLocation(`/groups/${id}`); }}
                 onCreateGroup={() => setShowCreateGroup(true)}
               />
             )}
@@ -611,11 +612,13 @@ const GroupChat = ({ groupId }: { groupId: number }) => {
 // --- GROUP ENVIRONMENT ---
 
 const GroupEnvironment = ({ groupId }: { groupId: number }) => {
+    const [, setLocation] = useLocation();
     const { data: thisGroup } = trpc.groups.getGroup.useQuery(groupId); 
     
     const groupData = trpc.groupContent.getFeed.useQuery(groupId);
     const groupTasks = trpc.groupContent.getTasks.useQuery(groupId);
-    const [subTab, setSubTab] = useState<'feed' | 'tasks' | 'chat' | 'sessions'>('feed');
+    const leaderboardQuery = trpc.leaderboards.getGroupMembers.useQuery(groupId);
+    const [subTab, setSubTab] = useState<'feed' | 'tasks' | 'chat' | 'sessions' | 'leaderboard'>('feed');
 
     return (
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="py-12">
@@ -628,13 +631,13 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                 <h1 className="text-6xl font-black tracking-tighter mb-4">{thisGroup?.name || 'Loading Neural Hub...'}</h1>
                 <p className="text-xl text-white/40 max-w-3xl leading-relaxed">{thisGroup?.description}</p>
                 
-                <div className="flex gap-2 mt-8">
-                    {['feed', 'tasks', 'chat', 'sessions'].map((tab) => (
+                <div className="flex gap-2 mt-8 overflow-x-auto pb-2">
+                    {['feed', 'tasks', 'chat', 'sessions', 'leaderboard'].map((tab) => (
                         <button 
                             key={tab}
                             onClick={() => setSubTab(tab as any)}
-                            className={`px-6 py-3 rounded-2xl text-sm font-bold capitalize transition-all ${
-                                subTab === tab ? 'bg-white text-black' : 'text-white/40 hover:text-white hover:bg-white/5'
+                            className={`px-6 py-3 rounded-2xl text-sm font-bold capitalize transition-all whitespace-nowrap ${
+                                subTab === tab ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-white/40 hover:text-white hover:bg-white/5'
                             }`}
                         >
                             {tab}
@@ -707,6 +710,60 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                             >
                                 Start Collective Session
                             </Button>
+                        </div>
+                    )}
+                    {subTab === 'leaderboard' && (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-end p-8 rounded-[2rem] bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-purple-500/20 shadow-2xl shadow-purple-500/10 mb-8">
+                                <div>
+                                    <h3 className="text-3xl font-black mb-2 flex items-center gap-3">
+                                       <Award className="w-8 h-8 text-yellow-400" /> 
+                                       In-Group Rankings
+                                    </h3>
+                                    <p className="text-white/60 font-medium">Rankings refresh in real-time. Lead your squad.</p>
+                                </div>
+                            </div>
+                            
+                            {leaderboardQuery.isLoading ? (
+                                <div className="flex justify-center py-20">
+                                    <div className="w-10 h-10 rounded-full border-4 border-purple-500/30 border-t-purple-500 animate-spin" />
+                                </div>
+                            ) : (
+                                <div className="space-y-4 bg-card/20 p-8 rounded-[2.5rem] border border-white/5">
+                                    {leaderboardQuery.data?.map((member, idx) => (
+                                        <div key={member.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                            <div className="w-8 text-center font-black text-2xl text-white/40">
+                                                #{idx + 1}
+                                            </div>
+                                            
+                                            <Avatar className="w-12 h-12 border-2 border-white/10 shadow-lg">
+                                                <AvatarImage src={member.avatar || undefined} />
+                                                <AvatarFallback>{member.name?.[0] || 'U'}</AvatarFallback>
+                                            </Avatar>
+
+                                            <div className="flex-1">
+                                                <div className="font-bold text-lg flex items-center gap-2">
+                                                    {member.name}
+                                                    {member.role === 'admin' && (
+                                                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-[9px] font-black uppercase">Admin</span>
+                                                    )}
+                                                </div>
+                                                <div className="text-sm text-white/40">@{member.username} • Level {member.level}</div>
+                                            </div>
+
+                                            <div className="text-right">
+                                                <div className="font-black text-2xl text-purple-400 flex items-center gap-2">
+                                                    {member.xp?.toLocaleString()} <Zap className="w-5 h-5 text-purple-500" />
+                                                </div>
+                                                <div className="text-[10px] uppercase tracking-widest text-white/20 font-bold">Total XP</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {leaderboardQuery.data?.length === 0 && (
+                                        <div className="text-center py-10 text-white/40 font-bold uppercase tracking-widest">No members found.</div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                 </main>

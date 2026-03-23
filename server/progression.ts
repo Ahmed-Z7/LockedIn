@@ -61,7 +61,7 @@ export async function updateStreak(userId: number) {
     const lastUpdate = profile.updatedAt ? new Date(profile.updatedAt) : null;
     
     if (!lastUpdate) {
-        await db.update(userProfiles).set({ strike: 1, updatedAt: now }).where(eq(userProfiles.userId, userId));
+        await db.update(userProfiles).set({ streak: 1, updatedAt: now }).where(eq(userProfiles.userId, userId));
         return 1;
     }
 
@@ -69,8 +69,8 @@ export async function updateStreak(userId: number) {
 
     if (diffDays === 1) {
         // Increment streak
-        const newStreak = (profile.strike || 0) + 1;
-        await db.update(userProfiles).set({ strike: newStreak, updatedAt: now }).where(eq(userProfiles.userId, userId));
+        const newStreak = (profile.streak || 0) + 1;
+        await db.update(userProfiles).set({ streak: newStreak, updatedAt: now }).where(eq(userProfiles.userId, userId));
         
         // Award daily XP
         await awardXP(userId, 10, "Daily Streak Maintained!");
@@ -83,11 +83,11 @@ export async function updateStreak(userId: number) {
         return newStreak;
     } else if (diffDays > 1) {
         // Reset streak
-        await db.update(userProfiles).set({ strike: 1, updatedAt: now }).where(eq(userProfiles.userId, userId));
+        await db.update(userProfiles).set({ streak: 1, updatedAt: now }).where(eq(userProfiles.userId, userId));
         return 1;
     }
 
-    return profile.strike;
+    return profile.streak;
 }
 
 export async function updateChallengeProgress(userId: number, category: string, amount: number) {

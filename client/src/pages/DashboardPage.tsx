@@ -151,9 +151,30 @@ export default function DashboardPage() {
             </motion.div>
           </div>
           
+          
           <p className="mt-6 text-foreground/30 text-xs font-semibold uppercase tracking-[0.2em] text-center">
             Neural Synchronicity at {sessions?.length ? Math.round((sessions?.filter(s => s.completed === 1).length / sessions.length) * 100) : 0}% Optimization
           </p>
+        </motion.div>
+
+        {/* Top Rank Preview */}
+        <motion.div
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 0.2 }}
+           onClick={() => setLocation("/leaderboard")}
+           className="mt-6 bg-gradient-to-r from-purple-900/40 via-indigo-900/40 to-blue-900/40 border border-purple-500/20 p-8 rounded-[2rem] shadow-2xl flex items-center justify-between cursor-pointer group hover:bg-white/[0.02] transition-colors"
+        >
+            <div>
+                <h3 className="text-2xl font-black mb-2 flex items-center gap-3 text-white">
+                   <Award className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" /> 
+                   Check Global Rankings
+                </h3>
+                <p className="text-foreground/60 font-medium">See how you stack up against the rest of the network and your squads.</p>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-purple-600 transition-colors shadow-lg">
+                <ArrowUpRight className="w-6 h-6 text-white" />
+            </div>
         </motion.div>
       </main>
     </div>

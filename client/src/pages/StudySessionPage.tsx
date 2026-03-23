@@ -5,7 +5,7 @@ import {
   Brain, BookOpen, Lightbulb, MessageSquare, 
   CheckCircle, AlertCircle, Timer, Gamepad2, 
   ArrowLeft, Layout, Sparkles, ChevronRight,
-  FlipCw, Send, Loader2, X, Zap
+  Send, Loader2, X, Zap
 } from "lucide-react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -36,10 +36,14 @@ export default function StudySessionPage() {
   const [method, setMethod] = useState<StudyMethod | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [totalWorkTime, setTotalWorkTime] = useState(0);
+  
+  // Dual Timers
+  const [totalSessionTime, setTotalSessionTime] = useState(0); // Total elapsed work time
+  const [blockTimeLeft, setBlockTimeLeft] = useState(0); // Current phase (work/break)
+  const [targetSessionTime, setTargetSessionTime] = useState(0); // Goal (e.g., 60 mins)
+
   const [currentTopicIdx, setCurrentTopicIdx] = useState(0);
-  const [activeTool, setActiveTool] = useState<"content" | "flashcards" | "quiz" | "notes" | "feynman">("content");
+  const [activeTool, setActiveTool] = useState<"content" | "mindmap" | "flashcards" | "quiz" | "notes" | "feynman">("content");
   const [isCompleted, setIsCompleted] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<Array<{role: 'ai' | 'user', content: string}>>([]);
@@ -57,17 +61,25 @@ export default function StudySessionPage() {
   // Timer logic
   useEffect(() => {
     let interval: any = null;
-    if (isActive && timeLeft > 0) {
+    if (isActive && (blockTimeLeft > 0 || isBreak)) {
       interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-        if (!isBreak && !exceptionTimeLeft) setTotalWorkTime(prev => prev + 1);
+        // Phase timer
+        if (blockTimeLeft > 0) {
+            setBlockTimeLeft((prev) => prev - 1);
+        } else if (isActive && !isBreak) {
+            handlePhaseComplete();
+        }
+
+        // Global session work timer
+        if (!isBreak && !exceptionTimeLeft) {
+            setTotalSessionTime(prev => prev + 1);
+        }
+        
         if (exceptionTimeLeft > 0) setExceptionTimeLeft(prev => prev - 1);
       }, 1000);
-    } else if (timeLeft === 0 && isActive) {
-      handlePhaseComplete();
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, isBreak, exceptionTimeLeft]);
+  }, [isActive, blockTimeLeft, isBreak, exceptionTimeLeft]);
 
   // Focus Lock Logic
   useEffect(() => {
@@ -105,44 +117,46 @@ export default function StudySessionPage() {
 
   const handlePhaseComplete = () => {
     setIsActive(false);
+    const selectedMethod = STUDY_METHODS.find(m => m.id === method);
     if (!isBreak) {
-      toast.success("Focus block complete! Time for a break.");
+      toast.success("Focus block complete! Time for a neural recharge.");
       setIsBreak(true);
-      const selectedMethod = STUDY_METHODS.find(m => m.id === method);
-      setTimeLeft((selectedMethod?.break || 5) * 60);
+      setBlockTimeLeft((selectedMethod?.break || 5) * 60);
       initializeMemoryGame();
       if (method === 'feynman') setActiveTool('feynman');
     } else {
-      toast("Break over. Back to focus mode!", { icon: "🔥" });
+      toast("Break over. Re-initializing Focus Lock...", { icon: "🔥" });
       setIsBreak(false);
-      const selectedMethod = STUDY_METHODS.find(m => m.id === method);
-      setTimeLeft((selectedMethod?.work || 25) * 60);
+      setBlockTimeLeft((selectedMethod?.work || 25) * 60);
+      setIsActive(true);
+      setIsLocked(true);
     }
-    // Auto-resume? Let's keep it manual for user control
   };
 
   const startSession = async (m: any) => {
     setMethod(m.id as StudyMethod);
-    setTimeLeft(m.work * 60);
+    setBlockTimeLeft(m.work * 60);
+    setTargetSessionTime(session?.duration || 60); // Use session duration from DB/Prop
     
-    // Trigger Focus Kicks In Animation
+    // Trigger "Focus Kicking In" Animation
     setIsFocusKickingIn(true);
     
-    // Try Fullscreen
+    // Auto-enter Fullscreen (Strict Focus Lock)
     try {
         if (document.documentElement.requestFullscreen) {
             await document.documentElement.requestFullscreen();
         }
     } catch (err) {
-        console.error("Fullscreen link failed:", err);
+        console.error("Neural link fullscreen failed:", err);
     }
 
+    // Sequence the high-impact intro
     setTimeout(() => {
         setIsFocusKickingIn(false);
         setIsActive(true);
         setIsLocked(true);
-        setChatMessages([{ role: 'ai', content: `Neural link established for ${m.title}. Focus Lock system active. I've prepared your materials. Ready to begin?` }]);
-    }, 4500); // Animation duration
+        setChatMessages([{ role: 'ai', content: `Neural link established for ${m.title}. Focus Lock system active. I've prepared your materials. Welcome to the flow state.` }]);
+    }, 5500); // Extended for visual impact
   };
 
   const handleExceptionSubmit = async (reason: string) => {
@@ -277,34 +291,48 @@ export default function StudySessionPage() {
                 </div>
             </div>
 
-            {/* Timer Display Quick View */}
-            {!isBreak && (
-                <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-                    <div className="flex items-center gap-4">
-                        <div className="text-3xl font-black font-mono tracking-tighter text-purple-400">
-                            {formatTime(timeLeft)}
+            {/* Dual Timer Display */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+                <div className="flex items-center gap-6">
+                    {/* Phase Timer (Focus/Break) */}
+                    <div className="flex flex-col items-center">
+                        <div className={cn("text-3xl font-black font-mono tracking-tighter transition-colors", isBreak ? "text-blue-400" : "text-purple-400")}>
+                            {formatTime(blockTimeLeft)}
                         </div>
-                        <Button 
-                            size="icon" 
-                            variant="ghost" 
-                            className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl"
-                            onClick={() => setIsActive(!isActive)}
-                        >
-                            {isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                        </Button>
+                        <div className="text-[8px] uppercase tracking-[0.2em] font-black text-foreground/20">Phase Time</div>
                     </div>
-                    {isActive && (
-                        <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400 animate-pulse">
-                            <Zap className="w-2.5 h-2.5 fill-emerald-400" /> Focus Mode Active
+
+                    <div className="w-px h-8 bg-white/5" />
+
+                    {/* Total Session Timer */}
+                    <div className="flex flex-col items-center">
+                        <div className="text-xl font-black font-mono tracking-tighter text-foreground/40">
+                            {formatTime(totalSessionTime)}
                         </div>
-                    )}
+                        <div className="text-[8px] uppercase tracking-[0.2em] font-black text-foreground/20">Total Work</div>
+                    </div>
+
+                    <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl ml-2"
+                        onClick={() => setIsActive(!isActive)}
+                    >
+                        {isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    </Button>
                 </div>
-            )}
+                {isActive && !isBreak && (
+                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400 animate-pulse">
+                        <Zap className="w-2.5 h-2.5 fill-emerald-400" /> Neural Lock Engaged
+                    </div>
+                )}
+            </div>
 
             <div className="flex items-center gap-3">
                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 mr-4">
                     {[
                         { id: 'content', icon: BookOpen },
+                        { id: 'mindmap', icon: Brain },
                         { id: 'flashcards', icon: Layout },
                         { id: 'quiz', icon: CheckCircle },
                         { id: 'feynman', icon: Lightbulb },
@@ -407,6 +435,57 @@ export default function StudySessionPage() {
                                         {session?.material?.content || "No material content available for this session. Use the Nex Focus AI to generate a summary."}
                                     </p>
                                 </section>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTool === 'mindmap' && (
+                        <motion.div 
+                            key="mindmap"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="h-full flex flex-col items-center justify-center relative"
+                        >
+                            <div className="text-center mb-12">
+                                <h2 className="text-3xl font-black mb-2 flex items-center justify-center gap-3">
+                                    <Brain className="w-8 h-8 text-purple-400" /> Neural Concept Map
+                                </h2>
+                                <p className="text-foreground/40 font-medium">Visualizing relationships in: {session?.subject}</p>
+                            </div>
+                            
+                            <div className="relative w-full max-w-3xl aspect-[16/9] bg-card/20 backdrop-blur-md border border-white/10 rounded-[3rem] p-8 flex items-center justify-center overflow-hidden">
+                                {/* Connecting lines background */}
+                                <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
+                                    <path d="M 50% 50% L 20% 20% M 50% 50% L 80% 20% M 50% 50% L 20% 80% M 50% 50% L 80% 80%" stroke="currentColor" strokeWidth="2" fill="none" />
+                                </svg>
+                                
+                                {/* Center Node */}
+                                <div className="absolute z-10 p-6 bg-purple-600 rounded-3xl text-white font-black text-xl shadow-[0_0_30px_rgba(168,85,247,0.4)] text-center max-w-[200px] border border-white/20">
+                                    {session?.subject || "Core Topic"}
+                                </div>
+                                
+                                {/* Peripheral Nodes */}
+                                {[
+                                    { top: '15%', left: '15%', title: 'Fundamentals', delay: 0.1 },
+                                    { top: '15%', right: '15%', title: 'Key Theories', delay: 0.2 },
+                                    { bottom: '15%', left: '15%', title: 'Applications', delay: 0.3 },
+                                    { bottom: '15%', right: '15%', title: 'Case Studies', delay: 0.4 }
+                                ].map((node, i) => (
+                                    <motion.button 
+                                        key={i}
+                                        initial={{ opacity: 0, scale: 0 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: node.delay, type: 'spring' }}
+                                        style={{ top: node.top, left: node.left, right: node.right, bottom: node.bottom }}
+                                        className="absolute p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/50 rounded-2xl text-sm font-bold transition-all shadow-xl group max-w-[150px] text-center"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-purple-500 flex items-center justify-center mx-auto mb-2 text-xs transition-colors">
+                                            {i + 1}
+                                        </div>
+                                        {node.title}
+                                    </motion.button>
+                                ))}
                             </div>
                         </motion.div>
                     )}
@@ -556,10 +635,10 @@ export default function StudySessionPage() {
                         />
                         <button 
                             onClick={handleSendMessage}
-                            disabled={chatMutation.isLoading}
+                            disabled={chatMutation.isPending}
                             className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-purple-500/20 active:scale-95 transition-transform disabled:opacity-50"
                         >
-                            {chatMutation.isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                            {chatMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                         </button>
                     </div>
                 </div>
@@ -580,7 +659,7 @@ export default function StudySessionPage() {
                     </div>
                     <div className="relative z-10 w-full max-w-4xl">
                         <div className="text-8xl font-black font-mono tracking-tighter text-blue-400 mb-8 animate-[pulse_2s_infinite]">
-                            {formatTime(timeLeft)}
+                            {formatTime(blockTimeLeft)}
                         </div>
                         <h2 className="text-4xl font-extrabold mb-4 tracking-tight">Refueling Neural Network</h2>
                         <p className="text-foreground/40 text-lg mb-12">Break is active. Let's recharge with a quick cognition challenge.</p>
@@ -614,7 +693,7 @@ export default function StudySessionPage() {
                             </div>
                         </div>
 
-                        <Button onClick={() => setTimeLeft(0)} variant="outline" className="border-white/5 text-foreground/30 hover:text-foreground">
+                        <Button onClick={() => setBlockTimeLeft(0)} variant="outline" className="border-white/5 text-foreground/30 hover:text-foreground">
                             Skip Break
                         </Button>
                     </div>
@@ -644,7 +723,7 @@ export default function StudySessionPage() {
                         <div className="grid grid-cols-2 gap-4 mb-8">
                             <div className="p-6 bg-white/5 rounded-2xl border border-white/5">
                                 <div className="text-3xl font-black text-purple-400">
-                                    +{Math.max(0, (Math.round(totalWorkTime / 60) * 10) - (distractions * 15))}
+                                    +{Math.max(0, (Math.round(totalSessionTime / 60) * 10) - (distractions * 15))}
                                 </div>
                                 <div className="text-[10px] uppercase tracking-widest font-black text-foreground/20">XP Gained</div>
                             </div>
@@ -740,8 +819,15 @@ export default function StudySessionPage() {
                     <motion.div 
                         initial={{ top: "-10%" }}
                         animate={{ top: "110%" }}
-                        transition={{ duration: 2.5, ease: "linear", repeat: 1 }}
-                        className="absolute left-0 w-full h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_20px_purple]"
+                        transition={{ duration: 2.0, ease: "easeInOut", repeat: 2 }}
+                        className="absolute left-0 w-full h-2 bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_30px_rgba(168,85,247,0.8)] z-20"
+                    />
+
+                    {/* Glitch Overlay */}
+                    <motion.div 
+                        animate={{ opacity: [0, 0.2, 0, 0.1, 0] }}
+                        transition={{ duration: 0.5, repeat: Infinity }}
+                        className="absolute inset-0 bg-purple-500/5 mix-blend-overlay pointer-events-none"
                     />
                 </motion.div>
             )}
@@ -784,14 +870,14 @@ export default function StudySessionPage() {
                                 placeholder="Why do you need to break focus?"
                             />
                             <Button 
-                                disabled={chatMutation.isLoading}
+                                disabled={chatMutation.isPending}
                                 className="w-full h-14 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-lg shadow-amber-500/20"
                                 onClick={() => {
                                     const val = (document.getElementById('exception-reason') as HTMLTextAreaElement).value;
                                     handleExceptionSubmit(val);
                                 }}
                             >
-                                {chatMutation.isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit Request"}
+                                {chatMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit Request"}
                             </Button>
                         </div>
                     </motion.div>

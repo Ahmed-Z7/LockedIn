@@ -13,7 +13,8 @@ import {
   challenges, studySchedules, userActivities, userChallenges, userProfiles, users, InsertUserProfile, 
   userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials,
   directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts, 
-  studyGroupTasks, studyGroupMessages, studyGroupMaterials
+  studyGroupTasks, studyGroupMessages, studyGroupMaterials,
+  notifications, userSettings
 } from "../drizzle/schema";
 
 export const appRouter = router({
@@ -173,13 +174,15 @@ export const appRouter = router({
         completed: z.number().optional(),
         distractions: z.number().optional(),
         isLocked: z.boolean().optional(),
+        subject: z.string().optional(),
+        duration: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const { sessionId, completed } = input;
+        const { sessionId, completed, subject, duration } = input;
         const [session] = await db.select().from(studySchedules).where(eq(studySchedules.id, sessionId));
         if (!session || session.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
 
-        await db.update(studySchedules).set({ completed }).where(eq(studySchedules.id, sessionId));
+        await db.update(studySchedules).set({ completed, subject, duration }).where(eq(studySchedules.id, sessionId));
 
         if (input.completed === 1) {
             let bonusXp = 0;
@@ -264,6 +267,32 @@ export const appRouter = router({
       .input(z.object({ notificationId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await dbHelpers.markNotificationAsRead(ctx.user.id, input.notificationId);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ notificationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.delete(notifications).where(and(eq(notifications.id, input.notificationId), eq(notifications.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    getSettings: protectedProcedure.query(async ({ ctx }) => {
+        const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id));
+        return settings;
+    }),
+    updateSettings: protectedProcedure
+      .input(z.object({
+        achievementNotifications: z.number().optional(),
+        socialNotifications: z.number().optional(),
+        messageNotifications: z.number().optional(),
+        weeklyDigest: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const [existing] = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id));
+        if (!existing) {
+            await db.insert(userSettings).values({ userId: ctx.user.id, ...input });
+        } else {
+            await db.update(userSettings).set(input).where(eq(userSettings.userId, ctx.user.id));
+        }
         return { success: true };
       }),
   }),
@@ -762,6 +791,84 @@ export const appRouter = router({
           content: input.content,
         });
         return { success: true };
+      }),
+  }),
+
+  // Leaderboards
+  leaderboards: router({
+    getGlobal: publicProcedure.query(async () => {
+      return await db.select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        avatar: userProfiles.profilePhoto,
+        xp: userProfiles.xp,
+        level: userProfiles.level,
+      })
+      .from(userProfiles)
+      .innerJoin(users, eq(userProfiles.userId, users.id))
+      .orderBy(desc(userProfiles.xp))
+      .limit(50);
+    }),
+
+    getSameLevel: protectedProcedure.query(async ({ ctx }) => {
+      // First, get the user's level
+      const [profile] = await db.select({ level: userProfiles.level }).from(userProfiles).where(eq(userProfiles.userId, ctx.user.id));
+      const userLevel = profile?.level || 1;
+
+      return await db.select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        avatar: userProfiles.profilePhoto,
+        xp: userProfiles.xp,
+        level: userProfiles.level,
+      })
+      .from(userProfiles)
+      .innerJoin(users, eq(userProfiles.userId, users.id))
+      .where(eq(userProfiles.level, userLevel))
+      .orderBy(desc(userProfiles.xp))
+      .limit(50);
+    }),
+
+    getSquads: publicProcedure.query(async () => {
+      const result = await db.select({
+        id: studyGroups.id,
+        name: studyGroups.name,
+        avatar: studyGroups.avatar,
+        totalXp: sql<number>`sum(${userProfiles.xp})`.as('totalXp'),
+        memberCount: sql<number>`count(${studyGroupMembers.id})`.as('memberCount'),
+      })
+      .from(studyGroups)
+      .leftJoin(studyGroupMembers, and(eq(studyGroups.id, studyGroupMembers.groupId), eq(studyGroupMembers.status, "approved")))
+      .leftJoin(userProfiles, eq(studyGroupMembers.userId, userProfiles.userId))
+      .groupBy(studyGroups.id)
+      .orderBy(desc(sql`totalXp`))
+      .limit(50);
+
+      return result.map(g => ({ ...g, totalXp: Number(g.totalXp) || 0 }));
+    }),
+
+    getGroupMembers: publicProcedure
+      .input(z.number())
+      .query(async ({ input }) => {
+        return await db.select({
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          avatar: userProfiles.profilePhoto,
+          xp: userProfiles.xp,
+          level: userProfiles.level,
+          role: studyGroupMembers.role,
+        })
+        .from(studyGroupMembers)
+        .innerJoin(users, eq(studyGroupMembers.userId, users.id))
+        .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+        .where(and(
+          eq(studyGroupMembers.groupId, input),
+          eq(studyGroupMembers.status, "approved")
+        ))
+        .orderBy(desc(userProfiles.xp));
       }),
   }),
 });

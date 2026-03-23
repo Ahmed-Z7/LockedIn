@@ -199,7 +199,7 @@ export default function ProfilePage() {
                     </span>
                   </div>
                 </div>
-                <p className="text-white/40 font-medium mb-6 text-sm">{profile?.email}</p>
+                <p className="text-white/40 font-medium mb-6 text-sm">{(profile as any)?.email}</p>
                 
                 {isEditing ? (
                   <div className="flex flex-col gap-4 max-w-md">
