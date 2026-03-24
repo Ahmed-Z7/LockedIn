@@ -4,7 +4,7 @@ import {
   Calendar, Clock, CheckCircle2, Circle, 
   Bot, Send, Sparkles, ChevronRight, 
   AlertTriangle, RotateCcw, Play, Plus,
-  Loader2
+  Loader2, Map
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -146,13 +146,22 @@ export default function SchedulePage() {
                 <h1 className="text-4xl font-black tracking-tighter text-white">Neural Timeline</h1>
                 <p className="text-white/40 text-sm font-medium">Synchronizing your biological rhythm with data.</p>
               </div>
-              <Button 
-                  onClick={() => setLocation('/start-learning')}
-                  className="bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl h-12 px-6 gap-2 group transition-all"
-              >
-                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-                Initialize New Path
-              </Button>
+              <div className="flex gap-4">
+                <Button 
+                    onClick={() => setLocation('/gamification-levels')}
+                    className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-2xl h-12 px-6 gap-2 group transition-all"
+                >
+                  <Map className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  View Progress Map
+                </Button>
+                <Button 
+                    onClick={() => setLocation('/start-learning')}
+                    className="bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl h-12 px-6 gap-2 group transition-all"
+                >
+                  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                  Initialize New Path
+                </Button>
+              </div>
             </div>
 
             <div className="relative pl-8 space-y-6">

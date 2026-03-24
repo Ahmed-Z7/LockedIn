@@ -18,7 +18,7 @@ export default function StartLearningPage() {
     const savePlanMutation = trpc.study.savePlan.useMutation({
         onSuccess: () => {
             toast.success("Study plan generated successfully!");
-            setLocation('/schedule');
+            setLocation('/gamification-levels');
         }
     });
 

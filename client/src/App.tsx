@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { DMChatProvider } from "./components/DMChat";
 import Home from "./pages/Home";
 import DashboardPage from "./pages/DashboardPage";
 import AICoachPage from "./pages/AICoachPage";
@@ -22,6 +23,7 @@ import StartLearningPage from "./pages/StartLearningPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import StudySessionPage from "./pages/StudySessionPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
+import GamificationLevelsPage from "./pages/GamificationLevelsPage";
 
 function Router() {
   return (
@@ -47,6 +49,7 @@ function Router() {
       <Route path="/start-learning" component={StartLearningPage} />
       <Route path="/analytics" component={AnalyticsPage} />
       <Route path="/leaderboard" component={LeaderboardPage} />
+      <Route path="/gamification-levels" component={GamificationLevelsPage} />
       <Route path="/study-session/:id" component={StudySessionPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
@@ -59,8 +62,10 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
-          <Toaster />
-          <Router />
+          <DMChatProvider>
+            <Toaster />
+            <Router />
+          </DMChatProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

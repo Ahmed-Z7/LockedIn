@@ -29,8 +29,29 @@ export default function ChallengesPage() {
   const profile = profileQuery.data?.profile;
 
   const filteredChallenges = useMemo(() => {
-    if (activeCategory === 'all') return challenges;
-    return challenges.filter(c => c.category === activeCategory);
+    let filtered = challenges;
+    if (activeCategory !== 'all') {
+      filtered = challenges.filter(c => c.category === activeCategory);
+    }
+    
+    // Sort logic: 
+    // 1. In progress (progress > 0 && completed === 0) -> top
+    // 2. Not started (progress === 0 && completed === 0) -> middle
+    // 3. Completed (completed === 1) -> bottom
+    return [...filtered].sort((a, b) => {
+      const aIsCompleted = (a.completed || 0) === 1;
+      const bIsCompleted = (b.completed || 0) === 1;
+      const aIsInProgress = !aIsCompleted && (a.currentProgress || 0) > 0;
+      const bIsInProgress = !bIsCompleted && (b.currentProgress || 0) > 0;
+      
+      if (aIsCompleted && !bIsCompleted) return 1;
+      if (!aIsCompleted && bIsCompleted) return -1;
+      
+      if (aIsInProgress && !bIsInProgress) return -1;
+      if (!aIsInProgress && bIsInProgress) return 1;
+      
+      return 0;
+    });
   }, [challenges, activeCategory]);
 
   const stats = useMemo(() => {
@@ -155,16 +176,23 @@ export default function ChallengesPage() {
               const target = challenge.targetValue || 1;
               const progressPercent = Math.min(100, Math.round((progressRaw / target) * 100));
               const isCompleted = (challenge.completed || 0) === 1;
+              const isInProgress = !isCompleted && progressRaw > 0;
+              const isNotStarted = !isCompleted && progressRaw === 0;
 
               return (
                 <motion.div key={challenge.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                   className={cn(
                     "relative group bg-card/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10 overflow-hidden",
-                    isCompleted && "border-cyan-500/30 shadow-cyan-500/5 bg-cyan-500/[0.02]"
+                    isCompleted && "border-cyan-500/30 shadow-cyan-500/5 bg-cyan-500/[0.05] shadow-[0_0_20px_rgba(6,182,212,0.15)]",
+                    isInProgress && "border-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.15)] bg-purple-500/[0.02]",
+                    isNotStarted && "opacity-50 hover:opacity-100 grayscale hover:grayscale-0"
                   )}>
                   
                   {/* Category Accent */}
-                  <div className={cn("absolute inset-0 bg-gradient-to-br transition-opacity duration-700 opacity-0 group-hover:opacity-100 pointer-events-none", meta.gradient)} />
+                  <div className={cn("absolute inset-0 bg-gradient-to-br transition-opacity duration-700 pointer-events-none",
+                    isNotStarted ? "opacity-0 group-hover:opacity-100" : "opacity-50",
+                    meta.gradient
+                  )} />
 
                   <div className="relative z-10">
                     <div className="flex items-start justify-between mb-8">

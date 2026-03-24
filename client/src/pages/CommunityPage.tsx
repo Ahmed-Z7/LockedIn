@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation, useParams } from 'wouter';
+import { useDMChat } from '@/components/DMChat';
 import { 
   Hash, Users, MessageSquare, Search, Plus, 
   Settings, ChevronRight, Send, Heart, MessageCircle,
@@ -65,6 +66,7 @@ const GroupCard = ({ name, description, role, memberCount, onClick }: { name: st
 export default function CommunityPage() {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
+  const { openChatWithUser } = useDMChat();
   const params = useParams();
   
   // Navigation State
@@ -81,6 +83,7 @@ export default function CommunityPage() {
   // Search Logic
   const [searchQuery, setSearchQuery] = useState('');
   const userSearch = trpc.social.searchUsers.useQuery(searchQuery, { enabled: searchQuery.length > 2 });
+  const groupSearch = trpc.groups.search.useQuery(searchQuery, { enabled: searchQuery.length > 2 });
 
   // Modals
   const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -209,22 +212,57 @@ export default function CommunityPage() {
             
             {/* 1. SEARCH RESULTS */}
             {activeTab === 'search' && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-4xl mx-auto space-y-6">
-                 <h2 className="text-3xl font-bold mb-8">Search Results for "{searchQuery}"</h2>
-                 {userSearch.data?.map(u => (
-                    <div key={u.id} className="p-6 rounded-3xl bg-card/30 border border-white/5 flex items-center justify-between hover:border-purple-500/30 transition-all">
-                       <div className="flex items-center gap-4">
-                          <Avatar className="w-12 h-12">
-                             <AvatarFallback>{u.username?.[0] || '?'}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                             <h4 className="font-bold">{u.name || 'Anonymous'}</h4>
-                             <p className="text-sm text-white/40">@{u.username || 'unknown'}</p>
-                          </div>
-                       </div>
-                       <Button onClick={() => setLocation(`/profile/${u.id}`)} variant="outline" className="rounded-xl">View Profile</Button>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-4xl mx-auto space-y-12">
+                 <div className="space-y-6">
+                    <h2 className="text-3xl font-black tracking-tighter italic">PEOPLE SEARCH <span className="text-purple-500">_</span> "{searchQuery}"</h2>
+                    {userSearch.data?.map(u => (
+                        <div key={u.id} className="p-6 rounded-3xl bg-card/30 border border-white/5 flex items-center justify-between hover:border-purple-500/30 transition-all group">
+                           <div className="flex items-center gap-4">
+                              <Avatar className="w-14 h-14 border-2 border-white/5 group-hover:border-purple-500/50 transition-colors">
+                                 <AvatarImage src={u.avatar || undefined} />
+                                 <AvatarFallback>{u.username?.[0] || '?'}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                 <h4 className="font-bold flex items-center gap-2 text-xl">
+                                   {u.name || 'Anonymous'}
+                                   <span className="px-3 py-1 rounded-full bg-purple-500/10 text-[10px] text-purple-400 border border-purple-500/20 font-black uppercase">Lv. {u.level || 1}</span>
+                                 </h4>
+                                 <p className="text-sm text-white/40">@{u.username || 'unknown'} • {u.xp?.toLocaleString() || 0} XP earned</p>
+                              </div>
+                           </div>
+                           <div className="flex gap-2">
+                             <Button 
+                               onClick={() => openChatWithUser(u.id, u.name || u.username || 'User', u.avatar)}
+                               className="bg-purple-600 hover:bg-purple-500 rounded-2xl h-12 px-6 font-bold"
+                             >
+                               <MessageSquare className="mr-2" size={18} /> Message
+                             </Button>
+                             <Button onClick={() => setLocation(`/profile/${u.id}`)} variant="outline" className="rounded-2xl h-12 px-6 border-white/10 hover:bg-white/5">View Profile</Button>
+                           </div>
+                        </div>
+                    ))}
+                    {userSearch.data?.length === 0 && searchQuery.length > 2 && !userSearch.isLoading && (
+                        <div className="text-white/20 font-bold uppercase tracking-widest text-center py-6 border border-dashed border-white/5 rounded-3xl">No users match your criteria.</div>
+                    )}
+                 </div>
+
+                 <div className="space-y-6">
+                    <h2 className="text-3xl font-black tracking-tighter italic">GROUP SEARCH <span className="text-blue-500">_</span> "{searchQuery}"</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {groupSearch.data?.map(g => (
+                            <GroupCard 
+                                key={g.id}
+                                name={g.name}
+                                description={g.description}
+                                memberCount={g.memberCount}
+                                onClick={() => { setSelectedGroupId(g.id); setLocation(`/groups/${g.id}`); }}
+                            />
+                        ))}
                     </div>
-                 ))}
+                    {groupSearch.data?.length === 0 && searchQuery.length > 2 && !groupSearch.isLoading && (
+                        <div className="text-white/20 font-bold uppercase tracking-widest text-center py-12 border border-dashed border-white/5 rounded-3xl">No collectives found in this sector.</div>
+                    )}
+                 </div>
               </motion.div>
             )}
 

@@ -4,8 +4,7 @@ import {
   Clock, Play, Pause, RotateCcw, SkipForward, 
   Brain, BookOpen, Lightbulb, MessageSquare, 
   CheckCircle, AlertCircle, Timer, Gamepad2, 
-  ArrowLeft, Layout, Sparkles, ChevronRight,
-  Send, Loader2, X, Zap
+  Send, Loader2, X, Zap, Map
 } from "lucide-react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -13,6 +12,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { QuizValidation } from "@/components/QuizValidation";
+import { OctopusCelebration } from "@/components/OctopusCelebration";
 
 type StudyMethod = "pomodoro" | "52/17" | "feynman" | "spaced" | "custom";
 
@@ -30,7 +31,10 @@ export default function StudySessionPage() {
 
   // Data
   const { data: session, isLoading } = trpc.study.getSession.useQuery({ sessionId }, { enabled: !!sessionId && isAuthenticated });
+  const { data: fullSchedule } = trpc.study.getSchedule.useQuery(undefined, { enabled: isAuthenticated });
   const updateStatus = trpc.study.updateSession.useMutation();
+
+  const [showCelebration, setShowCelebration] = useState(false);
 
   // State
   const [method, setMethod] = useState<StudyMethod | null>(null);
@@ -56,7 +60,14 @@ export default function StudySessionPage() {
   const [isExceptionAsking, setIsExceptionAsking] = useState(false);
   const [exceptionTimeLeft, setExceptionTimeLeft] = useState(0);
   
+  // Quiz & Validation State
+  const [isQuizActive, setIsQuizActive] = useState(false);
+  const [quizData, setQuizData] = useState<any[]>([]);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+  const [showStartCelebration, setShowStartCelebration] = useState(false);
+  
   const chatMutation = trpc.aiCoach.chat.useMutation();
+  const generateQuizMutation = trpc.aiCoach.generateQuiz.useMutation();
   
   // Timer logic
   useEffect(() => {
@@ -153,9 +164,15 @@ export default function StudySessionPage() {
     // Sequence the high-impact intro
     setTimeout(() => {
         setIsFocusKickingIn(false);
-        setIsActive(true);
-        setIsLocked(true);
-        setChatMessages([{ role: 'ai', content: `Neural link established for ${m.title}. Focus Lock system active. I've prepared your materials. Welcome to the flow state.` }]);
+        setShowStartCelebration(true); // TRIGGER OCTOPUS START CELEBRATION
+        
+        // Let octopus stay for 4 seconds, then start session
+        setTimeout(() => {
+            setShowStartCelebration(false);
+            setIsActive(true);
+            setIsLocked(true);
+            setChatMessages([{ role: 'ai', content: `Neural link established for ${m.title}. Focus Lock system active. I've prepared your materials. Welcome to the flow state.` }]);
+        }, 4000);
     }, 5500); // Extended for visual impact
   };
 
@@ -175,6 +192,58 @@ export default function StudySessionPage() {
     } catch (e) {
         toast.error("Telemetry link unstable. Reverting to lock.");
     }
+  };
+
+  const initiateQuiz = async () => {
+    setIsGeneratingQuiz(true);
+    setIsQuizActive(true);
+    try {
+      const res = await generateQuizMutation.mutateAsync({
+        sessionId,
+        content: session?.material?.content || "No content provided."
+      });
+      if (res.quiz && res.quiz.length > 0) {
+        setQuizData(res.quiz);
+      } else {
+        toast.error("AI quiz generation failed. Bypassing check.");
+        completeSession(100);
+      }
+    } catch (err) {
+      toast.error("Neural link error during quiz synthesis.");
+      completeSession(100);
+    } finally {
+      setIsGeneratingQuiz(false);
+    }
+  };
+
+  const completeSession = (finalScore: number) => {
+    setIsQuizActive(false);
+    setIsLocked(false);
+    if (document.exitFullscreen) {
+        try { document.exitFullscreen(); } catch(e) {}
+    }
+    
+    // Check for level completion
+    if (fullSchedule && session) {
+        const perLevel = Math.ceil(fullSchedule.length / 10);
+        const idx = fullSchedule.findIndex(s => s.id === sessionId);
+        const levelIdx = Math.floor(idx / perLevel);
+        const levelSessions = fullSchedule.slice(levelIdx * perLevel, Math.min((levelIdx + 1) * perLevel, fullSchedule.length));
+        
+        const otherSessionsDone = levelSessions.filter(s => s.id !== sessionId).every(s => s.completed === 1);
+        if (otherSessionsDone) {
+            setShowCelebration(true);
+        }
+    }
+
+    updateStatus.mutate({ 
+      sessionId, 
+      completed: 1,
+      distractions: distractions,
+      isLocked: isLocked 
+    });
+    setIsCompleted(true);
+    toast.success("Session synchronized with network.");
   };
 
   const formatTime = (seconds: number) => {
@@ -289,6 +358,15 @@ export default function StudySessionPage() {
                         {isBreak ? "Refueling Circuit" : "Neural Focus Active"}
                     </div>
                 </div>
+                <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="ml-4 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-xl px-4 gap-2 h-9"
+                    onClick={() => window.open('/gamification-levels', '_blank')}
+                >
+                    <Map className="w-4 h-4" />
+                    <span className="text-xs font-bold">Neural Map</span>
+                </Button>
             </div>
 
             {/* Dual Timer Display */}
@@ -353,23 +431,60 @@ export default function StudySessionPage() {
                 <Button 
                     variant="outline" 
                     className="border-white/5 bg-white/5 hover:bg-white/10 rounded-xl px-6 text-xs font-bold"
-                    onClick={() => {
-                        setIsLocked(false);
-                        if (document.exitFullscreen) document.exitFullscreen();
-                        updateStatus.mutate({ 
-                          sessionId, 
-                          completed: 1,
-                          distractions: distractions,
-                          isLocked: isLocked 
-                        });
-                        setIsCompleted(true);
-                        toast.success("Session synchronized with network.");
-                    }}
+                    onClick={initiateQuiz}
                 >
                     End Session
                 </Button>
             </div>
         </header>
+
+        {/* Quiz & Validation Overlay */}
+        <AnimatePresence>
+            {isQuizActive && (
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-3xl overflow-y-auto pt-20"
+                >
+                    {isGeneratingQuiz ? (
+                        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+                            <div className="w-24 h-24 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-8" />
+                            <h2 className="text-3xl font-black text-white mb-2 tracking-tighter italic uppercase">Analyzing Concepts</h2>
+                            <p className="text-zinc-500 max-w-sm font-medium">
+                                LOCKEDIN AI is scanning your study material to generate critical validation questions...
+                            </p>
+                        </div>
+                    ) : (
+                        <QuizValidation 
+                            quiz={quizData}
+                            subject={session?.subject || "Subject"}
+                            onComplete={(score) => completeSession(score)}
+                            onRetry={() => {
+                                setIsQuizActive(false);
+                                toast.info("Locking session back in. Review material well.");
+                            }}
+                        />
+                    )}
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* Start Celebration */}
+        <OctopusCelebration 
+            show={showStartCelebration} 
+            title="SESSION INITIATED!"
+            subtitle="The Octopus is ready. Synchronizing neural pathways for maximum focus."
+        />
+
+        {/* Level Completion Celebration Overlay */}
+        <OctopusCelebration 
+            show={showCelebration}
+            onClose={() => setShowCelebration(false)}
+            title="LEVEL COMPLETE!"
+            subtitle="The Octopus is impressed. Your mastery over this concept is complete."
+            buttonText="CONTINUE ASCENSION"
+        />
 
         {/* Focus Mode Indicator */}
         {isLocked && !isBreak && !exceptionTimeLeft && (

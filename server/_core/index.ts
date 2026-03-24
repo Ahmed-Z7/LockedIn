@@ -7,7 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { seed as seedChallenges } from "../scripts/seedChallenges";
+import { seedAll } from "../scripts/seedData";
 import { db } from "../db";
 import { challenges } from "../../drizzle/schema";
 import { sql } from "drizzle-orm";
@@ -65,15 +65,13 @@ async function startServer() {
     console.log(`Server running on http://localhost:${port}/`);
   });
 
-  // Auto-seed challenges if table is empty
+  // Auto-seed challenges, users, and groups safely
   try {
-    const result = await db.select({ count: sql<number>`count(*)` }).from(challenges);
-    if (result[0].count === 0) {
-      console.log("No challenges found in database. Running auto-seed...");
-      await seedChallenges();
+    if (db) {
+       await seedAll(db);
     }
   } catch (err) {
-    console.error("Failed to check/seed challenges:", err);
+    console.error("Failed to seed data:", err);
   }
 }
 

@@ -16,6 +16,7 @@ import {
   studyGroupTasks, studyGroupMessages, studyGroupMaterials,
   notifications, userSettings
 } from "../drizzle/schema";
+import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
 
 export const appRouter = router({
   system: systemRouter,
@@ -77,13 +78,6 @@ export const appRouter = router({
     getChallenges: protectedProcedure
       .query(async ({ ctx }) => {
         try {
-          // Safety: Auto-seed if empty
-          const countRes = await db.select({ count: sql<number>`count(*)` }).from(challenges);
-          if (countRes[0].count === 0) {
-            const { seed } = await import("./scripts/seedChallenges");
-            await seed();
-          }
-
           const userChallengesList = await db.select({
               id: challenges.id,
               title: challenges.title,
@@ -98,14 +92,15 @@ export const appRouter = router({
           .from(challenges)
           .leftJoin(userChallenges, and(eq(userChallenges.challengeId, challenges.id), eq(userChallenges.userId, ctx.user.id)));
           
+          if (userChallengesList.length === 0) {
+            console.log("[Router] DB returned 0 challenges, falling back to MOCK_CHALLENGES");
+            return MOCK_CHALLENGES;
+          }
+
           return userChallengesList;
         } catch (err: any) {
-          // Mock data for UI demonstration
-          return [
-            { id: 1, title: "Study Marathon Lvl 1", description: "Log 1 hour of study.", category: "study_time", targetValue: 60, currentProgress: 30, completed: 0, difficulty: "easy", rewardXp: 100 },
-            { id: 2, title: "Persistence Lvl 1", description: "3-day streak.", category: "streak", targetValue: 3, currentProgress: 2, completed: 0, difficulty: "easy", rewardXp: 150 },
-            { id: 41, title: "Early Bird Mastery", description: "10 morning sessions.", category: "consistency", targetValue: 10, currentProgress: 5, completed: 0, difficulty: "medium", rewardXp: 500 },
-          ];
+          console.error("Error fetching challenges:", err);
+          return MOCK_CHALLENGES;
         }
       }),
   }),
@@ -253,6 +248,45 @@ export const appRouter = router({
     getHistory: protectedProcedure.query(async ({ ctx }) => {
       return await dbHelpers.getUserAIChatHistory(ctx.user.id);
     }),
+    generateQuiz: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        content: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const prompt = `You are a strict AI Knowledge Validator. Based on the following study content, generate exactly 5 high-quality multiple-choice questions.
+          For each question, provide:
+          1. The question text.
+          2. 4 options.
+          3. The correct answer (must match one of the options).
+          4. A brief "weakness context" to show if someone gets this wrong.
+
+          Format your response as a JSON array of objects with the following schema:
+          [{ "question": "...", "options": ["...", "...", "...", "..."], "answer": "...", "type": "MULTIPLE CHOICE", "weakness": "..." }]
+
+          CONTENT:
+          ${input.content.substring(0, 4000)}
+          `;
+
+          const { invokeLLM } = await import("./_core/llm");
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: "You are a professional educational assessment AI." },
+              { role: "user", content: prompt },
+            ],
+          });
+
+          const rawContent = response.choices[0]?.message?.content || "[]";
+          const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+          const quiz = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
+
+          return { quiz };
+        } catch (error) {
+          console.error("Quiz generation failed:", error);
+          return { quiz: [], error: "Failed to generate quiz." };
+        }
+      }),
   }),
 
   // Notifications
@@ -488,25 +522,37 @@ export const appRouter = router({
   social: router({
     searchUsers: protectedProcedure
       .input(z.string())
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
         try {
           if (!input.trim()) return [];
-          return await db.select({
+          const usersList = await db.select({
             id: users.id,
             name: users.name,
             username: users.username,
+            avatar: userProfiles.profilePhoto,
+            xp: userProfiles.xp,
+            level: userProfiles.level,
           })
           .from(users)
-          .where(like(users.username, `${input}%`))
+          .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+          .where(and(
+            or(like(users.username, `%${input}%`), like(users.name, `%${input}%`)), 
+            not(eq(users.id, ctx.user.id))
+          ))
           .limit(20);
-        } catch (err: any) {
-          if (input.toLowerCase().startsWith('a')) {
-              return [
-                { id: 99, name: "Ahmed", username: "ahmed_dev" },
-                { id: 100, name: "Alice", username: "alice_wonder" }
-              ];
+
+          if (usersList.length === 0) {
+            return MOCK_USERS.filter(u => 
+              u.username.toLowerCase().includes(input.toLowerCase()) || 
+              u.name.toLowerCase().includes(input.toLowerCase())
+            );
           }
-          return [];
+          return usersList;
+        } catch (err: any) {
+          return MOCK_USERS.filter(u => 
+            u.username.toLowerCase().includes(input.toLowerCase()) || 
+            u.name.toLowerCase().includes(input.toLowerCase())
+          );
         }
       }),
     
@@ -617,6 +663,30 @@ export const appRouter = router({
         });
         
         return { groupId };
+      }),
+
+    search: protectedProcedure
+      .input(z.string())
+      .query(async ({ input }) => {
+        try {
+          if (!input.trim()) return [];
+          const list = await db.select({
+            id: studyGroups.id,
+            name: studyGroups.name,
+            description: studyGroups.description,
+            memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
+          })
+          .from(studyGroups)
+          .where(like(studyGroups.name, `%${input}%`))
+          .limit(20);
+
+          if (list.length === 0) {
+             return MOCK_GROUPS.filter(g => g.name.toLowerCase().includes(input.toLowerCase()));
+          }
+          return list;
+        } catch (err) {
+          return MOCK_GROUPS.filter(g => g.name.toLowerCase().includes(input.toLowerCase()));
+        }
       }),
 
     listMyGroups: protectedProcedure.query(async ({ ctx }) => {
@@ -797,18 +867,25 @@ export const appRouter = router({
   // Leaderboards
   leaderboards: router({
     getGlobal: publicProcedure.query(async () => {
-      return await db.select({
-        id: users.id,
-        name: users.name,
-        username: users.username,
-        avatar: userProfiles.profilePhoto,
-        xp: userProfiles.xp,
-        level: userProfiles.level,
-      })
-      .from(userProfiles)
-      .innerJoin(users, eq(userProfiles.userId, users.id))
-      .orderBy(desc(userProfiles.xp))
-      .limit(50);
+      try {
+        const usersList = await db.select({
+          id: users.id,
+          name: users.name,
+          username: users.username,
+          avatar: userProfiles.profilePhoto,
+          xp: userProfiles.xp,
+          level: userProfiles.level,
+        })
+        .from(userProfiles)
+        .innerJoin(users, eq(userProfiles.userId, users.id))
+        .orderBy(desc(userProfiles.xp))
+        .limit(50);
+
+        if (usersList.length === 0) return MOCK_USERS;
+        return usersList;
+      } catch (err) {
+        return MOCK_USERS;
+      }
     }),
 
     getSameLevel: protectedProcedure.query(async ({ ctx }) => {
@@ -832,21 +909,26 @@ export const appRouter = router({
     }),
 
     getSquads: publicProcedure.query(async () => {
-      const result = await db.select({
-        id: studyGroups.id,
-        name: studyGroups.name,
-        avatar: studyGroups.avatar,
-        totalXp: sql<number>`sum(${userProfiles.xp})`.as('totalXp'),
-        memberCount: sql<number>`count(${studyGroupMembers.id})`.as('memberCount'),
-      })
-      .from(studyGroups)
-      .leftJoin(studyGroupMembers, and(eq(studyGroups.id, studyGroupMembers.groupId), eq(studyGroupMembers.status, "approved")))
-      .leftJoin(userProfiles, eq(studyGroupMembers.userId, userProfiles.userId))
-      .groupBy(studyGroups.id)
-      .orderBy(desc(sql`totalXp`))
-      .limit(50);
+      try {
+        const result = await db.select({
+          id: studyGroups.id,
+          name: studyGroups.name,
+          avatar: studyGroups.avatar,
+          totalXp: sql<number>`sum(${userProfiles.xp})`.as('totalXp'),
+          memberCount: sql<number>`count(${studyGroupMembers.id})`.as('memberCount'),
+        })
+        .from(studyGroups)
+        .leftJoin(studyGroupMembers, and(eq(studyGroups.id, studyGroupMembers.groupId), eq(studyGroupMembers.status, "approved")))
+        .leftJoin(userProfiles, eq(studyGroupMembers.userId, userProfiles.userId))
+        .groupBy(studyGroups.id)
+        .orderBy(desc(sql`totalXp`))
+        .limit(50);
 
-      return result.map(g => ({ ...g, totalXp: Number(g.totalXp) || 0 }));
+        if (result.length === 0) return MOCK_GROUPS;
+        return result.map(g => ({ ...g, totalXp: Number(g.totalXp) || 0 }));
+      } catch (err) {
+        return MOCK_GROUPS;
+      }
     }),
 
     getGroupMembers: publicProcedure
