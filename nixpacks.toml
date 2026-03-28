@@ -1,8 +1,11 @@
 [phases.install]
+# هنثبت المكتبات من المكان اللي فيه الـ package.json
 cmds = ["pnpm install --no-frozen-lockfile"]
 
 [phases.build]
-cmds = ["pnpm build"]
+# هندخل جوه فولدر السيرفر ونعمل Build
+cmds = ["cd server && pnpm build"]
 
 [start]
-cmd = "node dist/index.js"
+# هنقوم السيرفر من المسار اللي نتج عن الـ build
+cmd = "node server/dist/index.js"
