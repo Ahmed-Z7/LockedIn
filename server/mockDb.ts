@@ -63,9 +63,9 @@ export const MOCK_USERS = [
 ];
 
 export const MOCK_GROUPS = [
-  { id: 201, name: "Neural Architects", description: "Deep work and systems thinking collective.", memberCount: 14 },
-  { id: 202, name: "Global Hackers", description: "Coding the future, 25 hours a day.", memberCount: 8 },
-  { id: 203, name: "Focus Collective", description: "Eliminate all distractions.", memberCount: 22 },
+  { id: 201, name: "Neural Architects", description: "Deep work and systems thinking collective.", memberCount: 14, totalXp: 12500 },
+  { id: 202, name: "Global Hackers", description: "Coding the future, 25 hours a day.", memberCount: 8, totalXp: 8400 },
+  { id: 203, name: "Focus Collective", description: "Eliminate all distractions.", memberCount: 22, totalXp: 15600 },
 ];
 
 // In-memory messages (persists across reloads on local dev server)

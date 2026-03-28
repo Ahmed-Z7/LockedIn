@@ -1,4 +1,5 @@
-import { drizzle } from "drizzle-orm/mysql2";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { challenges } from "../../drizzle/schema";
 import * as dotenv from "dotenv";
 
@@ -86,7 +87,8 @@ async function seed() {
     console.error("DATABASE_URL not set");
     return;
   }
-  const db = drizzle(process.env.DATABASE_URL);
+  const sql = neon(process.env.DATABASE_URL);
+  const db = drizzle(sql);
   console.log(`Seeding ${ALL_CHALLENGES.length} challenges...`);
   
   // To avoid duplication, we first fetch existing challenges

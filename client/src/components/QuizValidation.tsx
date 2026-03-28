@@ -171,7 +171,7 @@ export function QuizValidation({ quiz, onComplete, onRetry, subject }: QuizValid
         </div>
         <div className="text-right">
             <div className="text-xs text-zinc-500 font-medium mb-1 uppercase tracking-tighter">Current mastery</div>
-            <div className="text-2xl font-black text-white">{Math.round((score/quiz.length)*currentQuestion ? (currentIndex/quiz.length)*100 : 0)}%</div>
+            <div className="text-2xl font-black text-white">{Math.round((score / quiz.length) * 100)}%</div>
         </div>
       </div>
 

@@ -1,7 +1,12 @@
 import 'dotenv/config';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, desc, sql, and } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { 
+//import { drizzle } from "drizzle-orm/mysql2";
+
+
+
+import {
   users, InsertUser,
   userProfiles, InsertUserProfile,
   userBadges, InsertUserBadge,
@@ -20,11 +25,11 @@ import {
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
-export let db: ReturnType<typeof drizzle>;
 
-if (process.env.DATABASE_URL) {
-  db = drizzle(process.env.DATABASE_URL);
-}
+export const sqlConnection = neon(process.env.DATABASE_URL!);
+export const db = drizzle(sqlConnection);
+
+
 
 // Lazily create the drizzle instance (legacy helper)
 export async function getDb() {
@@ -52,7 +57,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   try {
     // Generate username from email if not provided
     const username = user.username || (user.email ? generateUsername(user.email) : `user_${Date.now()}`);
-    
+
     const values: InsertUser = {
       openId: user.openId,
       username: username,
@@ -92,9 +97,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: [users.openId],
       set: updateSet,
     });
+
+
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -252,7 +260,7 @@ export async function getCommunityPostWithAuthor(postId: number) {
   if (!db) return undefined;
   const post = await db.select().from(communityPosts).where(eq(communityPosts.id, postId)).limit(1);
   if (post.length === 0) return undefined;
-  
+
   const author = await db.select().from(users).where(eq(users.id, post[0].userId)).limit(1);
   return { ...post[0], author: author[0] || null };
 }
@@ -281,8 +289,8 @@ export async function addPostComment(data: InsertPostComment) {
   if (!db) return;
   await db.insert(postComments).values(data);
   // Increment comment count
-  await db.update(communityPosts).set({ 
-    commentsCount: sql`${communityPosts.commentsCount} + 1` 
+  await db.update(communityPosts).set({
+    commentsCount: sql`${communityPosts.commentsCount} + 1`
   }).where(eq(communityPosts.id, data.postId));
 }
 
@@ -324,7 +332,7 @@ export async function createNotification(data: InsertNotification) {
 export async function getUserNotifications(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  
+
   const result = await db.select({
     id: notifications.id,
     userId: notifications.userId,
@@ -337,12 +345,12 @@ export async function getUserNotifications(userId: number) {
     fromUserName: users.name,
     fromUserAvatar: userProfiles.profilePhoto
   })
-  .from(notifications)
-  .leftJoin(users, eq(notifications.fromUserId, users.id))
-  .leftJoin(userProfiles, eq(notifications.fromUserId, userProfiles.userId))
-  .where(eq(notifications.userId, userId))
-  .orderBy(desc(notifications.createdAt));
-  
+    .from(notifications)
+    .leftJoin(users, eq(notifications.fromUserId, users.id))
+    .leftJoin(userProfiles, eq(notifications.fromUserId, userProfiles.userId))
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt));
+
   return result;
 }
 
@@ -441,8 +449,8 @@ export async function getUnreadNotificationsCount(userId: number) {
 export async function createStudyMaterial(material: InsertStudyMaterial) {
   const db = await getDb();
   if (!db) return;
-  const [result] = await db.insert(studyMaterials).values(material);
-  return result.insertId;
+  const result = await db.insert(studyMaterials).values(material).returning({ id: studyMaterials.id });
+  return result[0]?.id;
 }
 
 export async function getStudyMaterials(userId: number) {

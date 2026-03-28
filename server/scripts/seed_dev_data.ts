@@ -1,4 +1,5 @@
-import { drizzle } from "drizzle-orm/mysql2";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { notifications, users, userProfiles } from "../../drizzle/schema";
 import * as dotenv from "dotenv";
 
@@ -10,8 +11,8 @@ async function seed() {
     return;
   }
 
-  const db = drizzle(process.env.DATABASE_URL);
-
+  const sqlConnection = neon(process.env.DATABASE_URL);
+  const db = drizzle(sqlConnection);
   console.log("Seeding dev user and notifications...");
 
   // 1. Ensure Dev User exists
@@ -23,14 +24,14 @@ async function seed() {
     username: "devuser",
     loginMethod: "mock",
     role: "user",
-  }).onDuplicateKeyUpdate({ set: { name: "Dev User" } });
+  }).onConflictDoUpdate({ target: users.id, set: { name: "Dev User" } });
 
   // 2. Ensure other users exist for "From" field
   await db.insert(users).values([
     { id: 2, openId: "id-mahmoud", name: "Mahmoud", email: "m@ex.com", username: "mahmoud", loginMethod: "mock", role: "user" },
     { id: 3, openId: "id-ahmed", name: "Ahmed", email: "a@ex.com", username: "ahmed", loginMethod: "mock", role: "user" },
     { id: 4, openId: "id-sara", name: "Sara", email: "s@ex.com", username: "sara", loginMethod: "mock", role: "user" },
-  ]).onDuplicateKeyUpdate({ set: { id: 2 } });
+  ]).onConflictDoUpdate({ target: users.id, set: { id: 2 } });
 
   // 3. Clear old notifications for Dev User to avoid clutter
   // await db.delete(notifications).where(eq(notifications.userId, 1));

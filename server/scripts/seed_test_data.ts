@@ -1,4 +1,5 @@
-import { drizzle } from "drizzle-orm/mysql2";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { users, userProfiles, studyGroups, studyGroupMembers, challenges, userChallenges } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import * as dotenv from "dotenv";
@@ -10,8 +11,8 @@ async function seedTestData() {
     console.error("DATABASE_URL not set");
     return;
   }
-  const db = drizzle(process.env.DATABASE_URL);
-  
+  const sqlConnection = neon(process.env.DATABASE_URL);
+  const db = drizzle(sqlConnection);
   console.log("Seeding test users and groups...");
 
   // 1. Users
@@ -34,13 +35,13 @@ async function seedTestData() {
     let existing = await db.select().from(users).where(eq(users.username, tu.username));
     let userId;
     if (existing.length === 0) {
-      const [{ insertId }] = await db.insert(users).values({
+      const [result] = await db.insert(users).values({
         name: tu.name,
         username: tu.username,
         email: tu.email,
         openId: "test_openid_" + Math.random().toString(36).substring(7),
-      });
-      userId = insertId;
+      }).returning({ id: users.id });
+      userId = result.id;
       
       await db.insert(userProfiles).values({
         userId,
@@ -62,12 +63,13 @@ async function seedTestData() {
     let existing = await db.select().from(studyGroups).where(eq(studyGroups.name, groupNames[i]));
     
     if (existing.length === 0) {
-      const [{ insertId: groupId }] = await db.insert(studyGroups).values({
+      const [result] = await db.insert(studyGroups).values({
         name: groupNames[i],
         description: "Official test group for " + groupNames[i],
         creatorId: creatorId,
         isPrivate: 0,
-      });
+      }).returning({ id: studyGroups.id });
+      const groupId = result.id;
 
       // Add a few members to each group
       const membersToADD = userIds.slice(i, i + 4);

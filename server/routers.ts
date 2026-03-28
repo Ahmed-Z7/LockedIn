@@ -269,7 +269,6 @@ export const appRouter = router({
           ${input.content.substring(0, 4000)}
           `;
 
-          const { invokeLLM } = await import("./_core/llm");
           const response = await invokeLLM({
             messages: [
               { role: "system", content: "You are a professional educational assessment AI." },
@@ -277,7 +276,10 @@ export const appRouter = router({
             ],
           });
 
-          const rawContent = response.choices[0]?.message?.content || "[]";
+          const content = response.choices[0]?.message?.content || "[]";
+          const rawContent = typeof content === "string" 
+            ? content 
+            : content.map(part => "text" in part ? part.text : "").join("\n");
           const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
           const quiz = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
 
@@ -652,9 +654,9 @@ export const appRouter = router({
           description: input.description,
           creatorId: ctx.user.id,
           isPrivate: input.isPublic === false ? 1 : 0,
-        });
+        }).returning({ id: studyGroups.id });
         
-        const groupId = (result as any).insertId;
+        const groupId = result.id;
         await db.insert(studyGroupMembers).values({
           groupId,
           userId: ctx.user.id,

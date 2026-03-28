@@ -4,7 +4,7 @@ import {
   Clock, Play, Pause, RotateCcw, SkipForward, 
   Brain, BookOpen, Lightbulb, MessageSquare, 
   CheckCircle, AlertCircle, Timer, Gamepad2, 
-  Send, Loader2, X, Zap, Map
+  Send, Loader2, X, Zap, Map, Sparkles, ArrowLeft, Layout
 } from "lucide-react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -200,17 +200,53 @@ export default function StudySessionPage() {
     try {
       const res = await generateQuizMutation.mutateAsync({
         sessionId,
-        content: session?.material?.content || "No content provided."
+        content: session?.material?.content || "General study productivity and focus techniques."
       });
       if (res.quiz && res.quiz.length > 0) {
         setQuizData(res.quiz);
       } else {
-        toast.error("AI quiz generation failed. Bypassing check.");
-        completeSession(100);
+        throw new Error("Empty quiz response");
       }
     } catch (err) {
-      toast.error("Neural link error during quiz synthesis.");
-      completeSession(100);
+      console.error("Neural link error during quiz synthesis, using fallback protocols.", err);
+      // High-quality Fallback Quiz (General Study Science)
+      setQuizData([
+        { 
+            question: "What is the most effective way to retain information during a high-intensity study session?", 
+            options: ["Active Recall", "Passive Reading", "Highlighting everything", "Multi-tasking"], 
+            answer: "Active Recall", 
+            type: "MULTIPLE CHOICE", 
+            weakness: "Passive reading is less effective than actively testing yourself." 
+        },
+        { 
+            question: "How long should a standard Pomodoro break typically last for optimal neural recovery?", 
+            options: ["5 minutes", "30 minutes", "1 hour", "No break needed"], 
+            answer: "5 minutes", 
+            type: "MULTIPLE CHOICE", 
+            weakness: "Longer breaks can break the flow state, while no breaks lead to fatigue." 
+        },
+        { 
+            question: "Which of these is a major sign of 'Flow State' during deep work?", 
+            options: ["Time distortion", "Checking phone", "Feeling bored", "Listening to TV"], 
+            answer: "Time distortion", 
+            type: "MULTIPLE CHOICE", 
+            weakness: "Flow state is characterized by total absorption and loss of time sense." 
+        },
+        { 
+            question: "What should you do if you encounter a distraction while your 'Neural Lock' is active?", 
+            options: ["Ignore and refocus", "Check it briefly", "Stop the session", "Call a friend"], 
+            answer: "Ignore and refocus", 
+            type: "MULTIPLE CHOICE", 
+            weakness: "Every distraction costs time and focus; refocusing is the key to mastery." 
+        },
+        { 
+            question: "According to the Feynman Technique, how do you verify you truly understand a topic?", 
+            options: ["Explain it simply", "Read the book again", "Memorize the terms", "Copy notes"], 
+            answer: "Explain it simply", 
+            type: "MULTIPLE CHOICE", 
+            weakness: "If you can't explain it simply, you don't understand it well enough." 
+        }
+      ]);
     } finally {
       setIsGeneratingQuiz(false);
     }
