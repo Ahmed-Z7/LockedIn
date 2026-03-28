@@ -1,11 +1,11 @@
 [phases.install]
-# هنثبت المكتبات من المكان اللي فيه الـ package.json
 cmds = ["pnpm install --no-frozen-lockfile"]
 
 [phases.build]
-# هندخل جوه فولدر السيرفر ونعمل Build
-cmds = ["cd server && pnpm build"]
+# هننفذ أمر الـ build اللي أنت وريهولي في الـ package.json
+# ده هيعمل Vite build للفرونت إند و esbuild للباك إند
+cmds = ["pnpm run build"]
 
 [start]
-# هنقوم السيرفر من المسار اللي نتج عن الـ build
-cmd = "node server/dist/index.js"
+# هننفذ أمر الـ start اللي متعرف عندك بالظبط
+cmd = "pnpm run start"
