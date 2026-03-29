@@ -11,6 +11,14 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, desc, or, like, not, inArray, sql } from "drizzle-orm";
 import { sdk } from "./_core/sdk";
 import crypto from "crypto";
+import { 
+  challenges, studySchedules, userActivities, userChallenges, userProfiles, users, InsertUserProfile, 
+  userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials,
+  directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts, 
+  studyGroupTasks, studyGroupMessages, studyGroupMaterials,
+  notifications, userSettings
+} from "../drizzle/schema";
+import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
 
 function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -29,14 +37,7 @@ function verifyPassword(password: string, storedHash: string): boolean {
     return crypto.timingSafeEqual(hashedBuffer, keyBuffer);
   } catch (e) { return false; }
 }
-import { 
-  challenges, studySchedules, userActivities, userChallenges, userProfiles, users, InsertUserProfile, 
-  userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials,
-  directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts, 
-  studyGroupTasks, studyGroupMessages, studyGroupMaterials,
-  notifications, userSettings
-} from "../drizzle/schema";
-import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
+
 
 export const appRouter = router({
   system: systemRouter,

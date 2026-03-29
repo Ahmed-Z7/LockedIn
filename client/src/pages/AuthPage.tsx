@@ -11,10 +11,8 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
-  const utils = trpc.useUtils();
   const { refresh } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
