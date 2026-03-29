@@ -1,4 +1,4 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
@@ -9,6 +9,26 @@ import * as dbHelpers from "./db";
 import { db } from "./db";
 import { TRPCError } from "@trpc/server";
 import { and, eq, desc, or, like, not, inArray, sql } from "drizzle-orm";
+import { sdk } from "./_core/sdk";
+import crypto from "crypto";
+
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hashed = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hashed}`;
+}
+
+function verifyPassword(password: string, storedHash: string): boolean {
+  if (!storedHash) return false;
+  const [salt, key] = storedHash.split(":");
+  if (!salt || !key) return false;
+  try {
+    const hashedBuffer = crypto.scryptSync(password, salt, 64);
+    const keyBuffer = Buffer.from(key, "hex");
+    if (hashedBuffer.length !== keyBuffer.length) return false;
+    return crypto.timingSafeEqual(hashedBuffer, keyBuffer);
+  } catch (e) { return false; }
+}
 import { 
   challenges, studySchedules, userActivities, userChallenges, userProfiles, users, InsertUserProfile, 
   userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials,
@@ -29,6 +49,44 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    register: publicProcedure
+      .input(z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(6) }))
+      .mutation(async ({ ctx, input }) => {
+        const existing = await db.select().from(users).where(eq(users.email, input.email));
+        if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
+        
+        const openId = crypto.randomUUID();
+        const hashedPassword = hashPassword(input.password);
+        
+        await db.insert(users).values({
+          name: input.name,
+          email: input.email,
+          openId,
+          password: hashedPassword,
+          loginMethod: "email",
+        });
+        
+        const sessionToken = await sdk.createSessionToken(openId, { name: input.name, expiresInMs: ONE_YEAR_MS });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        return { success: true };
+      }),
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), password: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const [user] = await db.select().from(users).where(eq(users.email, input.email));
+        if (!user || !user.password) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+        
+        const isValid = verifyPassword(input.password, user.password);
+        if (!isValid) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+        
+        const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        return { success: true };
+      }),
   }),
 
   // User Profile

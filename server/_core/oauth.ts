@@ -4,39 +4,80 @@ import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
   return typeof value === "string" ? value : undefined;
 }
 
+const getRedirectUri = (req: Request) => {
+  const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  let host = req.get('host');
+  return `${protocol}://${host}/api/oauth/callback`;
+};
+
 export function registerOAuthRoutes(app: Express) {
+  app.get("/api/oauth/google", (req: Request, res: Response) => {
+    if (!GOOGLE_CLIENT_ID) {
+      res.status(500).send("Google OAuth is not configured.");
+      return;
+    }
+    const redirectUri = getRedirectUri(req);
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=email profile&access_type=offline&prompt=consent`;
+    res.redirect(authUrl);
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
-    const state = getQueryParam(req, "state");
+    const error = getQueryParam(req, "error");
 
-    if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
+    if (error || !code) {
+      console.error("OAuth Error:", error);
+      res.redirect("/auth?error=oauth_failed");
       return;
     }
 
     try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+      const redirectUri = getRedirectUri(req);
+      
+      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          code,
+          client_id: GOOGLE_CLIENT_ID || "",
+          client_secret: GOOGLE_CLIENT_SECRET || "",
+          redirect_uri: redirectUri,
+          grant_type: "authorization_code",
+        }),
+      });
 
-      if (!userInfo.openId) {
-        res.status(400).json({ error: "openId missing from user info" });
-        return;
+      const tokenData = await tokenResponse.json();
+      if (!tokenData.access_token) {
+        console.error("Token Exchange Failed:", tokenData);
+        throw new Error("No access token");
       }
 
+      const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      });
+      const userInfo = await userResponse.json();
+      
+      if (!userInfo.email) throw new Error("No email from Google");
+
+      const openId = userInfo.id || userInfo.email;
+
       await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        openId: openId,
+        name: userInfo.name || userInfo.email.split('@')[0],
+        email: userInfo.email,
+        loginMethod: "google",
         lastSignedIn: new Date(),
       });
 
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
+      const sessionToken = await sdk.createSessionToken(openId, {
         name: userInfo.name || "",
         expiresInMs: ONE_YEAR_MS,
       });
@@ -44,10 +85,10 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/");
-    } catch (error) {
-      console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "OAuth callback failed" });
+      res.redirect("/");
+    } catch (err) {
+      console.error("[OAuth] Callback failed", err);
+      res.redirect("/auth?error=oauth_failed");
     }
   });
 }

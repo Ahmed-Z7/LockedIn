@@ -24,11 +24,13 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import StudySessionPage from "./pages/StudySessionPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import GamificationLevelsPage from "./pages/GamificationLevelsPage";
+import AuthPage from "./pages/AuthPage";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/auth" component={AuthPage} />
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/ai-coach" component={AICoachPage} />
       <Route path="/flash-cards" component={FlashCardsPage} />
