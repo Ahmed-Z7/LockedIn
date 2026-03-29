@@ -8,6 +8,13 @@
       "when": 1774818494221,
       "tag": "0000_short_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774826527016,
+      "tag": "0001_lonely_groot",
+      "breakpoints": true
     }
   ]
 }
