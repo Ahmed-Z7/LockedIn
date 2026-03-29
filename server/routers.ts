@@ -10,7 +10,7 @@ import { db } from "./db";
 import { TRPCError } from "@trpc/server";
 import { and, eq, desc, or, like, not, inArray, sql } from "drizzle-orm";
 import { sdk } from "./_core/sdk";
-import crypto from "crypto";
+import { randomBytes, scryptSync, timingSafeEqual, randomUUID } from "crypto";
 import { 
   challenges, studySchedules, userActivities, userChallenges, userProfiles, users, InsertUserProfile, 
   userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials,
@@ -21,8 +21,8 @@ import {
 import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
 
 function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hashed = crypto.scryptSync(password, salt, 64).toString("hex");
+  const salt = randomBytes(16).toString("hex");
+  const hashed = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${hashed}`;
 }
 
@@ -31,10 +31,10 @@ function verifyPassword(password: string, storedHash: string): boolean {
   const [salt, key] = storedHash.split(":");
   if (!salt || !key) return false;
   try {
-    const hashedBuffer = crypto.scryptSync(password, salt, 64);
+    const hashedBuffer = scryptSync(password, salt, 64);
     const keyBuffer = Buffer.from(key, "hex");
     if (hashedBuffer.length !== keyBuffer.length) return false;
-    return crypto.timingSafeEqual(hashedBuffer, keyBuffer);
+    return timingSafeEqual(hashedBuffer, keyBuffer);
   } catch (e) { return false; }
 }
 
@@ -56,7 +56,7 @@ export const appRouter = router({
         const existing = await db.select().from(users).where(eq(users.email, input.email));
         if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
         
-        const openId = crypto.randomUUID();
+        const openId = randomUUID();
         const hashedPassword = hashPassword(input.password);
         
         await db.insert(users).values({
