@@ -16,6 +16,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [verificationStep, setVerificationStep] = useState(false);
+  const [forgotPasswordStep, setForgotPasswordStep] = useState(false);
+  const [resetVerificationStep, setResetVerificationStep] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   
   const [formData, setFormData] = useState({
@@ -36,7 +38,7 @@ export default function AuthPage() {
 
   const sendCodeMutation = trpc.auth.sendVerificationCode.useMutation({
     onSuccess: () => {
-      toast.success("Verification code sent to your email!");
+      toast.success("Verification PIN sent to your email!");
       setVerificationStep(true);
     },
     onError: (error) => toast.error(error.message || "Failed to send code")
@@ -51,22 +53,62 @@ export default function AuthPage() {
     onError: (error) => toast.error(error.message || "Invalid verification code")
   });
 
+  const requestResetMutation = trpc.auth.requestPasswordReset.useMutation({
+    onSuccess: () => {
+      toast.success("Password reset code sent to your email!");
+      setResetVerificationStep(true);
+    },
+    onError: (error) => toast.error(error.message || "Failed to request reset")
+  });
+
+  const resetPasswordMutation = trpc.auth.resetPassword.useMutation({
+    onSuccess: () => {
+      toast.success("Password reset successfully! Please log in.");
+      setForgotPasswordStep(false);
+      setResetVerificationStep(false);
+      setIsLogin(true);
+      setVerificationCode("");
+      setFormData({ ...formData, password: "", confirmPassword: "" });
+    },
+    onError: (error) => toast.error(error.message || "Invalid code")
+  });
+
   const handleGoogleAuth = () => {
     window.location.href = "/api/oauth/google";
   };
 
   const handleForgotPassword = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!formData.email) {
-      toast.error("Please enter your email to reset password");
-      return;
-    }
-    toast.info("Password reset link sent to " + formData.email);
-    // Placeholder for actual forgot password mutation
+    setForgotPasswordStep(true);
+    setIsLogin(false);
+    setVerificationStep(false);
+    setResetVerificationStep(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (forgotPasswordStep) {
+      if (!resetVerificationStep) {
+        requestResetMutation.mutate({ email: formData.email });
+      } else {
+        if (formData.password !== formData.confirmPassword) {
+          toast.error("Passwords do not match");
+          return;
+        }
+        if (formData.password.length < 6) {
+          toast.error("Password must be at least 6 characters");
+          return;
+        }
+        resetPasswordMutation.mutate({
+          email: formData.email,
+          code: verificationCode,
+          newPassword: formData.password
+        });
+      }
+      return;
+    }
+
     if (isLogin) {
       loginMutation.mutate({ email: formData.email, password: formData.password });
     } else {
@@ -89,7 +131,7 @@ export default function AuthPage() {
     }
   };
 
-  const isPending = loginMutation.isPending || sendCodeMutation.isPending || registerMutation.isPending;
+  const isPending = loginMutation.isPending || sendCodeMutation.isPending || registerMutation.isPending || requestResetMutation.isPending || resetPasswordMutation.isPending;
 
   return (
     <div className="min-h-screen bg-[#030014] relative flex items-center justify-center overflow-hidden w-full px-4">
@@ -131,22 +173,23 @@ export default function AuthPage() {
               <Lock className="w-8 h-8 text-white" />
             </motion.div>
             <motion.h1 
-              key={isLogin ? "login-title" : (verificationStep ? "verify-title" : "register-title")}
+              key={forgotPasswordStep ? (resetVerificationStep ? "reset-verify-title" : "forgot-title") : (isLogin ? "login-title" : (verificationStep ? "verify-title" : "register-title"))}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
               className="text-3xl font-bold text-white tracking-tight"
             >
-              {isLogin ? "Welcome Back" : (verificationStep ? "Verify Email" : "Join LockedIn")}
+              {forgotPasswordStep ? (resetVerificationStep ? "Reset Password" : "Forgot Password") : (isLogin ? "Welcome Back" : (verificationStep ? "Verify Email" : "Join LockedIn"))}
             </motion.h1>
-            <p className="text-gray-400 mt-2 text-sm">
-              {isLogin ? "Enter your credentials to access your dashboard" : (verificationStep ? "Enter the 6-digit code sent to your email" : "Create an account to unlock your full potential")}
+            <p className="text-gray-400 mt-2 text-sm text-balance">
+              {forgotPasswordStep ? (resetVerificationStep ? "Enter the 6-digit code sent to your email and your new password" : "Enter your email to receive a password reset code") : (isLogin ? "Enter your credentials to access your dashboard" : (verificationStep ? "Enter the 6-digit code sent to your email" : "Create an account to unlock your full potential"))}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <AnimatePresence mode="popLayout">
-              {verificationStep ? (
+              {forgotPasswordStep ? (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -154,15 +197,99 @@ export default function AuthPage() {
                   className="space-y-4"
                 >
                   <div className="space-y-2">
-                    <Label htmlFor="code" className="text-gray-300">Verification Code</Label>
-                    <div className="relative">
-                      <CheckCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                    <Label htmlFor="email" className="text-gray-300">Email Address</Label>
+                    <div className="relative group">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors w-5 h-5" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        className="pl-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                        disabled={resetVerificationStep}
+                      />
+                    </div>
+                  </div>
+
+                  {resetVerificationStep && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-5 pt-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="reset-code" className="text-gray-300">6-Digit Reset Code</Label>
+                        <div className="relative">
+                          <CheckCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                          <Input
+                            id="reset-code"
+                            placeholder="• • • • • •"
+                            className="pl-11 bg-white/5 border-white/10 text-white focus:border-pink-500 focus:ring-pink-500/20 transition-all h-14 text-2xl tracking-[0.5em] text-center font-bold font-mono"
+                            value={verificationCode}
+                            onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
+                            required
+                            maxLength={6}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password" className="text-gray-300">New Password</Label>
+                        <div className="relative group">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors w-5 h-5" />
+                          <Input
+                            id="new-password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            className="pl-11 pr-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            required
+                          />
+                          <button 
+                            type="button" 
+                            onMouseDown={() => setShowPassword(true)}
+                            onMouseUp={() => setShowPassword(false)}
+                            onMouseLeave={() => setShowPassword(false)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-new-password" className="text-gray-300">Confirm New Password</Label>
+                        <div className="relative group">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors w-5 h-5" />
+                          <Input
+                            id="confirm-new-password"
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            className="pl-11 pr-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                            value={formData.confirmPassword}
+                            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </motion.div>
+              ) : verificationStep ? (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  <div className="space-y-3">
+                    <Label htmlFor="code" className="text-gray-300 text-center block">Enter 6-Digit PIN</Label>
+                    <div className="relative flex justify-center">
                       <Input
                         id="code"
-                        placeholder="123456"
-                        className="pl-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12 text-lg tracking-widest"
+                        placeholder="• • • • • •"
+                        className="bg-white/5 border-white/20 text-white focus:border-purple-400 focus:ring-purple-400/30 transition-all h-16 w-full max-w-[280px] text-3xl tracking-[0.5em] text-center shadow-inner rounded-xl font-bold font-mono"
                         value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
+                        onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
                         required
                         maxLength={6}
                       />
@@ -282,11 +409,11 @@ export default function AuthPage() {
               className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium rounded-xl shadow-lg shadow-purple-600/25 transition-all mt-6 text-base"
               disabled={isPending}
             >
-              {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (verificationStep ? "Verify & Join" : (isLogin ? "Sign In" : "Sign Up"))}
+              {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (forgotPasswordStep ? (resetVerificationStep ? "Apply New Password" : "Send Reset Code") : (verificationStep ? "Verify & Join" : (isLogin ? "Sign In" : "Sign Up")))}
             </Button>
           </form>
 
-          {(!verificationStep && isLogin) && (
+          {(!verificationStep && !forgotPasswordStep && isLogin) && (
             <>
               <div className="mt-8 flex items-center gap-4 before:flex-1 before:h-px before:bg-white/10 after:flex-1 after:h-px after:bg-white/10">
                 <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">Or</span>
@@ -313,17 +440,24 @@ export default function AuthPage() {
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-400">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
+              {forgotPasswordStep ? "Remembered your password?" : (isLogin ? "Don't have an account?" : "Already have an account?")}
               <button
                 type="button"
                 onClick={() => {
-                  setIsLogin(!isLogin);
+                  if (forgotPasswordStep) {
+                    setForgotPasswordStep(false);
+                    setIsLogin(true);
+                  } else {
+                    setIsLogin(!isLogin);
+                  }
                   setVerificationStep(false);
+                  setResetVerificationStep(false);
                   setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+                  setVerificationCode("");
                 }}
                 className="ml-2 text-purple-400 font-medium hover:text-purple-300 transition-colors underline-offset-4 hover:underline focus:outline-none"
               >
-                {isLogin ? "Create one" : "Sign in instead"}
+                {forgotPasswordStep ? "Back to sign in" : (isLogin ? "Create one" : "Sign in instead")}
               </button>
             </p>
           </div>

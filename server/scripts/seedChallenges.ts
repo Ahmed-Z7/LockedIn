@@ -89,7 +89,8 @@ export async function seed() {
     let count = 0;
     for (const challenge of challengeData) {
         try {
-            await db.insert(challenges).values(challenge).onDuplicateKeyUpdate({
+            await db.insert(challenges).values(challenge).onConflictDoUpdate({
+                target: challenges.id,
                 set: { description: challenge.description }
             });
             count++;

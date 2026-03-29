@@ -16,8 +16,9 @@ import {
   userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials,
   directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts, 
   studyGroupTasks, studyGroupMessages, studyGroupMaterials,
-  notifications, userSettings
+  notifications, userSettings, verificationCodes
 } from "../drizzle/schema";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
 
 function hashPassword(password: string): string {
@@ -37,8 +38,6 @@ function verifyPassword(password: string, storedHash: string): boolean {
     return timingSafeEqual(hashedBuffer, keyBuffer);
 } catch (e) { return false; }
 }
-
-const verificationCodes = new Map<string, { code: string, name: string, passwordHash: string, expiresAt: number }>();
 
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -85,22 +84,26 @@ export const appRouter = router({
         const code = generateVerificationCode();
         const hashedPassword = hashPassword(input.password);
         
-        verificationCodes.set(input.email, {
+        await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
+
+        await db.insert(verificationCodes).values({
+          email: input.email,
           code,
+          type: 'signup',
           name: input.name,
           passwordHash: hashedPassword,
           expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
         });
 
-        // Simulate sending email for now to avoid requiring SMTP credentials instantly
-        console.log(`\n\n=== MOCK EMAIL SERVICE ===\nTo: ${input.email}\nSubject: Your LockedIn Verification Code\nBody: Your verification code is ${code}. It expires in 15 minutes.\n==========================\n\n`);
+        await sendVerificationEmail(input.email, code);
 
         return { success: true };
       }),
     registerWithCode: publicProcedure
       .input(z.object({ email: z.string().email(), code: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        const verification = verificationCodes.get(input.email);
+        const [verification] = await db.select().from(verificationCodes)
+          .where(and(eq(verificationCodes.email, input.email), eq(verificationCodes.type, 'signup')));
         
         if (!verification) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "No verification pending for this email. Please sign up again." });
@@ -111,13 +114,13 @@ export const appRouter = router({
         }
         
         if (Date.now() > verification.expiresAt) {
-          verificationCodes.delete(input.email);
+          await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
           throw new TRPCError({ code: "BAD_REQUEST", message: "Verification code expired. Please sign up again." });
         }
 
         const existing = await db.select().from(users).where(eq(users.email, input.email));
         if (existing.length > 0) {
-          verificationCodes.delete(input.email);
+          await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
           throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
         }
         
@@ -133,9 +136,9 @@ export const appRouter = router({
           loginMethod: "email",
         });
         
-        verificationCodes.delete(input.email);
+        await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
 
-        const sessionToken = await sdk.createSessionToken(openId, { name: verification.name, expiresInMs: ONE_YEAR_MS });
+        const sessionToken = await sdk.createSessionToken(openId, { name: verification.name || "", expiresInMs: ONE_YEAR_MS });
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
         
@@ -153,6 +156,48 @@ export const appRouter = router({
         const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        return { success: true };
+      }),
+    requestPasswordReset: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(async ({ input }) => {
+        const [existing] = await db.select().from(users).where(eq(users.email, input.email));
+        if (!existing) return { success: true }; // Silently return true to prevent email enumeration
+        
+        const code = generateVerificationCode();
+
+        await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
+        await db.insert(verificationCodes).values({
+          email: input.email,
+          code,
+          type: 'reset',
+          expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
+        });
+
+        await sendPasswordResetEmail(input.email, code);
+
+        return { success: true };
+      }),
+    resetPassword: publicProcedure
+      .input(z.object({ email: z.string().email(), code: z.string(), newPassword: z.string().min(6) }))
+      .mutation(async ({ input }) => {
+        const [verification] = await db.select().from(verificationCodes)
+          .where(and(eq(verificationCodes.email, input.email), eq(verificationCodes.type, 'reset')));
+          
+        if (!verification || verification.code !== input.code) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired code." });
+        }
+
+        if (Date.now() > verification.expiresAt) {
+          await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Code expired. Please request a new one." });
+        }
+
+        const hashedPassword = hashPassword(input.newPassword);
+        await db.update(users).set({ password: hashedPassword }).where(eq(users.email, input.email));
+        
+        await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
         
         return { success: true };
       }),
