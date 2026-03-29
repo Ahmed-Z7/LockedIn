@@ -109,6 +109,7 @@
     "vitest": "^2.1.4"
   },
   "pnpm": {
+    "onlyBuiltDependencies": ["@tailwindcss/oxide", "esbuild", "sharp"],
     "patchedDependencies": {
       "wouter@3.7.1": "patches/wouter@3.7.1.patch"
     },
