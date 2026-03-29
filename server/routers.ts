@@ -35,10 +35,14 @@ function verifyPassword(password: string, storedHash: string): boolean {
     const keyBuffer = Buffer.from(key, "hex");
     if (hashedBuffer.length !== keyBuffer.length) return false;
     return timingSafeEqual(hashedBuffer, keyBuffer);
-  } catch (e) { return false; }
+} catch (e) { return false; }
 }
 
+const verificationCodes = new Map<string, { code: string, name: string, passwordHash: string, expiresAt: number }>();
 
+function generateVerificationCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
 export const appRouter = router({
   system: systemRouter,
   
@@ -68,6 +72,70 @@ export const appRouter = router({
         });
         
         const sessionToken = await sdk.createSessionToken(openId, { name: input.name, expiresInMs: ONE_YEAR_MS });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+      }),
+    sendVerificationCode: publicProcedure
+      .input(z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(6) }))
+      .mutation(async ({ input }) => {
+        const existing = await db.select().from(users).where(eq(users.email, input.email));
+        if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
+
+        const code = generateVerificationCode();
+        const hashedPassword = hashPassword(input.password);
+        
+        verificationCodes.set(input.email, {
+          code,
+          name: input.name,
+          passwordHash: hashedPassword,
+          expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
+        });
+
+        // Simulate sending email for now to avoid requiring SMTP credentials instantly
+        console.log(`\n\n=== MOCK EMAIL SERVICE ===\nTo: ${input.email}\nSubject: Your LockedIn Verification Code\nBody: Your verification code is ${code}. It expires in 15 minutes.\n==========================\n\n`);
+
+        return { success: true };
+      }),
+    registerWithCode: publicProcedure
+      .input(z.object({ email: z.string().email(), code: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const verification = verificationCodes.get(input.email);
+        
+        if (!verification) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "No verification pending for this email. Please sign up again." });
+        }
+        
+        if (verification.code !== input.code) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid verification code" });
+        }
+        
+        if (Date.now() > verification.expiresAt) {
+          verificationCodes.delete(input.email);
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Verification code expired. Please sign up again." });
+        }
+
+        const existing = await db.select().from(users).where(eq(users.email, input.email));
+        if (existing.length > 0) {
+          verificationCodes.delete(input.email);
+          throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
+        }
+        
+        const username = input.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+        const openId = randomUUID();
+        
+        await db.insert(users).values({
+          name: verification.name,
+          username: username,
+          email: input.email,
+          openId,
+          password: verification.passwordHash,
+          loginMethod: "email",
+        });
+        
+        verificationCodes.delete(input.email);
+
+        const sessionToken = await sdk.createSessionToken(openId, { name: verification.name, expiresInMs: ONE_YEAR_MS });
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
         

@@ -21,7 +21,7 @@ const getRedirectUri = (req: Request) => {
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/google", (req: Request, res: Response) => {
     if (!GOOGLE_CLIENT_ID) {
-      res.status(500).send("Google OAuth is not configured.");
+      res.redirect("/auth?error=oauth_not_configured");
       return;
     }
     const redirectUri = getRedirectUri(req);

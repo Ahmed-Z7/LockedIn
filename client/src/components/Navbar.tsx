@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Lock, Bell, User, Plus } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/_core/hooks/useAuth';
-import { getLoginUrl } from '@/const';
+import { getLoginUrl, APP_LOGO } from '@/const';
 import GlowButton from './GlowButton';
 import ThemeSwitcher from './ThemeSwitcher';
 import { trpc } from '@/lib/trpc';
@@ -32,15 +32,17 @@ export default function Navbar() {
           whileHover={{ scale: 1.05 }}
           onClick={() => setLocation('/')}
         >
-          <div className="relative">
+          <div className="relative flex items-center justify-center">
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-[#9333EA] to-[#6366F1] dark:from-purple-600 dark:to-blue-600 rounded-lg blur"
-              animate={{ opacity: [0.5, 1, 0.5] }}
+              className="absolute inset-0 bg-gradient-to-r from-[#9333EA] to-[#6366F1] dark:from-purple-600 dark:to-blue-600 rounded-lg blur opacity-50"
+              animate={{ opacity: [0.3, 0.7, 0.3] }}
               transition={{ duration: 2, repeat: Infinity }}
             />
-            <div className="relative bg-gradient-to-r from-[#9333EA] to-[#6366F1] dark:from-purple-700 dark:to-blue-700 rounded-lg p-2">
-              <Lock className="w-6 h-6 text-white dark:text-foreground" />
-            </div>
+            <img 
+              src={APP_LOGO} 
+              alt="LockedIn Logo" 
+              className="relative w-8 h-8 rounded-lg object-contain bg-white/10 dark:bg-black/10 backdrop-blur-sm p-1 shadow-md"
+            />
           </div>
           <span className="text-xl font-bold text-[#334155] dark:bg-gradient-to-r dark:from-purple-400 dark:to-blue-400 dark:bg-clip-text dark:text-transparent">
             LOCKEDIN
