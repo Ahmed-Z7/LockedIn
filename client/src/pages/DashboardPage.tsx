@@ -95,7 +95,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
               { label: 'Day Streak', value: profile?.streak || 0, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-              { label: 'Sessions Done', value: sessions?.filter(s => s.completed === 1).length || 0, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+              { label: 'Sessions Done', value: sessions?.filter(s => s.completed === 1)?.length || 0, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
               { label: 'Neural XP', value: profile?.xp || 0, icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
               { label: 'Active Challenges', value: 'View All', icon: Award, color: 'text-purple-400', bg: 'bg-purple-500/10', path: '/challenges' },
             ].map((stat, i) => (
