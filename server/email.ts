@@ -1,18 +1,29 @@
 import nodemailer from 'nodemailer';
+import dns from 'dns';
+
+// Fix for Node.js prioritizing IPv6 over IPv4 on some cloud environments (like Railway)
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true,
+  // Force IPv4 locally for this transport
+  family: 4, 
+  connectionTimeout: 15000, 
+  greetingTimeout: 15000,
+  socketTimeout: 15000,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS,
   },
-  // Ensure we use IPv4 to avoid ENETUNREACH on cloud providers like Railway
   tls: {
-    rejectUnauthorized: false
+    rejectUnauthorized: false,
+    servername: 'smtp.gmail.com'
   }
-});
+} as any);
 
 const FROM = process.env.SMTP_USER || 'LockedIn <lockedin.eg.support@gmail.com>';
 const APP_URL = process.env.FRONTEND_URL || process.env.VITE_APP_URL || 'https://locked-in.vercel.app';
