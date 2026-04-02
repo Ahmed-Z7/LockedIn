@@ -10,13 +10,13 @@ export async function sendVerificationEmail(email: string, code: string) {
       <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
         <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1f2937;">${code}</span>
       </div>
-      <p style="font-size: 14px; text-align: center; color: #6b7280;">This code expires in 15 minutes. Please do not share this code.</p>
+      <p style="font-size: 14px; text-align: center; color: #6b7280;">This code expires in 5 minutes. Please do not share this code.</p>
     </div>
   `;
 
   try {
     const data = await resend.emails.send({
-      from: 'LockedIn <onboarding@resend.dev>', // Update to your domain in production
+      from: 'LockedIn <onboarding@resend.dev>', // Standardized
       to: email,
       subject: 'Your LockedIn Verification Code',
       html,
@@ -36,13 +36,13 @@ export async function sendPasswordResetEmail(email: string, code: string) {
       <div style="background-color: #fce7f3; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
         <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #9d174d;">${code}</span>
       </div>
-      <p style="font-size: 14px; text-align: center; color: #6b7280;">This code expires in 15 minutes. If you did not request this, please ignore this email.</p>
+      <p style="font-size: 14px; text-align: center; color: #6b7280;">This code expires in 5 minutes. If you did not request this, please ignore this email.</p>
     </div>
   `;
 
   try {
     const data = await resend.emails.send({
-      from: 'LockedIn Auth <onboarding@resend.dev>', // Update to your domain in production
+      from: 'LockedIn <onboarding@resend.dev>', // Standardized
       to: email,
       subject: 'LockedIn Password Reset',
       html,

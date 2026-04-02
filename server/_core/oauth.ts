@@ -13,10 +13,12 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 const getRedirectUri = (req: Request) => {
-  const frontendUrl = process.env.FRONTEND_URL || "https://lockedin-eg.vercel.app";
-  // The Vercel rewrite handles /api/:path* -> Railway/api/:path*
-  // So Google should redirect back to the Vercel domain to ensure cookies are same-site
-  return `${frontendUrl}/api/oauth/callback`;
+  const isDev = process.env.NODE_ENV !== "production";
+  if (isDev) {
+    return "http://localhost:3000/api/oauth/callback";
+  }
+  // This matches the authorized redirect URI in Google Cloud Console
+  return "https://lockedin.up.railway.app/api/oauth/callback";
 };
 
 export function registerOAuthRoutes(app: Express) {

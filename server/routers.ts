@@ -102,10 +102,11 @@ export const appRouter = router({
           type: 'signup',
           name: input.name,
           passwordHash: hashedPassword,
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes
           createdAt: new Date().toISOString()
         });
 
+        console.log(`[Verification] Sent signup code to ${input.email}`);
         await sendVerificationEmail(input.email, code);
 
         return { success: true };
@@ -124,7 +125,11 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "كود التحقق غير صالح" });
         }
         
-        if (new Date().toISOString() > verification.expiresAt) {
+        const now = Date.now();
+        const expiresAt = new Date(verification.expiresAt).getTime();
+        
+        if (now > expiresAt) {
+          console.warn(`[VerificationSignup] Expired code for ${input.email}. Now: ${new Date(now).toISOString()}, Expires: ${verification.expiresAt}`);
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
           throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت صلاحية كود التحقق. يرجى الاشتراك مرة أخرى." });
         }
@@ -186,10 +191,11 @@ export const appRouter = router({
           email: input.email,
           code,
           type: 'reset',
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes
           createdAt: new Date().toISOString()
         });
 
+        console.log(`[Verification] Sent reset code for ${input.email}`);
         await sendPasswordResetEmail(input.email, code);
 
         return { success: true };
@@ -205,10 +211,15 @@ export const appRouter = router({
           .where(and(eq(verificationCodes.email, input.email), eq(verificationCodes.type, 'reset')));
           
         if (!verification || verification.code !== input.code) {
+          console.warn(`[ResetPassword] Invalid code attempt for ${input.email}`);
           throw new TRPCError({ code: "BAD_REQUEST", message: "الكود غير صالح أو منتهي الصلاحية." });
         }
 
-        if (new Date().toISOString() > verification.expiresAt) {
+        const now = Date.now();
+        const expiresAt = new Date(verification.expiresAt).getTime();
+        
+        if (now > expiresAt) {
+          console.warn(`[ResetPassword] Expired code for ${input.email}. Now: ${new Date(now).toISOString()}, Expires: ${verification.expiresAt}`);
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
           throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت صلاحية الكود. يرجى طلب كود جديد." });
         }
