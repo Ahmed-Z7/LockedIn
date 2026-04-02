@@ -25,6 +25,19 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     throw new Error("GEMINI_API_KEY is not configured in Environment Variables");
   }
 
+  // Debug: Attempt to list models to see what's actually available
+  try {
+    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${ENV.geminiApiKey}`;
+    const listRes = await fetch(listUrl);
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      const modelNames = listData.models?.map((m: any) => m.name) || [];
+      console.log("[AI Debug] Available Models for your key:", JSON.stringify(modelNames));
+    }
+  } catch (e) {
+    console.warn("[AI Debug] Could not list models:", e);
+  }
+
   const systemMessage = params.messages.find(m => m.role === "system")?.content || "";
   const otherMessages = params.messages.filter(m => m.role !== "system");
 
@@ -39,11 +52,10 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  // Try multiple model IDs to find one that is active in 2026
   const modelsToTry = [
     "gemini-1.5-flash",
-    "gemini-1.5-flash-latest",
-    "gemini-2.0-flash",
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-pro",
     "gemini-pro"
   ];
 
@@ -51,7 +63,6 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   for (const modelId of modelsToTry) {
     try {
-      console.log(`[AI] Attempting to invoke model: ${modelId}`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
 
       const response = await fetch(url, {
@@ -63,20 +74,17 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       if (response.ok) {
         const data = await response.json();
         const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Error generating response";
-        console.log(`[AI] Successfully used model: ${modelId}`);
         return {
           choices: [{ message: { role: "model", content: aiText } }]
         };
       } else {
         const errorText = await response.text();
         lastError = `Model ${modelId} failed: ${response.status} - ${errorText}`;
-        console.warn(`[AI] ${lastError}`);
       }
     } catch (err: any) {
       lastError = `Fetch failed for ${modelId}: ${err.message}`;
-      console.warn(`[AI] ${lastError}`);
     }
   }
 
-  throw new Error(`All Gemini models failed. Last error: ${lastError}`);
+  throw new Error(`All Gemini models failed. Latest error: ${lastError}`);
 }
