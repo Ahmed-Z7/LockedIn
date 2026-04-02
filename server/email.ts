@@ -187,15 +187,22 @@ export async function sendPasswordResetEmail(email: string, code: string) {
   `);
 
   try {
+    console.log(`Attempting to send password reset email to: ${email}`);
     const info = await transporter.sendMail({
       from: FROM,
       to: email,
       subject: '🔑 Reset Your LockedIn Password',
       html,
     });
+    console.log('Password reset email sent successfully:', info.messageId);
     return { success: true, data: info };
-  } catch (error) {
-    console.error('Error sending password reset email:', error);
-    throw new Error('Failed to send password reset email');
+  } catch (error: any) {
+    console.error('DETAILED PASSWORD RESET EMAIL ERROR:', {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response
+    });
+    throw new Error(`Failed to send password reset email: ${error.message}`);
   }
 }

@@ -52,6 +52,7 @@ export function registerOAuthRoutes(app: Express) {
 
     try {
       const redirectUri = getRedirectUri(req);
+      console.log("[OAuth] Exchanging code with redirectUri:", redirectUri);
       
       const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
