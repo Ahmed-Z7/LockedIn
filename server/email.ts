@@ -1,8 +1,15 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.RESEND_SENDER_EMAIL || 'LockedIn <onboarding@resend.dev>';
-const APP_URL = process.env.VITE_APP_URL || 'https://locked-in.vercel.app';
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.SMTP_USER || 'lockedin.eg.support@gmail.com',
+    pass: process.env.SMTP_PASS || 'xhqxbwhdmpmvfmrf',
+  },
+});
+
+const FROM = process.env.SMTP_USER || 'LockedIn <lockedin.eg.support@gmail.com>';
+const APP_URL = process.env.FRONTEND_URL || process.env.VITE_APP_URL || 'https://locked-in.vercel.app';
 
 const baseTemplate = (content: string) => `
 <!DOCTYPE html>
@@ -114,13 +121,13 @@ export async function sendVerificationEmail(email: string, code: string) {
   `);
 
   try {
-    const data = await resend.emails.send({
+    const info = await transporter.sendMail({
       from: FROM,
       to: email,
       subject: '🔐 Your LockedIn Verification Code',
       html,
     });
-    return { success: true, data };
+    return { success: true, data: info };
   } catch (error) {
     console.error('Error sending verification email:', error);
     throw new Error('Failed to send verification email');
@@ -167,13 +174,13 @@ export async function sendPasswordResetEmail(email: string, code: string) {
   `);
 
   try {
-    const data = await resend.emails.send({
+    const info = await transporter.sendMail({
       from: FROM,
       to: email,
       subject: '🔑 Reset Your LockedIn Password',
       html,
     });
-    return { success: true, data };
+    return { success: true, data: info };
   } catch (error) {
     console.error('Error sending password reset email:', error);
     throw new Error('Failed to send password reset email');
