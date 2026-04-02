@@ -1,17 +1,17 @@
 -- Current sql file was generated after introspecting the database
 -- If you want to run this migration please uncomment this code before executing migrations
-/*
-CREATE TYPE "public"."category" AS ENUM('study_time', 'streak', 'focus', 'group', 'ai_usage', 'consistency');--> statement-breakpoint
-CREATE TYPE "public"."difficulty" AS ENUM('easy', 'medium', 'hard');--> statement-breakpoint
-CREATE TYPE "public"."group_role" AS ENUM('admin', 'member');--> statement-breakpoint
-CREATE TYPE "public"."group_status" AS ENUM('pending', 'approved');--> statement-breakpoint
-CREATE TYPE "public"."invitation_status" AS ENUM('pending', 'accepted', 'declined');--> statement-breakpoint
-CREATE TYPE "public"."notification_type" AS ENUM('like', 'comment', 'follow', 'badge', 'study_session');--> statement-breakpoint
-CREATE TYPE "public"."priority" AS ENUM('low', 'medium', 'high');--> statement-breakpoint
-CREATE TYPE "public"."rarity" AS ENUM('common', 'rare', 'epic', 'legendary');--> statement-breakpoint
-CREATE TYPE "public"."role" AS ENUM('user', 'admin');--> statement-breakpoint
-CREATE TYPE "public"."sessionType" AS ENUM('study', 'review');--> statement-breakpoint
-CREATE TYPE "public"."task_status" AS ENUM('open', 'completed');--> statement-breakpoint
+
+-- CREATE TYPE "public"."category" AS ENUM('study_time', 'streak', 'focus', 'group', 'ai_usage', 'consistency');--> statement-breakpoint
+-- CREATE TYPE "public"."difficulty" AS ENUM('easy', 'medium', 'hard');--> statement-breakpoint
+-- CREATE TYPE "public"."group_role" AS ENUM('admin', 'member');--> statement-breakpoint
+-- CREATE TYPE "public"."group_status" AS ENUM('pending', 'approved');--> statement-breakpoint
+-- CREATE TYPE "public"."invitation_status" AS ENUM('pending', 'accepted', 'declined');--> statement-breakpoint
+-- CREATE TYPE "public"."notification_type" AS ENUM('like', 'comment', 'follow', 'badge', 'study_session');--> statement-breakpoint
+-- CREATE TYPE "public"."priority" AS ENUM('low', 'medium', 'high');--> statement-breakpoint
+-- CREATE TYPE "public"."rarity" AS ENUM('common', 'rare', 'epic', 'legendary');--> statement-breakpoint
+-- CREATE TYPE "public"."role" AS ENUM('user', 'admin');--> statement-breakpoint
+-- CREATE TYPE "public"."sessionType" AS ENUM('study', 'review');--> statement-breakpoint
+-- CREATE TYPE "public"."task_status" AS ENUM('open', 'completed');--> statement-breakpoint
 CREATE TABLE "studySessions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"userId" integer NOT NULL,
@@ -324,4 +324,3 @@ ALTER TABLE "userChallenges" ADD CONSTRAINT "userChallenges_userId_users_id_fk" 
 ALTER TABLE "userChallenges" ADD CONSTRAINT "userChallenges_challengeId_challenges_id_fk" FOREIGN KEY ("challengeId") REFERENCES "public"."challenges"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "userProfiles" ADD CONSTRAINT "userProfiles_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "userSettings" ADD CONSTRAINT "userSettings_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
-*/

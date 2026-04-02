@@ -13,10 +13,11 @@ import { sdk } from "./_core/sdk";
 import { randomBytes, scryptSync, timingSafeEqual, randomUUID } from "crypto";
 import {
   challenges, studySchedules, userActivities, userChallenges, userProfiles, users, InsertUserProfile,
-  userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials,
+  userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials, InsertStudyMaterial,
   directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts,
   studyGroupTasks, studyGroupMessages, studyGroupMaterials,
-  notifications, userSettings, verificationCodes
+  notifications, userSettings, InsertUserSetting, verificationCodes,
+  userAIKnowledge, InsertUserAIKnowledge
 } from "../drizzle/schema";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
@@ -42,6 +43,7 @@ function verifyPassword(password: string, storedHash: string): boolean {
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -126,14 +128,12 @@ export const appRouter = router({
         }
 
         const now = Date.now();
-        // Fix for pg timestamp losing timezone constraint
         let expiresAtStr = verification.expiresAt;
         if (!expiresAtStr.includes('T')) expiresAtStr = expiresAtStr.replace(' ', 'T');
         if (!expiresAtStr.endsWith('Z') && !expiresAtStr.includes('+')) expiresAtStr += 'Z';
         const expiresAt = new Date(expiresAtStr).getTime();
 
         if (now > expiresAt) {
-          console.warn(`[VerificationSignup] Expired code for ${input.email}. Now: ${new Date(now).toISOString()}, Expires: ${verification.expiresAt}`);
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
           throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت صلاحية كود التحقق. يرجى الاشتراك مرة أخرى." });
         }
@@ -186,7 +186,7 @@ export const appRouter = router({
       .input(z.object({ email: z.string().email("البريد الإلكتروني غير صالح") }))
       .mutation(async ({ input }) => {
         const [existing] = await db.select().from(users).where(eq(users.email, input.email));
-        if (!existing) return { success: true }; // Silently return true to prevent email enumeration
+        if (!existing) return { success: true };
 
         const code = generateVerificationCode();
 
@@ -215,33 +215,29 @@ export const appRouter = router({
           .where(and(eq(verificationCodes.email, input.email), eq(verificationCodes.type, 'reset')));
 
         if (!verification || verification.code !== input.code) {
-          console.warn(`[ResetPassword] Invalid code attempt for ${input.email}`);
           throw new TRPCError({ code: "BAD_REQUEST", message: "الكود غير صالح أو منتهي الصلاحية." });
         }
 
         const now = Date.now();
-        // Fix for pg timestamp losing timezone constraint
         let expiresAtStr = verification.expiresAt;
         if (!expiresAtStr.includes('T')) expiresAtStr = expiresAtStr.replace(' ', 'T');
         if (!expiresAtStr.endsWith('Z') && !expiresAtStr.includes('+')) expiresAtStr += 'Z';
         const expiresAt = new Date(expiresAtStr).getTime();
 
         if (now > expiresAt) {
-          console.warn(`[ResetPassword] Expired code for ${input.email}. Now: ${new Date(now).toISOString()}, Expires: ${verification.expiresAt}`);
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
           throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت صلاحية الكود. يرجى طلب كود جديد." });
         }
 
         const hashedPassword = hashPassword(input.newPassword);
         await db.update(users).set({ password: hashedPassword }).where(eq(users.email, input.email));
-
         await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
 
         return { success: true };
       }),
   }),
 
-  // User Profile
+  // User Profile Data
   profileData: router({
     get: protectedProcedure.query(async ({ ctx }) => {
       const profile = await dbHelpers.getUserProfile(ctx.user.id);
@@ -302,10 +298,7 @@ export const appRouter = router({
             .from(challenges)
             .leftJoin(userChallenges, and(eq(userChallenges.challengeId, challenges.id), eq(userChallenges.userId, ctx.user.id)));
 
-          if (userChallengesList.length === 0) {
-            console.log("[Router] DB returned 0 challenges, falling back to MOCK_CHALLENGES");
-            return MOCK_CHALLENGES;
-          }
+          if (userChallengesList.length === 0) return MOCK_CHALLENGES;
 
           return userChallengesList.map(c => ({
             ...c,
@@ -319,7 +312,7 @@ export const appRouter = router({
       }),
   }),
 
-  // Study Session Management
+  // Study Router
   study: router({
     analyzeMaterial: protectedProcedure
       .input(z.object({
@@ -330,41 +323,24 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         try {
           const prompt = `Analyze the following study material and extract exactly 5 to 10 logical study topics.
-          For each topic, provide:
-          1. A concise title.
-          2. Difficulty (easy, medium, hard).
-          3. Estimated duration in minutes.
-
-          Material Content:
-          ${input.content.substring(0, 5000)}
-
           Output formatting (JSON array):
           [{ "title": "...", "difficulty": "...", "duration": 60 }]
-          `;
+          Material: ${input.content.substring(0, 5000)}`;
 
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are an expert curriculum analyzer. Extract structured study topics accurately." },
+              { role: "system", content: "You are an expert curriculum analyzer. Extract structured study topics accurately in JSON." },
               { role: "user", content: prompt },
             ],
           });
 
           const content = response.choices[0]?.message?.content || "[]";
-          const rawContent = typeof content === "string"
-            ? content
-            : content.map(part => "text" in part ? part.text : "").join("\n");
-
+          const rawContent = typeof content === "string" ? content : String(content);
           const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
           const topics = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
 
-          return {
-            topics: topics.length > 0 ? topics : [
-              { title: 'Core Fundamentals', difficulty: 'medium', duration: 60 },
-              { title: 'Advanced Application', difficulty: 'hard', duration: 90 }
-            ]
-          };
+          return { topics: topics.length > 0 ? topics : [{ title: 'Core Fundamentals', difficulty: 'medium', duration: 60 }] };
         } catch (error: any) {
-          console.error("[AI Analysis Error]:", error?.message || error);
           return { topics: [{ title: 'Overview', difficulty: 'medium', duration: 60 }] };
         }
       }),
@@ -398,11 +374,7 @@ export const appRouter = router({
       try {
         return await dbHelpers.getStudySchedule(ctx.user.id);
       } catch (err: any) {
-        return [
-          { id: 1, subject: "Neural Architecture", duration: 45, scheduledTime: new Date().toISOString(), completed: 0, difficulty: 'hard', sessionType: 'study', materialId: null },
-          { id: 2, subject: "Quantum Learning", duration: 30, scheduledTime: new Date(Date.now() + 3600000).toISOString(), completed: 0, difficulty: 'medium', sessionType: 'review', materialId: null },
-          { id: 3, subject: "Data Structures", duration: 60, scheduledTime: new Date(Date.now() + 7200000).toISOString(), completed: 1, difficulty: 'easy', sessionType: 'study', materialId: null },
-        ];
+        return [];
       }
     }),
 
@@ -425,15 +397,10 @@ export const appRouter = router({
         if (input.completed === 1) {
           let bonusXp = 0;
           let reason = `Completed Study Session: ${session.subject}`;
-
           if (input.isLocked) {
             await updateChallengeProgress(ctx.user.id, "focus", 1);
-            if (input.distractions === 0) {
-              bonusXp += 30; // Deep work bonus
-              reason += " (Zero Distractions Bonus!)";
-            }
+            if (input.distractions === 0) bonusXp += 30;
           }
-
           await awardXP(ctx.user.id, 50 + bonusXp, reason);
           await updateChallengeProgress(ctx.user.id, "study_time", session.duration);
           await updateChallengeProgress(ctx.user.id, "consistency", 1);
@@ -457,57 +424,63 @@ export const appRouter = router({
       .input(z.object({ message: z.string() }))
       .mutation(async ({ ctx, input }) => {
         try {
+          const history = await dbHelpers.getUserAIChatHistory(ctx.user.id);
+          const recentHistory = history.slice(0, 5).reverse();
+          const historyContext = recentHistory.map(h => `User: ${h.message}\nAI: ${h.response}`).join("\n");
+
           const schedule = await dbHelpers.getStudySchedule(ctx.user.id);
           const scheduleContext = schedule.map(s => `ID: ${s.id}, Subject: ${s.subject}, Time: ${s.scheduledTime}`).join('\n');
 
-          const prompt = `You are ZED, a friendly and caring AI study buddy.
-Tone: Warm, attentive, and supportive.
-Style: Concise and straight to the point — no unnecessary introductions.
-Communication: Speaks simply, clearly, and only says what adds real value.
+          const prompt = `You are ZED, the Intelligent AI Study Buddy.
+          - Tone: Warm but EXTREMELY CONCISE ("ما قل ودل").
           - Context: Today is ${new Date().toISOString()}.
+          - History: ${historyContext}
           - Current Schedule:
           ${scheduleContext}
-
           User Message: "${input.message}"
-
           Output format (JSON):
           {
-            "actions": [{ "id": 123, "newTime": "ISO_DATE", "newDuration": 60, "action": "update" | "delete" }],
-            "friendlyMessage": "Your response to the user in Egyptian Arabic (or English if they use it)"
-          }
-          `;
+            "actions": [{ "id": 123, "newTime": "ISO_DATE", "newDuration": 60, "action": "update" | "delete" | "add", "subject": "..." }],
+            "friendlyMessage": "Your concise response in Egyptian Arabic/English"
+          }`;
 
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are an expert schedule optimizer and study buddy. Interpret the user's intent and provide specific DB updates AND a friendly message in JSON." },
+              { role: "system", content: "You are an expert schedule optimizer AI. Return only strict JSON." },
               { role: "user", content: prompt },
             ],
           });
 
           const content = response.choices[0]?.message?.content || "{}";
-          const rawContent = typeof content === "string" ? content : content.map(part => "text" in part ? part.text : "").join("\n");
+          const rawContent = typeof content === "string" ? content : String(content);
           const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
           const result = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
           const actions = result.actions || [];
-          const friendlyMessage = result.friendlyMessage || "I've handled that for you! 🔒✨";
+          const friendlyMessage = result.friendlyMessage || "Processed! 🔒";
 
           for (const action of actions) {
             if (action.action === "update") {
-              await db.update(studySchedules)
-                .set({
+              await db.update(studySchedules).set({ 
                   ...(action.newTime && { scheduledTime: action.newTime }),
                   ...(action.newDuration && { duration: action.newDuration })
-                })
-                .where(and(eq(studySchedules.id, action.id), eq(studySchedules.userId, ctx.user.id)));
+                }).where(and(eq(studySchedules.id, action.id), eq(studySchedules.userId, ctx.user.id)));
             } else if (action.action === "delete") {
               await db.delete(studySchedules).where(and(eq(studySchedules.id, action.id), eq(studySchedules.userId, ctx.user.id)));
+            } else if (action.action === "add" && action.subject && action.newTime) {
+              await db.insert(studySchedules).values({
+                userId: ctx.user.id,
+                subject: action.subject,
+                scheduledTime: action.newTime,
+                duration: action.newDuration || 60,
+                completed: 0,
+                createdAt: new Date().toISOString()
+              });
             }
           }
-
           return { response: friendlyMessage };
         } catch (error: any) {
-          console.error("[AI Schedule Adjustment Error]:", error?.message || error);
-          return { response: "I had trouble adjusting your schedule. 😓 (Error: " + (error?.message || "Internal Error") + ")" };
+          console.error("[AI Schedule Adjustment Error]:", error?.message);
+          return { response: "I had trouble adjusting your schedule. 😓" };
         }
       }),
   }),
@@ -522,13 +495,36 @@ Communication: Speaks simply, clearly, and only says what adds real value.
       }))
       .mutation(async ({ ctx, input }) => {
         try {
-          const systemMsg = `You are ZED, the Friendly AI Study Buddy for the LOCKEDIN platform.
-          - Tone: Supportive, funny, and encouraging. Like a close friend who is a genius.
-          - Language: Respond in the language used by the user. If they use Arabic, use Egyptian Arabic (Amiya).
-          - Goal: Help users stay focused, explain difficult concepts, and motivate them to reach their study goals.
-          - Context: ${input.documentContext ? "The user is studying: " + input.documentContext : "General study assistance"}.
+          const history = await dbHelpers.getUserAIChatHistory(ctx.user.id);
+          const recentHistory = (history as any[]).slice(0, 10).reverse();
+          const historyContext = recentHistory.map((h: any) => `User: ${h.message}\nAI: ${h.response}`).join("\n");
           
-          Always keep your responses relatively concise but impactful. Use emojis! 🔒🚀`;
+          const schedule = await dbHelpers.getStudySchedule(ctx.user.id);
+          const scheduleContext = (schedule as any[]).map((s: any) => `ID: ${s.id}, Subject: ${s.subject}, Time: ${s.scheduledTime}`).join('\n');
+
+          const knowledge = await dbHelpers.getUserAIKnowledge(ctx.user.id);
+          const knowledgeContext = (knowledge as any[]).map((k: any) => `- ${k.content}`).join('\n');
+
+          const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id));
+          const aiTone = settings?.aiTone || 'friendly';
+          const aiLanguage = settings?.aiLanguage || 'bilingual';
+
+          const systemMsg = `You are ZED, the Intelligent AI Study Buddy for LOCKEDIN.
+          - STYLE: EXTREMELY CONCISE ("ما قل ودل"). Direct and impactful.
+          - PERSONA: A genius friend. ${aiTone === 'strict' ? 'Be firm, demanding, and highly disciplined.' : aiTone === 'scientific' ? 'Use scientific terms, focus on neuro-efficiency.' : 'Be supportive, funny, and energetic.'}
+          - LANGUAGE: ${aiLanguage === 'arabic' ? 'Egyptian Arabic primary.' : aiLanguage === 'english' ? 'English primary.' : 'Dual Arabic (Egyptian/Amiya) and English.'}
+          - CONTEXT: Today is ${new Date().toISOString()}.
+          - INTERNAL MEMORY (Last 10 msgs):
+          ${historyContext}
+          - ESTABLISHED FACTS ABOUT USER:
+          ${knowledgeContext || "None yet. Learn about the user's habits/goals."}
+          - CURRENT SCHEDULE:
+          ${scheduleContext}
+          
+          OUTPUT RULES (JSON ONLY):
+          1. "response": Your reply to the user.
+          2. "actions": Array of database changes [{ "action": "add"|"update"|"delete", ... }].
+          3. "newKnowledge": Array of strings. If the user mentions a NEW persistent fact about themselves (habit, goal, preference, exam date), extract it here. (e.g. ["User has biology exam on Tuesday", "User hates evening study"]).`;
 
           const response = await invokeLLM({
             messages: [
@@ -536,60 +532,83 @@ Communication: Speaks simply, clearly, and only says what adds real value.
               { role: "user", content: input.message },
             ],
           });
-          const content = response.choices[0]?.message?.content || "Error generating response";
-          const aiResponse = typeof content === 'string'
-            ? content
-            : content.map(part => 'text' in part ? part.text : '').join('\n');
+
+          const content = response.choices[0]?.message?.content || "{}";
+          const rawContent = typeof content === "string" ? content : String(content);
+          const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+          const result = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
+          
+          const aiResponse = result.response || "Neural link stable. 🔒";
+          const actions = result.actions || [];
+          const newKnowledge = result.newKnowledge || [];
+
+          // Process Schedule Actions
+          for (const action of actions) {
+            if (action.action === "update") {
+              await db.update(studySchedules).set({ 
+                  ...(action.newTime && { scheduledTime: action.newTime }),
+                  ...(action.newDuration && { duration: action.newDuration })
+                }).where(and(eq(studySchedules.id, action.id), eq(studySchedules.userId, ctx.user.id)));
+            } else if (action.action === "delete") {
+              await db.delete(studySchedules).where(and(eq(studySchedules.id, action.id), eq(studySchedules.userId, ctx.user.id)));
+            } else if (action.action === "add" && action.subject && action.newTime) {
+              await db.insert(studySchedules).values({
+                userId: ctx.user.id,
+                subject: action.subject,
+                scheduledTime: action.newTime,
+                duration: action.newDuration || 60,
+                completed: 0,
+                createdAt: new Date().toISOString()
+              });
+            }
+          }
+
+          // Process New Knowledge (Training)
+          for (const fact of newKnowledge) {
+            await dbHelpers.saveAIKnowledge(ctx.user.id, fact);
+          }
 
           await dbHelpers.saveAIChatMessage(ctx.user.id, input.message, aiResponse, input.topic);
           await updateChallengeProgress(ctx.user.id, "ai_usage", 1);
-          return { response: aiResponse };
+          
+          return { 
+            response: aiResponse, 
+            actionsCount: actions.length,
+            learnedSomething: newKnowledge.length > 0 
+          };
         } catch (error: any) {
-          console.error("[AI Coach Error]:", error?.message || error);
-          return { response: "I encountered an error. 😓 (Make sure GEMINI_API_KEY is set in Railway)" };
+          console.error("AI CHAT ERROR:", error);
+          return { response: "Neural pulse erratic. Try again.", actionsCount: 0 };
         }
       }),
     getHistory: protectedProcedure.query(async ({ ctx }) => {
       return await dbHelpers.getUserAIChatHistory(ctx.user.id);
     }),
+    getKnowledge: protectedProcedure.query(async ({ ctx }) => {
+      return await dbHelpers.getUserAIKnowledge(ctx.user.id);
+    }),
+    deleteKnowledge: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await dbHelpers.deleteAIKnowledge(input.id, ctx.user.id);
+        return { success: true };
+      }),
     generateQuiz: protectedProcedure
-      .input(z.object({
-        sessionId: z.number(),
-        content: z.string(),
-      }))
+      .input(z.object({ sessionId: z.number(), content: z.string() }))
       .mutation(async ({ input }) => {
         try {
-          const prompt = `You are a strict AI Knowledge Validator. Based on the following study content, generate exactly 5 high-quality multiple-choice questions.
-          For each question, provide:
-          1. The question text.
-          2. 4 options.
-          3. The correct answer (must match one of the options).
-          4. A brief "weakness context" to show if someone gets this wrong.
-
-          Format your response as a JSON array of objects with the following schema:
-          [{ "question": "...", "options": ["...", "...", "...", "..."], "answer": "...", "type": "MULTIPLE CHOICE", "weakness": "..." }]
-
-          CONTENT:
-          ${input.content.substring(0, 4000)}
-          `;
-
+          const prompt = `Generate exactly 5 high-quality MCQs from this content: ${input.content.substring(0, 4000)}. Return JSON array.`;
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are a professional educational assessment AI. Always respond with high-quality multiple choice questions." },
+              { role: "system", content: "Educational assessment AI. Respond with JSON MCQs." },
               { role: "user", content: prompt },
             ],
           });
-
           const content = response.choices[0]?.message?.content || "[]";
-          const rawContent = typeof content === "string"
-            ? content
-            : content.map(part => "text" in part ? part.text : "").join("\n");
+          const rawContent = typeof content === "string" ? content : String(content);
           const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
-          const quiz = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
-
-          return { quiz };
+          return { quiz: JSON.parse(jsonMatch ? jsonMatch[0] : "[]") };
         } catch (error) {
-          console.error("Quiz generation failed:", error);
           return { quiz: [], error: "Failed to generate quiz." };
         }
       }),
@@ -625,6 +644,8 @@ Communication: Speaks simply, clearly, and only says what adds real value.
         socialNotifications: z.number().optional(),
         messageNotifications: z.number().optional(),
         weeklyDigest: z.number().optional(),
+        aiTone: z.string().optional(),
+        aiLanguage: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const [existing] = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id));
@@ -637,7 +658,7 @@ Communication: Speaks simply, clearly, and only says what adds real value.
       }),
   }),
 
-  // User Core
+  // User Account Core
   userAccount: router({
     getProfile: protectedProcedure.query(async ({ ctx }) => {
       try {
@@ -645,7 +666,6 @@ Communication: Speaks simply, clearly, and only says what adds real value.
         const profile = await dbHelpers.getUserProfile(ctx.user.id);
         const badges = await dbHelpers.getUserBadges(ctx.user.id);
         const activities = await db.select().from(userActivities).where(eq(userActivities.userId, ctx.user.id)).orderBy(desc(userActivities.createdAt)).limit(20);
-
         return {
           ...profile,
           badges,
@@ -656,23 +676,24 @@ Communication: Speaks simply, clearly, and only says what adds real value.
           avatar: profile?.profilePhoto || null,
           profilePhoto: profile?.profilePhoto || null,
           levelTitle: getLevelTitle(profile?.level || 1),
-          streak: profile?.streak || 0 // Ensure we use 'streak' from DB
+          streak: profile?.streak || 0
         };
-      } catch (err: any) {
+      } catch (err) {
         return {
           id: ctx.user.id,
           userId: ctx.user.id,
-          xp: 1250,
-          level: 5,
-          badges: [],
-          activities: [],
-          name: ctx.user.name || "Test User",
-          username: ctx.user.username || "test_user",
-          levelTitle: "Neural Architect",
-          streak: 7,
+          xp: 0,
+          level: 1,
+          name: ctx.user.name,
+          username: ctx.user.username,
+          email: ctx.user.email,
           avatar: null,
           profilePhoto: null,
-          bio: "Simulated neural link active. Database offline."
+          bio: null,
+          streak: 0,
+          levelTitle: 'Fresh Initiate',
+          badges: [],
+          activities: []
         };
       }
     }),
@@ -696,568 +717,189 @@ Communication: Speaks simply, clearly, and only says what adds real value.
       }),
   }),
 
-  // Gamification (Legacy/Compat)
+  // Legacy/Compat Routers
   gamification: router({
-    getBadges: protectedProcedure.query(async ({ ctx }) => {
-      return await dbHelpers.getUserBadges(ctx.user.id);
+    getBadges: protectedProcedure.query(async ({ ctx }) => await dbHelpers.getUserBadges(ctx.user.id)),
+  }),
+
+  leaderboards: router({
+    getGlobal: protectedProcedure.query(async () => {
+      return await db.select({ id: users.id, name: users.name, username: users.username, xp: userProfiles.xp, level: userProfiles.level, avatar: userProfiles.profilePhoto }).from(users).innerJoin(userProfiles, eq(users.id, userProfiles.userId)).orderBy(desc(userProfiles.xp)).limit(50);
+    }),
+    getGroupMembers: protectedProcedure.input(z.number()).query(async ({ input }) => {
+      return await db.select({ 
+        id: users.id, 
+        name: users.name, 
+        username: users.username, 
+        xp: userProfiles.xp, 
+        level: userProfiles.level, 
+        avatar: userProfiles.profilePhoto,
+        role: studyGroupMembers.role
+      }).from(users)
+      .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+      .innerJoin(studyGroupMembers, eq(users.id, studyGroupMembers.userId))
+      .where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.status, "approved")))
+      .orderBy(desc(userProfiles.xp));
+    }),
+    getSameLevel: protectedProcedure.query(async ({ ctx }) => {
+      const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, ctx.user.id));
+      const level = profile?.level || 1;
+      return await db.select({ id: users.id, name: users.name, username: users.username, xp: userProfiles.xp, level: userProfiles.level, avatar: userProfiles.profilePhoto }).from(users).innerJoin(userProfiles, eq(users.id, userProfiles.userId)).where(eq(userProfiles.level, level)).orderBy(desc(userProfiles.xp)).limit(50);
+    }),
+    getSquads: protectedProcedure.query(async () => {
+        return [
+          { id: 1, name: "Alpha Squad", memberCount: 5, totalXp: 12500, avatar: null },
+          { id: 2, name: "Beta Team", memberCount: 3, totalXp: 8200, avatar: null }
+        ];
     }),
   }),
 
-  // Flash Cards
   flashCards: router({
     createDeck: protectedProcedure
-      .input(z.object({
-        title: z.string(),
-        description: z.string().optional(),
-        category: z.string().optional(),
-      }))
+      .input(z.object({ title: z.string(), description: z.string().optional(), category: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
-        await dbHelpers.createFlashCardDeck({
-          userId: ctx.user.id,
-          title: input.title,
-          description: input.description,
-          category: input.category,
-        });
-        await updateChallengeProgress(ctx.user.id, "consistency", 1);
+        await dbHelpers.createFlashCardDeck({ userId: ctx.user.id, title: input.title, description: input.description, category: input.category });
         return { success: true };
       }),
-    getDecks: protectedProcedure.query(async ({ ctx }) => {
-      return await dbHelpers.getUserFlashCardDecks(ctx.user.id);
-    }),
+    getDecks: protectedProcedure.query(async ({ ctx }) => await dbHelpers.getUserFlashCardDecks(ctx.user.id)),
     addCard: protectedProcedure
-      .input(z.object({
-        deckId: z.number(),
-        question: z.string(),
-        answer: z.string(),
-        difficulty: z.enum(["easy", "medium", "hard"]).optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await dbHelpers.addFlashCard({
-          deckId: input.deckId,
-          question: input.question,
-          answer: input.answer,
-          difficulty: input.difficulty,
-        });
+      .input(z.object({ deckId: z.number(), question: z.string(), answer: z.string(), difficulty: z.enum(["easy", "medium", "hard"]).optional() }))
+      .mutation(async ({ input }) => {
+        await dbHelpers.addFlashCard(input);
         return { success: true };
       }),
-    getCards: protectedProcedure
-      .input(z.object({ deckId: z.number() }))
-      .query(async ({ input }) => {
-        return await dbHelpers.getDeckFlashCards(input.deckId);
-      }),
+    getCards: protectedProcedure.input(z.object({ deckId: z.number() })).query(async ({ input }) => await dbHelpers.getDeckFlashCards(input.deckId)),
   }),
 
-  // Social Media Lock
   blockedWebsites: router({
-    add: protectedProcedure
-      .input(z.object({
-        domain: z.string(),
-        reason: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await dbHelpers.addBlockedWebsite({
-          userId: ctx.user.id,
-          domain: input.domain,
-          reason: input.reason,
-        });
-        return { success: true };
-      }),
-    list: protectedProcedure.query(async ({ ctx }) => {
-      return await dbHelpers.getUserBlockedWebsites(ctx.user.id);
+    add: protectedProcedure.input(z.object({ domain: z.string(), reason: z.string().optional() })).mutation(async ({ ctx, input }) => {
+      await dbHelpers.addBlockedWebsite({ userId: ctx.user.id, domain: input.domain, reason: input.reason });
+      return { success: true };
     }),
-    remove: protectedProcedure
-      .input(z.object({ websiteId: z.number() }))
-      .mutation(async ({ input }) => {
-        await dbHelpers.removeBlockedWebsite(input.websiteId);
-        return { success: true };
-      }),
+    list: protectedProcedure.query(async ({ ctx }) => await dbHelpers.getUserBlockedWebsites(ctx.user.id)),
+    remove: protectedProcedure.input(z.object({ websiteId: z.number() })).mutation(async ({ input }) => {
+      await dbHelpers.removeBlockedWebsite(input.websiteId);
+      return { success: true };
+    }),
   }),
 
-  // Community Posts
   community: router({
-    createPost: protectedProcedure
-      .input(z.object({
-        title: z.string(),
-        content: z.string(),
-        category: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await dbHelpers.createCommunityPost({
-          userId: ctx.user.id,
-          title: input.title,
-          content: input.content,
-          category: input.category || "general",
-        });
-        await updateChallengeProgress(ctx.user.id, "group", 1);
-        return { success: true };
-      }),
+    createPost: protectedProcedure.input(z.object({ title: z.string(), content: z.string(), category: z.string().optional() })).mutation(async ({ ctx, input }) => {
+      await dbHelpers.createCommunityPost({ userId: ctx.user.id, title: input.title, content: input.content, category: input.category || "general" });
+      return { success: true };
+    }),
     getPosts: publicProcedure.query(async () => {
-      try {
-        const posts = await dbHelpers.getAllCommunityPosts();
-        const enrichedPosts = await Promise.all(
-          posts.map(async (post) => {
-            const user = await dbHelpers.getUserById(post.userId);
-            const profile = await dbHelpers.getUserProfile(post.userId);
-            return {
-              ...post,
-              authorName: user?.name || 'Unknown',
-              authorUsername: user?.username || 'unknown',
-              authorAvatar: profile?.profilePhoto || null,
-            };
-          })
-        );
-        return enrichedPosts;
-      } catch (err: any) {
-        return [
-          { id: 1, title: "How to stay focused?", content: "I'm struggling with long sessions. Any tips?", category: "general", authorName: "Ahmed", authorUsername: "ahmed_dev", authorAvatar: null, createdAt: new Date().toISOString(), likes: 5, commentsCount: 2 },
-          { id: 2, title: "New Study Group!", content: "Join our Neural Architecture group.", category: "groups", authorName: "Alice", authorUsername: "alice_wonder", authorAvatar: null, createdAt: new Date().toISOString(), likes: 12, commentsCount: 4 },
-        ];
-      }
+      const posts = await dbHelpers.getAllCommunityPosts();
+      return await Promise.all(posts.map(async (post) => {
+        const user = await dbHelpers.getUserById(post.userId);
+        const profile = await dbHelpers.getUserProfile(post.userId);
+        return { ...post, authorName: user?.name || 'Unknown', authorUsername: user?.username || 'unknown', authorAvatar: profile?.profilePhoto || null };
+      }));
     }),
-    getMyPosts: protectedProcedure.query(async ({ ctx }) => {
-      return await dbHelpers.getUserCommunityPosts(ctx.user.id);
+    getMyPosts: protectedProcedure.query(async ({ ctx }) => await dbHelpers.getUserCommunityPosts(ctx.user.id)),
+    likePost: protectedProcedure.input(z.object({ postId: z.number() })).mutation(async ({ ctx, input }) => {
+      await dbHelpers.likePost(input.postId, ctx.user.id);
+      return { success: true };
     }),
-    likePost: protectedProcedure
-      .input(z.object({ postId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await dbHelpers.likePost(input.postId, ctx.user.id);
-        return { success: true };
-      }),
   }),
-  // Social & Community Features
+
   social: router({
-    searchUsers: protectedProcedure
-      .input(z.string())
-      .query(async ({ input, ctx }) => {
-        try {
-          if (!input.trim()) return [];
-          const usersList = await db.select({
-            id: users.id,
-            name: users.name,
-            username: users.username,
-            avatar: userProfiles.profilePhoto,
-            xp: userProfiles.xp,
-            level: userProfiles.level,
-          })
-            .from(users)
-            .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
-            .where(and(
-              or(like(users.username, `%${input}%`), like(users.name, `%${input}%`)),
-              not(eq(users.id, ctx.user.id))
-            ))
-            .limit(20);
-
-          if (usersList.length === 0) {
-            return MOCK_USERS.filter(u =>
-              u.username.toLowerCase().includes(input.toLowerCase()) ||
-              u.name.toLowerCase().includes(input.toLowerCase())
-            );
-          }
-          return usersList;
-        } catch (err: any) {
-          return MOCK_USERS.filter(u =>
-            u.username.toLowerCase().includes(input.toLowerCase()) ||
-            u.name.toLowerCase().includes(input.toLowerCase())
-          );
-        }
-      }),
-
-    getPublicProfile: publicProcedure
-      .input(z.number())
-      .query(async ({ input }) => {
-        try {
-          const user = await dbHelpers.getUserById(input);
-          if (!user) throw new TRPCError({ code: "NOT_FOUND" });
-          const profile = await dbHelpers.getUserProfile(input);
-          const badges = await dbHelpers.getUserBadges(input);
-          const activities = await db.select().from(userActivities).where(eq(userActivities.userId, input)).orderBy(desc(userActivities.createdAt)).limit(10);
-
-          return {
-            id: user.id,
-            name: user.name,
-            username: user.username,
-            bio: profile?.bio,
-            avatar: profile?.profilePhoto,
-            profilePhoto: profile?.profilePhoto,
-            xp: profile?.xp || 0,
-            level: profile?.level || 1,
-            streak: profile?.streak || 0,
-            levelTitle: getLevelTitle(profile?.level || 1),
-            badges,
-            activities
-          };
-        } catch (err: any) {
-          return {
-            id: input,
-            name: "Mock Researcher",
-            username: "mock_researcher",
-            bio: "Database link severed. Displaying neural simulation profile.",
-            avatar: null,
-            profilePhoto: null,
-            xp: 750,
-            level: 3,
-            streak: 4,
-            levelTitle: "Neural Pioneer",
-            badges: [],
-            activities: []
-          };
-        }
-      }),
+    searchUsers: protectedProcedure.input(z.string()).query(async ({ input, ctx }) => {
+      if (!input.trim()) return [];
+      return await db.select({ id: users.id, name: users.name, username: users.username, avatar: userProfiles.profilePhoto, xp: userProfiles.xp, level: userProfiles.level })
+        .from(users).leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+        .where(and(or(like(users.username, `%${input}%`), like(users.name, `%${input}%`)), not(eq(users.id, ctx.user.id)))).limit(20);
+    }),
+    getPublicProfile: publicProcedure.input(z.number()).query(async ({ input }) => {
+      const user = await dbHelpers.getUserById(input);
+      if (!user) throw new TRPCError({ code: "NOT_FOUND" });
+      const profile = await dbHelpers.getUserProfile(input);
+      const badges = await dbHelpers.getUserBadges(input);
+      const activities = await db.select().from(userActivities).where(eq(userActivities.userId, input)).orderBy(desc(userActivities.createdAt)).limit(10);
+      return { id: user.id, name: user.name, username: user.username, bio: profile?.bio, avatar: profile?.profilePhoto, xp: profile?.xp || 0, level: profile?.level || 1, badges, activities, profilePhoto: profile?.profilePhoto, streak: profile?.streak || 0, levelTitle: getLevelTitle(profile?.level || 1) };
+    }),
   }),
 
-  // Direct Messaging
   messaging: router({
-    sendMessage: protectedProcedure
-      .input(z.object({ receiverId: z.number(), content: z.string() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.insert(directMessages).values({
-          senderId: ctx.user.id,
-          receiverId: input.receiverId,
-          content: input.content,
-        });
-        return { success: true };
-      }),
-
-    getMessages: protectedProcedure
-      .input(z.number()) // withUserId
-      .query(async ({ ctx, input }) => {
-        return await db.select()
-          .from(directMessages)
-          .where(or(
-            and(eq(directMessages.senderId, ctx.user.id), eq(directMessages.receiverId, input)),
-            and(eq(directMessages.senderId, input), eq(directMessages.receiverId, ctx.user.id))
-          ))
-          .orderBy(directMessages.createdAt);
-      }),
-
+    sendMessage: protectedProcedure.input(z.object({ receiverId: z.number(), content: z.string() })).mutation(async ({ ctx, input }) => {
+      await db.insert(directMessages).values({ senderId: ctx.user.id, receiverId: input.receiverId, content: input.content });
+      return { success: true };
+    }),
+    getMessages: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
+      return await db.select().from(directMessages).where(or(and(eq(directMessages.senderId, ctx.user.id), eq(directMessages.receiverId, input)), and(eq(directMessages.senderId, input), eq(directMessages.receiverId, ctx.user.id)))).orderBy(directMessages.createdAt);
+    }),
     getConversations: protectedProcedure.query(async ({ ctx }) => {
-      // Get unique users current user has messaged or received messages from
-      const sentTo = await db.select({ id: directMessages.receiverId }).from(directMessages).where(eq(directMessages.senderId, ctx.user.id));
-      const receivedFrom = await db.select({ id: directMessages.senderId }).from(directMessages).where(eq(directMessages.receiverId, ctx.user.id));
-
-      const userIds = Array.from(new Set([...sentTo.map(u => u.id), ...receivedFrom.map(u => u.id)]));
-      if (userIds.length === 0) return [];
-
-      return await db.select({
-        id: users.id,
-        name: users.name,
-        username: users.username,
-      })
-        .from(users)
-        .where(inArray(users.id, userIds));
+        const sent = await db.select({ otherId: directMessages.receiverId }).from(directMessages).where(eq(directMessages.senderId, ctx.user.id));
+        const received = await db.select({ otherId: directMessages.senderId }).from(directMessages).where(eq(directMessages.receiverId, ctx.user.id));
+        const userIds = Array.from(new Set([...sent.map(s => s.otherId), ...received.map(r => r.otherId)]));
+        if (userIds.length === 0) return [];
+        return await db.select({ id: users.id, name: users.name, username: users.username, avatar: userProfiles.profilePhoto }).from(users).leftJoin(userProfiles, eq(users.id, userProfiles.userId)).where(inArray(users.id, userIds));
     }),
   }),
 
-  // Study Groups
   groups: router({
-    create: protectedProcedure
-      .input(z.object({ name: z.string().min(3), description: z.string().optional(), isPublic: z.boolean().optional() }))
-      .mutation(async ({ ctx, input }) => {
-        const [result] = await db.insert(studyGroups).values({
-          name: input.name,
-          description: input.description,
-          creatorId: ctx.user.id,
-          isPrivate: input.isPublic === false ? 1 : 0,
-        }).returning({ id: studyGroups.id });
-
-        const groupId = result.id;
-        await db.insert(studyGroupMembers).values({
-          groupId,
-          userId: ctx.user.id,
-          role: "admin",
-          status: "approved"
-        });
-
-        return { groupId };
-      }),
-
-    search: protectedProcedure
-      .input(z.string())
-      .query(async ({ input }) => {
-        try {
-          if (!input.trim()) return [];
-          const list = await db.select({
-            id: studyGroups.id,
-            name: studyGroups.name,
-            description: studyGroups.description,
-            memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
-          })
-            .from(studyGroups)
-            .where(like(studyGroups.name, `%${input}%`))
-            .limit(20);
-
-          if (list.length === 0) {
-            return MOCK_GROUPS.filter(g => g.name.toLowerCase().includes(input.toLowerCase()));
-          }
-          return list;
-        } catch (err) {
-          return MOCK_GROUPS.filter(g => g.name.toLowerCase().includes(input.toLowerCase()));
-        }
-      }),
-
+    create: protectedProcedure.input(z.object({ name: z.string().min(3), description: z.string().optional(), isPublic: z.boolean().optional() })).mutation(async ({ ctx, input }) => {
+      const [result] = await db.insert(studyGroups).values({ name: input.name, description: input.description, creatorId: ctx.user.id, isPrivate: input.isPublic === false ? 1 : 0 }).returning({ id: studyGroups.id });
+      await db.insert(studyGroupMembers).values({ groupId: result.id, userId: ctx.user.id, role: "admin", status: "approved" });
+      return { groupId: result.id };
+    }),
     listMyGroups: protectedProcedure.query(async ({ ctx }) => {
-      return await db.select({
-        id: studyGroups.id,
-        name: studyGroups.name,
-        description: studyGroups.description,
-        role: studyGroupMembers.role,
-        memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
-      })
-        .from(studyGroups)
-        .innerJoin(studyGroupMembers, eq(studyGroups.id, studyGroupMembers.groupId))
-        .where(and(eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.status, "approved")));
+      return await db.select({ id: studyGroups.id, name: studyGroups.name, description: studyGroups.description, role: studyGroupMembers.role }).from(studyGroups).innerJoin(studyGroupMembers, eq(studyGroups.id, studyGroupMembers.groupId)).where(and(eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.status, "approved")));
     }),
-
-    discover: protectedProcedure.query(async ({ ctx }) => {
-      // Get groups user is NOT a member of
-      const myGroupMemberships = await db.select({ id: studyGroupMembers.groupId }).from(studyGroupMembers).where(eq(studyGroupMembers.userId, ctx.user.id));
-      const myGroupIds = myGroupMemberships.map(g => g.id);
-
-      const query = db.select({
-        id: studyGroups.id,
-        name: studyGroups.name,
-        description: studyGroups.description,
-        creatorId: studyGroups.creatorId,
-        memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
-      }).from(studyGroups);
-
-      if (myGroupIds.length > 0) {
-        return await query.where(not(inArray(studyGroups.id, myGroupIds))).limit(10);
-      }
-      return await query.limit(10);
+    search: protectedProcedure.input(z.string()).query(async ({ input }) => {
+      const results = await db.select().from(studyGroups).where(and(like(studyGroups.name, `%${input}%`), eq(studyGroups.isPrivate, 0)));
+      return await Promise.all(results.map(async (g) => {
+        const members = await db.select({ count: sql<number>`count(*)` }).from(studyGroupMembers).where(eq(studyGroupMembers.groupId, g.id));
+        return { ...g, memberCount: Number(members[0]?.count || 0) };
+      }));
     }),
-
-    joinRequest: protectedProcedure
-      .input(z.number())
-      .mutation(async ({ ctx, input }) => {
-        const [existing] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id)));
-        if (existing) return { success: true };
-
-        await db.insert(studyGroupMembers).values({
-          groupId: input,
-          userId: ctx.user.id,
-          status: "pending",
-        });
-        return { success: true };
-      }),
-
-    getPendingMembers: protectedProcedure
-      .input(z.number())
-      .query(async ({ ctx, input }) => {
-        const [group] = await db.select().from(studyGroups).where(eq(studyGroups.id, input));
-        if (group.creatorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
-
-        return await db.select({
-          id: users.id,
-          name: users.name,
-          username: users.username,
-        })
-          .from(users)
-          .innerJoin(studyGroupMembers, eq(users.id, studyGroupMembers.userId))
-          .where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.status, "pending")));
-      }),
-
-    handleMember: protectedProcedure
-      .input(z.object({ groupId: z.number(), userId: z.number(), approve: z.boolean() }))
-      .mutation(async ({ ctx, input }) => {
-        const [group] = await db.select().from(studyGroups).where(eq(studyGroups.id, input.groupId));
-        if (group.creatorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
-
-        if (input.approve) {
-          await db.update(studyGroupMembers).set({ status: "approved" }).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, input.userId)));
-        } else {
-          await db.delete(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, input.userId)));
-        }
-        return { success: true };
-      }),
-
-    getGroup: protectedProcedure
-      .input(z.number())
-      .query(async ({ ctx, input }) => {
-        const [group] = await db.select({
-          id: studyGroups.id,
-          name: studyGroups.name,
-          description: studyGroups.description,
-          creatorId: studyGroups.creatorId,
-          isPrivate: studyGroups.isPrivate,
-          memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
-        })
-          .from(studyGroups)
-          .where(eq(studyGroups.id, input));
-
-        if (!group) throw new TRPCError({ code: "NOT_FOUND" });
-
-        const [membership] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id)));
-
-        return { ...group, role: membership?.role || null, status: membership?.status || null };
-      }),
+    discover: protectedProcedure.query(async () => {
+      const results = await db.select().from(studyGroups).where(eq(studyGroups.isPrivate, 0)).limit(10);
+      return await Promise.all(results.map(async (g) => {
+        const members = await db.select({ count: sql<number>`count(*)` }).from(studyGroupMembers).where(eq(studyGroupMembers.groupId, g.id));
+        return { ...g, memberCount: Number(members[0]?.count || 0) };
+      }));
+    }),
+    getGroup: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
+      const [group] = await db.select().from(studyGroups).where(eq(studyGroups.id, input));
+      if (!group) return null;
+      const members = await db.select({ count: sql<number>`count(*)` }).from(studyGroupMembers).where(eq(studyGroupMembers.groupId, input));
+      const [userMember] = await db.select({ role: studyGroupMembers.role }).from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id)));
+      return { ...group, memberCount: Number(members[0]?.count || 0), role: userMember?.role || null };
+    }),
   }),
 
-  // Group Content & Collaboration
   groupContent: router({
-    getFeed: protectedProcedure
-      .input(z.number())
-      .query(async ({ input }) => {
-        return await db.select({
-          id: studyGroupPosts.id,
-          title: studyGroupPosts.title,
-          content: studyGroupPosts.content,
-          createdAt: studyGroupPosts.createdAt,
-          authorName: users.name,
-        })
-          .from(studyGroupPosts)
-          .innerJoin(users, eq(studyGroupPosts.userId, users.id))
-          .where(eq(studyGroupPosts.groupId, input))
-          .orderBy(desc(studyGroupPosts.createdAt));
-      }),
-
-    createPost: protectedProcedure
-      .input(z.object({ groupId: z.number(), title: z.string(), content: z.string() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.insert(studyGroupPosts).values({
-          groupId: input.groupId,
-          userId: ctx.user.id,
-          title: input.title,
-          content: input.content,
-        });
-        return { success: true };
-      }),
-
-    getTasks: protectedProcedure
-      .input(z.number())
-      .query(async ({ input }) => {
-        return await db.select().from(studyGroupTasks).where(eq(studyGroupTasks.groupId, input));
-      }),
-
-    createTask: protectedProcedure
-      .input(z.object({ groupId: z.number(), title: z.string(), description: z.string().optional(), dueDate: z.string().optional() }))
-      .mutation(async ({ input }) => {
-        await db.insert(studyGroupTasks).values({
-          groupId: input.groupId,
-          title: input.title,
-          description: input.description,
-          dueDate: input.dueDate ? new Date(input.dueDate).toISOString() : null,
-        });
-        return { success: true };
-      }),
-
-    getChatMessages: protectedProcedure
-      .input(z.number())
-      .query(async ({ input }) => {
-        return await db.select({
-          id: studyGroupMessages.id,
-          content: studyGroupMessages.content,
-          createdAt: studyGroupMessages.createdAt,
-          userId: users.id,
-          authorName: users.name,
-          authorUsername: users.username,
-        })
-          .from(studyGroupMessages)
-          .innerJoin(users, eq(studyGroupMessages.userId, users.id))
-          .where(eq(studyGroupMessages.groupId, input))
-          .orderBy(studyGroupMessages.createdAt);
-      }),
-
-    sendChatMessage: protectedProcedure
-      .input(z.object({ groupId: z.number(), content: z.string() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.insert(studyGroupMessages).values({
-          groupId: input.groupId,
-          userId: ctx.user.id,
-          content: input.content,
-        });
-        return { success: true };
-      }),
-  }),
-
-  // Leaderboards
-  leaderboards: router({
-    getGlobal: publicProcedure.query(async () => {
-      try {
-        const usersList = await db.select({
-          id: users.id,
-          name: users.name,
-          username: users.username,
-          avatar: userProfiles.profilePhoto,
-          xp: userProfiles.xp,
-          level: userProfiles.level,
-        })
-          .from(userProfiles)
-          .innerJoin(users, eq(userProfiles.userId, users.id))
-          .orderBy(desc(userProfiles.xp))
-          .limit(50);
-
-        if (usersList.length === 0) return MOCK_USERS;
-        return usersList;
-      } catch (err) {
-        return MOCK_USERS;
-      }
+    getFeed: protectedProcedure.input(z.number()).query(async ({ input }) => {
+      return await db.select({ id: studyGroupPosts.id, title: studyGroupPosts.title, content: studyGroupPosts.content, createdAt: studyGroupPosts.createdAt, authorName: users.name }).from(studyGroupPosts).innerJoin(users, eq(studyGroupPosts.userId, users.id)).where(eq(studyGroupPosts.groupId, input)).orderBy(desc(studyGroupPosts.createdAt));
     }),
-
-    getSameLevel: protectedProcedure.query(async ({ ctx }) => {
-      // First, get the user's level
-      const [profile] = await db.select({ level: userProfiles.level }).from(userProfiles).where(eq(userProfiles.userId, ctx.user.id));
-      const userLevel = profile?.level || 1;
-
-      return await db.select({
-        id: users.id,
-        name: users.name,
-        username: users.username,
-        avatar: userProfiles.profilePhoto,
-        xp: userProfiles.xp,
-        level: userProfiles.level,
-      })
-        .from(userProfiles)
-        .innerJoin(users, eq(userProfiles.userId, users.id))
-        .where(eq(userProfiles.level, userLevel))
-        .orderBy(desc(userProfiles.xp))
-        .limit(50);
+    getTasks: protectedProcedure.input(z.number()).query(async ({ input }) => {
+        return await db.select().from(studyGroupTasks).where(eq(studyGroupTasks.groupId, input)).orderBy(desc(studyGroupTasks.createdAt));
     }),
-
-    getSquads: publicProcedure.query(async () => {
-      try {
-        const result = await db.select({
-          id: studyGroups.id,
-          name: studyGroups.name,
-          avatar: studyGroups.avatar,
-          totalXp: sql<number>`sum(${userProfiles.xp})`.as('totalXp'),
-          memberCount: sql<number>`count(${studyGroupMembers.id})`.as('memberCount'),
-        })
-          .from(studyGroups)
-          .leftJoin(studyGroupMembers, and(eq(studyGroups.id, studyGroupMembers.groupId), eq(studyGroupMembers.status, "approved")))
-          .leftJoin(userProfiles, eq(studyGroupMembers.userId, userProfiles.userId))
-          .groupBy(studyGroups.id)
-          .orderBy(desc(sql`totalXp`))
-          .limit(50);
-
-        if (result.length === 0) return MOCK_GROUPS;
-        return result.map(g => ({ ...g, totalXp: Number(g.totalXp) || 0 }));
-      } catch (err) {
-        return MOCK_GROUPS;
-      }
-    }),
-
-    getGroupMembers: publicProcedure
-      .input(z.number())
-      .query(async ({ input }) => {
+    getChatMessages: protectedProcedure.input(z.number()).query(async ({ input }) => {
         return await db.select({
-          id: users.id,
-          name: users.name,
-          username: users.username,
-          avatar: userProfiles.profilePhoto,
-          xp: userProfiles.xp,
-          level: userProfiles.level,
-          role: studyGroupMembers.role,
-        })
-          .from(studyGroupMembers)
-          .innerJoin(users, eq(studyGroupMembers.userId, users.id))
-          .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
-          .where(and(
-            eq(studyGroupMembers.groupId, input),
-            eq(studyGroupMembers.status, "approved")
-          ))
-          .orderBy(desc(userProfiles.xp));
-      }),
+            id: studyGroupMessages.id,
+            groupId: studyGroupMessages.groupId,
+            userId: studyGroupMessages.userId,
+            content: studyGroupMessages.content,
+            createdAt: studyGroupMessages.createdAt,
+            authorName: users.name,
+            authorUsername: users.username,
+            authorAvatar: userProfiles.profilePhoto
+        }).from(studyGroupMessages)
+        .innerJoin(users, eq(studyGroupMessages.userId, users.id))
+        .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+        .where(eq(studyGroupMessages.groupId, input))
+        .orderBy(studyGroupMessages.createdAt);
+    }),
+    createPost: protectedProcedure.input(z.object({ groupId: z.number(), title: z.string(), content: z.string() })).mutation(async ({ ctx, input }) => {
+        await db.insert(studyGroupPosts).values({ groupId: input.groupId, userId: ctx.user.id, title: input.title, content: input.content });
+        return { success: true };
+    }),
+    sendChatMessage: protectedProcedure.input(z.object({ groupId: z.number(), content: z.string() })).mutation(async ({ ctx, input }) => {
+        await db.insert(studyGroupMessages).values({ groupId: input.groupId, userId: ctx.user.id, content: input.content });
+        return { success: true };
+    }),
   }),
 });
 

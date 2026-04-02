@@ -6,4 +6,6 @@ export const ENV = {
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
+  forgeApiUrl: process.env.VITE_FORGE_API_URL ?? "",
+  forgeApiKey: process.env.VITE_FORGE_API_KEY ?? "",
 };

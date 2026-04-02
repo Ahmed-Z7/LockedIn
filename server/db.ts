@@ -21,7 +21,8 @@ import {
   postLikes, InsertPostLike,
   notifications, InsertNotification,
   userSettings, InsertUserSetting,
-  studyMaterials, InsertStudyMaterial
+  studyMaterials, InsertStudyMaterial,
+  userAIKnowledge, InsertUserAIKnowledge
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -505,4 +506,26 @@ export async function getStudySessionById(id: number, userId: number) {
     .where(and(eq(studySchedules.id, id), eq(studySchedules.userId, userId)))
     .limit(1);
   return result[0] || null;
+}
+
+// AI Knowledge Functions
+export async function getUserAIKnowledge(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(userAIKnowledge).where(eq(userAIKnowledge.userId, userId)).orderBy(desc(userAIKnowledge.createdAt));
+}
+
+export async function saveAIKnowledge(userId: number, content: string, category: string = 'preference') {
+  const db = await getDb();
+  if (!db) return;
+  // Prevent exact duplicates
+  const existing = await db.select().from(userAIKnowledge).where(and(eq(userAIKnowledge.userId, userId), eq(userAIKnowledge.content, content)));
+  if (existing.length > 0) return;
+  
+  await db.insert(userAIKnowledge).values({ userId, content, category });
+}
+export async function deleteAIKnowledge(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(userAIKnowledge).where(and(eq(userAIKnowledge.id, id), eq(userAIKnowledge.userId, userId)));
 }

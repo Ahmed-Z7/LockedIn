@@ -77,7 +77,7 @@ export default function SchedulePage() {
   const progressPercent = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-6 bg-[#09090b] relative overflow-hidden">
+    <div className="min-h-screen pt-32 pb-12 px-6 bg-[#09090b] relative overflow-hidden">
       {/* Dynamic Background Elements */}
       <div className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-0 left-0 w-[30vw] h-[30vw] bg-indigo-600/5 rounded-full blur-[100px] pointer-events-none" />

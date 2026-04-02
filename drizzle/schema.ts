@@ -47,6 +47,24 @@ export const aiChatHistory = pgTable("aiChatHistory", {
 		}),
 ]);
 
+export const userAIKnowledge = pgTable("userAIKnowledge", {
+	id: serial().primaryKey().notNull(),
+	userId: integer().notNull(),
+	content: text().notNull(),
+	category: varchar({ length: 50 }).default('preference'), // 'preference', 'habit', 'goal', 'exam'
+	confidence: integer().default(100),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+		foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "userAIKnowledge_userId_users_id_fk"
+		}),
+]);
+
+export type InsertUserAIKnowledge = typeof userAIKnowledge.$inferInsert;
+export type UserAIKnowledge = typeof userAIKnowledge.$inferSelect;
+
 export const directMessages = pgTable("directMessages", {
 	id: serial().primaryKey().notNull(),
 	senderId: integer().notNull(),
@@ -502,6 +520,8 @@ export const userSettings = pgTable("userSettings", {
 	messageNotifications: integer().default(1),
 	challengeReminders: integer().default(1),
 	weeklyDigest: integer().default(1),
+	aiTone: varchar({ length: 50 }).default('friendly'), // 'friendly', 'strict', 'professional', 'scientific'
+	aiLanguage: varchar({ length: 50 }).default('bilingual'), // 'arabic', 'english', 'bilingual'
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	foreignKey({

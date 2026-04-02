@@ -3,8 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Send, MessageCircle, Loader2, Sparkles, Moon, 
   AlertTriangle, Feather, Dumbbell, RotateCcw,
-  TrendingUp, Zap, Target
+  TrendingUp, Zap, Target, Brain, Trash2, Globe, Settings2, X
 } from "lucide-react";
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger 
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -23,13 +27,26 @@ export default function AICoachPage() {
   
   const utils = trpc.useUtils();
   const chatMutation = trpc.aiCoach.chat.useMutation();
-  const adjustMutation = trpc.study.adjustSchedule.useMutation({
-    onSuccess: (data) => {
-        setMessages(prev => [...prev, { role: "assistant", content: `[SYSTEM LINK]: ${data.response}` }]);
-        utils.study.getSchedule.invalidate();
-    }
-  });
+  const { data: history, isLoading: isHistoryLoading } = trpc.aiCoach.getHistory.useQuery(undefined, { enabled: isAuthenticated });
   const { data: profile } = trpc.userAccount.getProfile.useQuery(undefined, { enabled: isAuthenticated });
+  
+  // ZED Training & Config
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const { data: knowledge, refetch: refetchKnowledge } = trpc.aiCoach.getKnowledge.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: settings } = trpc.notifications.getSettings.useQuery(undefined, { enabled: isAuthenticated });
+  
+  const deleteKnowledgeMutation = trpc.aiCoach.deleteKnowledge.useMutation();
+  const updateSettingsMutation = trpc.notifications.updateSettings.useMutation();
+
+  useEffect(() => {
+    if (history && history.length > 0) {
+      const mapped = history.flatMap(h => [
+        { role: "user" as const, content: h.message },
+        { role: "assistant" as const, content: h.response || "" }
+      ]).slice(-20); // Show last 20 messages
+      setMessages(mapped);
+    }
+  }, [history]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -42,18 +59,43 @@ export default function AICoachPage() {
     if (text === input) setInput("");
 
     try {
-      // Check if it's a schedule adjustment request
-      const identifiesAsAdjustment = ["easier", "harder", "exam", "review", "schedule", "plan", "time"].some(kw => text.toLowerCase().includes(kw));
+      const response = await chatMutation.mutateAsync({ message: text });
+      setMessages(prev => [...prev, { role: "assistant", content: response.response }]);
       
-      if (identifiesAsAdjustment) {
-        await adjustMutation.mutateAsync({ message: text });
-      } else {
-        const response = await chatMutation.mutateAsync({ message: text });
-        setMessages(prev => [...prev, { role: "assistant", content: response.response }]);
+      if (response.learnedSomething) {
+        toast.info("ZED learned a new fact about you! 🧠", {
+            description: "Check the Training Center to see what I've added."
+        });
+        refetchKnowledge();
+      }
+
+      if (response.actionsCount > 0) {
+        utils.study.getSchedule.invalidate();
+        setMessages(prev => [...prev, { role: "assistant", content: "⚡ Schedule synchronized with neural intent." }]);
       }
     } catch (error) {
       setMessages(prev => [...prev, { role: "assistant", content: "Connection pulse lost. Trying to reconnect..." }]);
     }
+  };
+
+  const updateAISetting = async (key: string, value: string) => {
+    try {
+      await updateSettingsMutation.mutateAsync({ [key]: value });
+      toast.success("ZED core personality updated.");
+      utils.notifications.getSettings.invalidate();
+    } catch (error) {
+      toast.error("Failed to update ZED core.");
+    }
+  };
+
+  const deleteFact = async (id: number) => {
+      try {
+          await deleteKnowledgeMutation.mutateAsync({ id });
+          toast.success("Information removed from ZED's memory.");
+          refetchKnowledge();
+      } catch (error) {
+          toast.error("Failed to remove information.");
+      }
   };
 
   const quickCommands = [
@@ -98,6 +140,125 @@ export default function AICoachPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Training Center Trigger */}
+                        <Dialog open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="relative group border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-2xl px-4 py-6">
+                                    <Brain className="w-5 h-5 mr-2 group-hover:animate-pulse" />
+                                    <span className="font-bold uppercase tracking-wider text-xs">Training Center</span>
+                                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full animate-ping" />
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl bg-card/90 backdrop-blur-2xl border-white/5 text-foreground rounded-3xl shadow-2xl">
+                                <DialogHeader>
+                                    <DialogTitle className="text-2xl font-black flex items-center gap-3">
+                                        <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl">
+                                            <Brain className="w-6 h-6 text-white" />
+                                        </div>
+                                        ZED TRAINING CENTER
+                                    </DialogTitle>
+                                    <DialogDescription className="text-foreground/50">
+                                        Manage ZED's permanent memory and core personality protocols.
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                    {/* Personality Config */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-purple-400 flex items-center gap-2">
+                                            <Settings2 className="w-4 h-4" />
+                                            Personality Core
+                                        </h3>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {[
+                                                { id: 'friendly', label: 'Friendly Buddy', icon: Sparkles, desc: 'Empathetic and humorous' },
+                                                { id: 'strict', label: 'Strict Mentor', icon: Target, desc: 'Direct, firm, and disciplined' },
+                                                { id: 'scientific', label: 'Scientific', icon: Zap, desc: 'Neuro-efficiency focused' }
+                                            ].map((tone) => (
+                                                <button
+                                                    key={tone.id}
+                                                    onClick={() => updateAISetting('aiTone', tone.id)}
+                                                    className={cn(
+                                                        "flex items-start gap-4 p-4 rounded-2xl transition-all border text-left",
+                                                        settings?.aiTone === tone.id 
+                                                            ? "bg-purple-500/20 border-purple-500/50" 
+                                                            : "bg-white/5 border-white/5 hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    <div className={cn(
+                                                        "p-2 rounded-lg",
+                                                        settings?.aiTone === tone.id ? "bg-purple-500 text-white" : "bg-white/5 text-foreground/40"
+                                                    )}>
+                                                        <tone.icon className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-bold">{tone.label}</div>
+                                                        <div className="text-[10px] text-foreground/40">{tone.desc}</div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-blue-400 flex items-center gap-2 pt-4">
+                                            <Globe className="w-4 h-4" />
+                                            Language Protocol
+                                        </h3>
+                                        <div className="flex gap-2">
+                                            {['Bilingual', 'Arabic', 'English'].map((lang) => (
+                                                <button
+                                                    key={lang}
+                                                    onClick={() => updateAISetting('aiLanguage', lang.toLowerCase())}
+                                                    className={cn(
+                                                        "flex-1 py-3 rounded-xl border text-xs font-bold transition-all",
+                                                        settings?.aiLanguage === lang.toLowerCase()
+                                                            ? "bg-blue-500/20 border-blue-500/50 text-blue-400"
+                                                            : "bg-white/5 border-white/5 hover:bg-white/10 text-foreground/40"
+                                                    )}
+                                                >
+                                                    {lang}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Active Knowledge Feed */}
+                                    <div className="flex flex-col h-full max-h-[400px]">
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-400 flex items-center gap-2 mb-4">
+                                            <Sparkles className="w-4 h-4" />
+                                            Active Neural Facts
+                                        </h3>
+                                        <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                                            {knowledge && knowledge.length > 0 ? (
+                                                knowledge.map((k: any) => (
+                                                    <div 
+                                                        key={k.id}
+                                                        className="group p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between hover:border-indigo-500/30 transition-all"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <div className="text-[10px] uppercase font-bold text-indigo-400/50 mb-1">{k.category}</div>
+                                                            <div className="text-xs text-foreground/80 leading-relaxed font-medium">{k.content}</div>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => deleteFact(k.id)}
+                                                            className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-500 rounded-lg transition-all text-foreground/20"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-20">
+                                                    <Brain className="w-12 h-12 mb-4" />
+                                                    <p className="text-sm font-bold">Neural Bank Empty</p>
+                                                    <p className="text-[10px]">Chat with ZED more to build internal memory.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     </div>
 
                     {/* Messages */}
@@ -156,27 +317,32 @@ export default function AICoachPage() {
 
             {/* Right: Sidebar Info */}
             <div className="space-y-6">
-                {/* Quick Commands */}
+                {/* Chat History */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="bg-card/30 backdrop-blur-xl border border-white/5 p-6 rounded-3xl"
                 >
                     <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/40 mb-4 flex items-center gap-2">
-                        <Zap className="w-4 h-4" />
-                        Quick Commands
+                        <MessageCircle className="w-4 h-4" />
+                        Recent History
                     </h3>
-                    <div className="space-y-2">
-                        {quickCommands.map((cmd) => (
-                            <button
-                                key={cmd.label}
-                                onClick={() => handleSendMessage(cmd.text)}
-                                className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/10 transition-all text-left group"
-                            >
-                                <cmd.icon className="w-4 h-4 text-foreground/30 group-hover:text-purple-400 transition-colors" />
-                                <span className="text-sm font-medium text-foreground/70 group-hover:text-foreground transition-colors">{cmd.label}</span>
-                            </button>
-                        ))}
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
+                        {isHistoryLoading ? (
+                            <div className="py-4 text-center text-xs text-white/20">Loading memories...</div>
+                        ) : history && history.length > 0 ? (
+                            history.slice(0, 5).map((h) => (
+                                <div
+                                    key={h.id}
+                                    className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/20 transition-all text-left cursor-default"
+                                >
+                                    <p className="text-[10px] text-white/40 mb-1 line-clamp-1">{h.message}</p>
+                                    <p className="text-xs text-foreground/70 line-clamp-1">{h.response}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="py-4 text-center text-xs text-white/20">No history found.</div>
+                        )}
                     </div>
                 </motion.div>
 
