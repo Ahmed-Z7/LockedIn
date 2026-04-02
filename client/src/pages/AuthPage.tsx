@@ -94,7 +94,8 @@ export default function AuthPage() {
   });
 
   const handleGoogleAuth = () => {
-    window.location.href = "/api/oauth/google";
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "https://lockedin.up.railway.app";
+    window.location.href = `${backendUrl}/api/oauth/google`;
   };
 
   const handleForgotPassword = (e: React.MouseEvent) => {

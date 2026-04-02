@@ -121,16 +121,23 @@ export async function sendVerificationEmail(email: string, code: string) {
   `);
 
   try {
+    console.log(`Attempting to send verification email to: ${email}`);
     const info = await transporter.sendMail({
       from: FROM,
       to: email,
       subject: '🔐 Your LockedIn Verification Code',
       html,
     });
+    console.log('Email sent successfully:', info.messageId);
     return { success: true, data: info };
-  } catch (error) {
-    console.error('Error sending verification email:', error);
-    throw new Error('Failed to send verification email');
+  } catch (error: any) {
+    console.error('DETAILED EMAIL ERROR:', {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response
+    });
+    throw new Error(`Failed to send verification email: ${error.message}`);
   }
 }
 

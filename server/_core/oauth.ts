@@ -97,7 +97,7 @@ export function registerOAuthRoutes(app: Express) {
       const frontendUrl = process.env.FRONTEND_URL || "https://lockedin-eg.vercel.app";
       res.redirect(`${frontendUrl}/auth?token=${sessionToken}`);
     } catch (err: any) {
-      console.error("[OAuth] Callback failed", err);
+      console.error("[OAuth] FATAL ERROR during callback:", err);
       const frontendUrl = process.env.FRONTEND_URL || "https://lockedin-eg.vercel.app";
       const errorMessage = encodeURIComponent(err.message || "oauth_failed");
       res.redirect(`${frontendUrl}/auth?error=oauth_failed&reason=${errorMessage}`);
