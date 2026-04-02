@@ -8,13 +8,15 @@ if (dns.setDefaultResultOrder) {
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  // Force IPv4 locally for this transport
+  port: 587,
+  secure: false, // true for 465, false for other ports (587)
+  // Force IPv4
   family: 4, 
-  connectionTimeout: 15000, 
-  greetingTimeout: 15000,
-  socketTimeout: 15000,
+  debug: true,
+  logger: true,
+  connectionTimeout: 20000, 
+  greetingTimeout: 20000,
+  socketTimeout: 20000,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS,
