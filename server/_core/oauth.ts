@@ -13,9 +13,10 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 const getRedirectUri = (req: Request) => {
-  const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-  let host = req.get('host');
-  return `${protocol}://${host}/api/oauth/callback`;
+  const frontendUrl = process.env.FRONTEND_URL || "https://lockedin-eg.vercel.app";
+  // The Vercel rewrite handles /api/:path* -> Railway/api/:path*
+  // So Google should redirect back to the Vercel domain to ensure cookies are same-site
+  return `${frontendUrl}/api/oauth/callback`;
 };
 
 export function registerOAuthRoutes(app: Express) {
@@ -84,12 +85,13 @@ export function registerOAuthRoutes(app: Express) {
 
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
+      
       const frontendUrl = process.env.FRONTEND_URL || "https://lockedin-eg.vercel.app";
-      res.redirect(frontendUrl);
+      res.redirect(`${frontendUrl}/auth?token=${sessionToken}`);
     } catch (err) {
       console.error("[OAuth] Callback failed", err);
-      res.redirect("/auth?error=oauth_failed");
+      const frontendUrl = process.env.FRONTEND_URL || "https://lockedin-eg.vercel.app";
+      res.redirect(`${frontendUrl}/auth?error=oauth_failed`);
     }
   });
 }

@@ -61,7 +61,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const existing = await db.select().from(users).where(eq(users.email, input.email));
-        if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
+        if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني موجود بالفعل" });
         
         const openId = randomUUID();
         const hashedPassword = hashPassword(input.password);
@@ -72,6 +72,8 @@ export const appRouter = router({
           openId,
           password: hashedPassword,
           loginMethod: "email",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
         
         const sessionToken = await sdk.createSessionToken(openId, { name: input.name, expiresInMs: ONE_YEAR_MS });
@@ -87,7 +89,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const existing = await db.select().from(users).where(eq(users.email, input.email));
-        if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
+        if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني موجود بالفعل" });
 
         const code = generateVerificationCode();
         const hashedPassword = hashPassword(input.password);
@@ -100,7 +102,8 @@ export const appRouter = router({
           type: 'signup',
           name: input.name,
           passwordHash: hashedPassword,
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+          createdAt: new Date().toISOString()
         });
 
         await sendVerificationEmail(input.email, code);
@@ -114,22 +117,22 @@ export const appRouter = router({
           .where(and(eq(verificationCodes.email, input.email), eq(verificationCodes.type, 'signup')));
         
         if (!verification) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "No verification pending for this email. Please sign up again." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "لا يوجد طلب تحقق لهذا البريد الإلكتروني. يرجى الاشتراك مرة أخرى." });
         }
         
         if (verification.code !== input.code) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid verification code" });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "كود التحقق غير صالح" });
         }
         
         if (new Date().toISOString() > verification.expiresAt) {
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Verification code expired. Please sign up again." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت صلاحية كود التحقق. يرجى الاشتراك مرة أخرى." });
         }
 
         const existing = await db.select().from(users).where(eq(users.email, input.email));
         if (existing.length > 0) {
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
-          throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
+          throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني موجود بالفعل" });
         }
         
         const username = input.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -159,10 +162,10 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const [user] = await db.select().from(users).where(eq(users.email, input.email));
-        if (!user || !user.password) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+        if (!user || !user.password) throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صالحة" });
         
         const isValid = verifyPassword(input.password, user.password);
-        if (!isValid) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+        if (!isValid) throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صالحة" });
         
         const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
         const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -183,7 +186,8 @@ export const appRouter = router({
           email: input.email,
           code,
           type: 'reset',
-          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+          createdAt: new Date().toISOString()
         });
 
         await sendPasswordResetEmail(input.email, code);
@@ -201,12 +205,12 @@ export const appRouter = router({
           .where(and(eq(verificationCodes.email, input.email), eq(verificationCodes.type, 'reset')));
           
         if (!verification || verification.code !== input.code) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired code." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "الكود غير صالح أو منتهي الصلاحية." });
         }
 
         if (new Date().toISOString() > verification.expiresAt) {
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Code expired. Please request a new one." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت صلاحية الكود. يرجى طلب كود جديد." });
         }
 
         const hashedPassword = hashPassword(input.newPassword);
@@ -230,8 +234,8 @@ export const appRouter = router({
           avatar: null,
           xp: 0,
           level: 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         };
       }
       return profile;
@@ -393,7 +397,7 @@ export const appRouter = router({
       .input(z.object({ sessionId: z.number() }))
       .query(async ({ ctx, input }) => {
         const session = await dbHelpers.getStudySessionById(input.sessionId, ctx.user.id);
-        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "الجلسة غير موجودة" });
         let material = null;
         if (session.materialId) {
             material = await dbHelpers.getStudyMaterialById(session.materialId);

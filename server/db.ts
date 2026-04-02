@@ -490,7 +490,11 @@ export async function updateScheduleStatus(id: number, userId: number, completed
   const db = await getDb();
   if (!db) return;
   await db.update(studySchedules)
-    .set({ completed, ...meta, scheduledTime: meta?.scheduledTime?.toISOString() })
+    .set({ 
+      completed, 
+      ...meta, 
+      scheduledTime: meta?.scheduledTime ? new Date(meta.scheduledTime).toISOString() : undefined 
+    })
     .where(and(eq(studySchedules.id, id), eq(studySchedules.userId, userId)));
 }
 

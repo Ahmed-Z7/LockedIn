@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, User, Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
@@ -26,6 +27,25 @@ export default function AuthPage() {
     password: "",
     confirmPassword: "",
   });
+  
+  // Handle token from Google OAuth redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      // Set cookie manually for the Vercel domain
+      const expires = new Date(Date.now() + ONE_YEAR_MS).toUTCString();
+      document.cookie = `${COOKIE_NAME}=${token}; path=/; expires=${expires}; SameSite=Lax; Secure`;
+      
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      toast.success("Successfully logged in with Google!");
+      refresh().then(() => {
+        setLocation("/dashboard");
+      });
+    }
+  }, [refresh, setLocation]);
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: async () => {

@@ -7,12 +7,15 @@ import type { TrpcContext } from "./context";
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
   errorFormatter: ({ shape, error }) => {
+    let message = shape.message;
+    if (error.cause instanceof z.ZodError) {
+      const fieldErrors = error.cause.flatten().fieldErrors as Record<string, string[] | undefined>;
+      const firstError = Object.values(fieldErrors)[0]?.[0];
+      message = firstError || error.cause.issues[0]?.message || shape.message;
+    }
     return {
       ...shape,
-      message: 
-        error.cause instanceof z.ZodError 
-          ? error.cause.issues[0]?.message || shape.message 
-          : shape.message,
+      message,
     };
   },
 });

@@ -34,7 +34,8 @@ export async function awardXP(userId: number, amount: number, reason: string) {
       userId,
       type: "level_up",
       description: `Reached Level ${newLevel}: ${getLevelTitle(newLevel)}!`,
-      xpGain: 0
+      xpGain: 0,
+      createdAt: new Date().toISOString()
     });
   }
 
@@ -47,7 +48,8 @@ export async function awardXP(userId: number, amount: number, reason: string) {
     userId,
     type: "xp_gain",
     description: reason,
-    xpGain: amount
+    xpGain: amount,
+    createdAt: new Date().toISOString()
   });
 
   return { newXP, newLevel, leveledUp: newLevel > currentLevel };

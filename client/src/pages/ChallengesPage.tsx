@@ -10,8 +10,10 @@ import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { LucideIcon } from 'lucide-react';
 
-const CATEGORY_MAP: Record<string, { icon: any, label: string, color: string, gradient: string }> = {
+const CATEGORY_MAP: Record<string, { icon: LucideIcon, label: string, color: string, gradient: string }> = {
   study_time: { icon: Clock, label: 'Study Time', color: 'text-blue-400', gradient: 'from-blue-600/20 to-cyan-500/5' },
   streak: { icon: Flame, label: 'Streak', color: 'text-orange-400', gradient: 'from-orange-600/20 to-red-500/5' },
   focus: { icon: Target, label: 'Focus', color: 'text-purple-400', gradient: 'from-purple-600/20 to-indigo-500/5' },
@@ -287,7 +289,4 @@ export default function ChallengesPage() {
   );
 }
 
-// Utility function
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
-}
+
