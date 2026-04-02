@@ -1,221 +1,75 @@
-import nodemailer from 'nodemailer';
-import dns from 'dns';
+import axios from 'axios';
 
-// Fix for Node.js prioritizing IPv6 over IPv4 on some cloud environments (like Railway)
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true for 465, false for other ports (587)
-  // Force IPv4
-  family: 4, 
-  debug: true,
-  logger: true,
-  connectionTimeout: 20000, 
-  greetingTimeout: 20000,
-  socketTimeout: 20000,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-    servername: 'smtp.gmail.com'
-  }
-} as any);
-
-const FROM = process.env.SMTP_USER || 'LockedIn <lockedin.eg.support@gmail.com>';
-const APP_URL = process.env.FRONTEND_URL || process.env.VITE_APP_URL || 'https://locked-in.vercel.app';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_7WJ5CqK6_NsCP7P7M4YjNbKqH8W2M'; 
+const FROM = 'LockedIn <onboarding@resend.dev>'; 
+const APP_URL = process.env.FRONTEND_URL || 'https://lockedin-eg.vercel.app';
 
 const baseTemplate = (content: string) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LockedIn</title>
+  <meta charset="UTF-8">
+  <style>
+    body { background-color: #0a0118; font-family: sans-serif; color: #fff; margin: 0; padding: 40px 20px; }
+    .card { background: #120a2e; border: 1px solid #7c3aed44; border-radius: 24px; padding: 40px; max-width: 500px; margin: 0 auto; }
+    .logo { color: #fff; font-weight: 900; background: linear-gradient(135deg,#7c3aed,#3b82f6); padding: 10px 20px; border-radius: 12px; display: inline-block; margin-bottom: 30px; text-decoration: none; }
+    .code { font-size: 32px; letter-spacing: 10px; color: #a78bfa; font-weight: 900; margin: 30px 0; text-align: center; background: rgba(124,58,237,0.1); padding: 20px; border-radius: 16px; border: 1px solid rgba(124,58,237,0.3); }
+    h1 { font-size: 24px; margin: 0 0 10px; color: #fff; }
+    p { color: #9ca3af; line-height: 1.6; margin: 0; }
+  </style>
 </head>
-<body style="margin:0;padding:0;background-color:#0a0118;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0118;padding:40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
-
-          <!-- Logo / Header -->
-          <tr>
-            <td align="center" style="padding-bottom:32px;">
-              <table cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="background:linear-gradient(135deg,#7c3aed,#3b82f6);border-radius:16px;padding:14px 20px;display:inline-block;">
-                    <span style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-0.5px;">🔒 LOCKEDIN</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Card -->
-          <tr>
-            <td style="background:linear-gradient(145deg,#120a2e,#0f0a24);border:1px solid rgba(124,58,237,0.25);border-radius:24px;padding:40px 36px;box-shadow:0 0 60px rgba(124,58,237,0.15);">
-              ${content}
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td align="center" style="padding-top:32px;">
-              <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.6;">
-                You're receiving this email because an action was triggered on your LockedIn account.<br/>
-                If you didn't request this, you can safely ignore this email.<br/><br/>
-                <a href="${APP_URL}" style="color:#7c3aed;text-decoration:none;">lockedin.team</a>
-                &nbsp;·&nbsp;
-                <span style="color:#374151;">Stay focused. Stay locked in.</span>
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
+<body>
+  <div class="card">
+    <div class="logo">🔒 LOCKEDIN</div>
+    ${content}
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 12px; color: #4b5563;">
+      Stay focused. Stay locked in.<br>
+      <a href="${APP_URL}" style="color: #7c3aed; text-decoration: none;">lockedin-eg.vercel.app</a>
+    </div>
+  </div>
 </body>
 </html>
 `;
 
-const codeBlock = (code: string, accent = '#7c3aed') => `
-  <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;">
-    <tr>
-      <td align="center">
-        <table cellpadding="0" cellspacing="0" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);border-radius:16px;padding:24px 40px;">
-          <tr>
-            <td align="center">
-              <span style="font-size:42px;font-weight:900;letter-spacing:10px;color:${accent};font-family:'Courier New',monospace;">${code}</span>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-`;
+async function sendResendEmail(to: string, subject: string, html: string) {
+  try {
+    console.log(`[Resend] Sending email to: ${to}`);
+    const response = await axios.post('https://api.resend.com/emails', {
+      from: FROM,
+      to: [to],
+      subject,
+      html
+    }, {
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log('[Resend] Email sent successfully ID:', response.data.id);
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    const errorData = error.response?.data || error.message;
+    console.error('[Resend] API ERROR:', errorData);
+    throw new Error(`Failed to send email: ${JSON.stringify(errorData)}`);
+  }
+}
 
 export async function sendVerificationEmail(email: string, code: string) {
   const html = baseTemplate(`
-    <!-- Icon -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-      <tr>
-        <td align="center">
-          <div style="width:72px;height:72px;background:linear-gradient(135deg,#7c3aed22,#3b82f622);border:1px solid rgba(124,58,237,0.4);border-radius:20px;display:inline-flex;align-items:center;justify-content:center;font-size:32px;line-height:72px;text-align:center;">🚀</div>
-        </td>
-      </tr>
-    </table>
-
-    <h1 style="margin:0 0 8px;font-size:26px;font-weight:800;color:#f3f4f6;text-align:center;letter-spacing:-0.5px;">
-      Verify Your Email
-    </h1>
-    <p style="margin:0 0 4px;font-size:15px;color:#9ca3af;text-align:center;line-height:1.6;">
-      Welcome to LockedIn! You're one step away from unlocking your full potential.
-    </p>
-    <p style="margin:0 0 4px;font-size:15px;color:#9ca3af;text-align:center;line-height:1.6;">
-      Use the 6-digit PIN below to verify your account:
-    </p>
-
-    ${codeBlock(code, '#a78bfa')}
-
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
-      <tr>
-        <td align="center">
-          <span style="display:inline-block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px 18px;font-size:13px;color:#f87171;font-weight:600;">
-            ⏱  Expires in 5 minutes
-          </span>
-        </td>
-      </tr>
-    </table>
-
-    <p style="margin:24px 0 0;font-size:13px;color:#6b7280;text-align:center;">
-      For your security, never share this code with anyone — including LockedIn support.
-    </p>
+    <h1>Verify Your Email</h1>
+    <p>Welcome to LockedIn! Use the 6-digit PIN below to verify your account:</p>
+    <div class="code">${code}</div>
+    <p style="font-size: 13px; color: #f87171;">⏱ Expires in 5 minutes</p>
   `);
-
-  try {
-    console.log(`Attempting to send verification email to: ${email}`);
-    const info = await transporter.sendMail({
-      from: FROM,
-      to: email,
-      subject: '🔐 Your LockedIn Verification Code',
-      html,
-    });
-    console.log('Email sent successfully:', info.messageId);
-    return { success: true, data: info };
-  } catch (error: any) {
-    console.error('DETAILED EMAIL ERROR:', {
-      message: error.message,
-      code: error.code,
-      command: error.command,
-      response: error.response
-    });
-    throw new Error(`Failed to send verification email: ${error.message}`);
-  }
+  return sendResendEmail(email, '🔐 Your LockedIn Verification Code', html);
 }
 
 export async function sendPasswordResetEmail(email: string, code: string) {
   const html = baseTemplate(`
-    <!-- Icon -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-      <tr>
-        <td align="center">
-          <div style="width:72px;height:72px;background:linear-gradient(135deg,#db277722,#7c3aed22);border:1px solid rgba(219,39,119,0.4);border-radius:20px;display:inline-flex;align-items:center;justify-content:center;font-size:32px;line-height:72px;text-align:center;">🔒</div>
-        </td>
-      </tr>
-    </table>
-
-    <h1 style="margin:0 0 8px;font-size:26px;font-weight:800;color:#f3f4f6;text-align:center;letter-spacing:-0.5px;">
-      Reset Your Password
-    </h1>
-    <p style="margin:0 0 4px;font-size:15px;color:#9ca3af;text-align:center;line-height:1.6;">
-      We received a request to reset the password for your LockedIn account.
-    </p>
-    <p style="margin:0 0 4px;font-size:15px;color:#9ca3af;text-align:center;line-height:1.6;">
-      Enter the code below to proceed:
-    </p>
-
-    ${codeBlock(code, '#f472b6')}
-
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
-      <tr>
-        <td align="center">
-          <span style="display:inline-block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px 18px;font-size:13px;color:#f87171;font-weight:600;">
-            ⏱  Expires in 5 minutes
-          </span>
-        </td>
-      </tr>
-    </table>
-
-    <p style="margin:24px 0 0;font-size:13px;color:#6b7280;text-align:center;">
-      If you didn't request a password reset, please ignore this email.<br/>
-      Your account is safe — no changes have been made.
-    </p>
+    <h1>Reset Your Password</h1>
+    <p>We received a request to reset your password. Enter the code below to proceed:</p>
+    <div class="code">${code}</div>
+    <p style="font-size: 13px; color: #f87171;">⏱ Expires in 5 minutes</p>
   `);
-
-  try {
-    console.log(`Attempting to send password reset email to: ${email}`);
-    const info = await transporter.sendMail({
-      from: FROM,
-      to: email,
-      subject: '🔑 Reset Your LockedIn Password',
-      html,
-    });
-    console.log('Password reset email sent successfully:', info.messageId);
-    return { success: true, data: info };
-  } catch (error: any) {
-    console.error('DETAILED PASSWORD RESET EMAIL ERROR:', {
-      message: error.message,
-      code: error.code,
-      command: error.command,
-      response: error.response
-    });
-    throw new Error(`Failed to send password reset email: ${error.message}`);
-  }
+  return sendResendEmail(email, '🔑 Reset Your LockedIn Password', html);
 }
