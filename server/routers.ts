@@ -11,10 +11,10 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, desc, or, like, not, inArray, sql } from "drizzle-orm";
 import { sdk } from "./_core/sdk";
 import { randomBytes, scryptSync, timingSafeEqual, randomUUID } from "crypto";
-import { 
-  challenges, studySchedules, userActivities, userChallenges, userProfiles, users, InsertUserProfile, 
+import {
+  challenges, studySchedules, userActivities, userChallenges, userProfiles, users, InsertUserProfile,
   userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials,
-  directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts, 
+  directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts,
   studyGroupTasks, studyGroupMessages, studyGroupMaterials,
   notifications, userSettings, verificationCodes
 } from "../drizzle/schema";
@@ -36,7 +36,7 @@ function verifyPassword(password: string, storedHash: string): boolean {
     const keyBuffer = Buffer.from(key, "hex");
     if (hashedBuffer.length !== keyBuffer.length) return false;
     return timingSafeEqual(hashedBuffer, keyBuffer);
-} catch (e) { return false; }
+  } catch (e) { return false; }
 }
 
 function generateVerificationCode() {
@@ -44,7 +44,7 @@ function generateVerificationCode() {
 }
 export const appRouter = router({
   system: systemRouter,
-  
+
   // Authentication
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -54,18 +54,18 @@ export const appRouter = router({
       return { success: true } as const;
     }),
     register: publicProcedure
-      .input(z.object({ 
-        name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"), 
-        email: z.string().email("البريد الإلكتروني غير صالح"), 
-        password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل") 
+      .input(z.object({
+        name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
+        email: z.string().email("البريد الإلكتروني غير صالح"),
+        password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل")
       }))
       .mutation(async ({ ctx, input }) => {
         const existing = await db.select().from(users).where(eq(users.email, input.email));
         if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني موجود بالفعل" });
-        
+
         const openId = randomUUID();
         const hashedPassword = hashPassword(input.password);
-        
+
         await db.insert(users).values({
           name: input.name,
           email: input.email,
@@ -75,17 +75,17 @@ export const appRouter = router({
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
-        
+
         const sessionToken = await sdk.createSessionToken(openId, { name: input.name, expiresInMs: ONE_YEAR_MS });
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-        
+
       }),
     sendVerificationCode: publicProcedure
-      .input(z.object({ 
-        name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"), 
-        email: z.string().email("البريد الإلكتروني غير صالح"), 
-        password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل") 
+      .input(z.object({
+        name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"),
+        email: z.string().email("البريد الإلكتروني غير صالح"),
+        password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل")
       }))
       .mutation(async ({ input }) => {
         const existing = await db.select().from(users).where(eq(users.email, input.email));
@@ -93,7 +93,7 @@ export const appRouter = router({
 
         const code = generateVerificationCode();
         const hashedPassword = hashPassword(input.password);
-        
+
         await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
 
         await db.insert(verificationCodes).values({
@@ -116,22 +116,22 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const [verification] = await db.select().from(verificationCodes)
           .where(and(eq(verificationCodes.email, input.email), eq(verificationCodes.type, 'signup')));
-        
+
         if (!verification) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "لا يوجد طلب تحقق لهذا البريد الإلكتروني. يرجى الاشتراك مرة أخرى." });
         }
-        
+
         if (verification.code !== input.code) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "كود التحقق غير صالح" });
         }
-        
+
         const now = Date.now();
         // Fix for pg timestamp losing timezone constraint
         let expiresAtStr = verification.expiresAt;
         if (!expiresAtStr.includes('T')) expiresAtStr = expiresAtStr.replace(' ', 'T');
         if (!expiresAtStr.endsWith('Z') && !expiresAtStr.includes('+')) expiresAtStr += 'Z';
         const expiresAt = new Date(expiresAtStr).getTime();
-        
+
         if (now > expiresAt) {
           console.warn(`[VerificationSignup] Expired code for ${input.email}. Now: ${new Date(now).toISOString()}, Expires: ${verification.expiresAt}`);
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
@@ -143,10 +143,10 @@ export const appRouter = router({
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
           throw new TRPCError({ code: "CONFLICT", message: "البريد الإلكتروني موجود بالفعل" });
         }
-        
+
         const username = input.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
         const openId = randomUUID();
-        
+
         await db.insert(users).values({
           name: verification.name,
           username: username,
@@ -155,31 +155,31 @@ export const appRouter = router({
           password: verification.passwordHash,
           loginMethod: "email",
         });
-        
+
         await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
 
         const sessionToken = await sdk.createSessionToken(openId, { name: verification.name || "", expiresInMs: ONE_YEAR_MS });
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-        
+
         return { success: true };
       }),
     login: publicProcedure
-      .input(z.object({ 
-        email: z.string().email("البريد الإلكتروني غير صالح"), 
-        password: z.string().min(1, "كلمة المرور مطلوبة") 
+      .input(z.object({
+        email: z.string().email("البريد الإلكتروني غير صالح"),
+        password: z.string().min(1, "كلمة المرور مطلوبة")
       }))
       .mutation(async ({ ctx, input }) => {
         const [user] = await db.select().from(users).where(eq(users.email, input.email));
         if (!user || !user.password) throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صالحة" });
-        
+
         const isValid = verifyPassword(input.password, user.password);
         if (!isValid) throw new TRPCError({ code: "UNAUTHORIZED", message: "البريد الإلكتروني أو كلمة المرور غير صالحة" });
-        
+
         const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-        
+
         return { success: true };
       }),
     requestPasswordReset: publicProcedure
@@ -187,7 +187,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const [existing] = await db.select().from(users).where(eq(users.email, input.email));
         if (!existing) return { success: true }; // Silently return true to prevent email enumeration
-        
+
         const code = generateVerificationCode();
 
         await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
@@ -205,15 +205,15 @@ export const appRouter = router({
         return { success: true };
       }),
     resetPassword: publicProcedure
-      .input(z.object({ 
-        email: z.string().email("البريد الإلكتروني غير صالح"), 
-        code: z.string().min(1, "كود التحقق مطلوب"), 
-        newPassword: z.string().min(6, "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل") 
+      .input(z.object({
+        email: z.string().email("البريد الإلكتروني غير صالح"),
+        code: z.string().min(1, "كود التحقق مطلوب"),
+        newPassword: z.string().min(6, "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل")
       }))
       .mutation(async ({ input }) => {
         const [verification] = await db.select().from(verificationCodes)
           .where(and(eq(verificationCodes.email, input.email), eq(verificationCodes.type, 'reset')));
-          
+
         if (!verification || verification.code !== input.code) {
           console.warn(`[ResetPassword] Invalid code attempt for ${input.email}`);
           throw new TRPCError({ code: "BAD_REQUEST", message: "الكود غير صالح أو منتهي الصلاحية." });
@@ -225,7 +225,7 @@ export const appRouter = router({
         if (!expiresAtStr.includes('T')) expiresAtStr = expiresAtStr.replace(' ', 'T');
         if (!expiresAtStr.endsWith('Z') && !expiresAtStr.includes('+')) expiresAtStr += 'Z';
         const expiresAt = new Date(expiresAtStr).getTime();
-        
+
         if (now > expiresAt) {
           console.warn(`[ResetPassword] Expired code for ${input.email}. Now: ${new Date(now).toISOString()}, Expires: ${verification.expiresAt}`);
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
@@ -234,9 +234,9 @@ export const appRouter = router({
 
         const hashedPassword = hashPassword(input.newPassword);
         await db.update(users).set({ password: hashedPassword }).where(eq(users.email, input.email));
-        
+
         await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
-        
+
         return { success: true };
       }),
   }),
@@ -259,7 +259,7 @@ export const appRouter = router({
       }
       return profile;
     }),
-    
+
     update: protectedProcedure
       .input(z.object({
         bio: z.string().optional(),
@@ -284,24 +284,24 @@ export const appRouter = router({
         const activities = await db.select().from(userActivities).where(eq(userActivities.userId, ctx.user.id)).orderBy(desc(userActivities.createdAt)).limit(10);
         return { profile, badges, activities };
       }),
-    
+
     getChallenges: protectedProcedure
       .query(async ({ ctx }) => {
         try {
           const userChallengesList = await db.select({
-              id: challenges.id,
-              title: challenges.title,
-              description: challenges.description,
-              category: challenges.category,
-              targetValue: challenges.targetValue,
-              currentProgress: userChallenges.currentProgress,
-              completed: userChallenges.completed,
-              difficulty: challenges.difficulty,
-              rewardXp: challenges.rewardXp,
+            id: challenges.id,
+            title: challenges.title,
+            description: challenges.description,
+            category: challenges.category,
+            targetValue: challenges.targetValue,
+            currentProgress: userChallenges.currentProgress,
+            completed: userChallenges.completed,
+            difficulty: challenges.difficulty,
+            rewardXp: challenges.rewardXp,
           })
-          .from(challenges)
-          .leftJoin(userChallenges, and(eq(userChallenges.challengeId, challenges.id), eq(userChallenges.userId, ctx.user.id)));
-          
+            .from(challenges)
+            .leftJoin(userChallenges, and(eq(userChallenges.challengeId, challenges.id), eq(userChallenges.userId, ctx.user.id)));
+
           if (userChallengesList.length === 0) {
             console.log("[Router] DB returned 0 challenges, falling back to MOCK_CHALLENGES");
             return MOCK_CHALLENGES;
@@ -322,7 +322,7 @@ export const appRouter = router({
   // Study Session Management
   study: router({
     analyzeMaterial: protectedProcedure
-      .input(z.object({ 
+      .input(z.object({
         content: z.string(),
         days: z.number().min(1).max(30),
         hoursPerDay: z.number().min(1).max(12)
@@ -350,17 +350,19 @@ export const appRouter = router({
           });
 
           const content = response.choices[0]?.message?.content || "[]";
-          const rawContent = typeof content === "string" 
-            ? content 
+          const rawContent = typeof content === "string"
+            ? content
             : content.map(part => "text" in part ? part.text : "").join("\n");
-          
+
           const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
           const topics = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
 
-          return { topics: topics.length > 0 ? topics : [
-            { title: 'Core Fundamentals', difficulty: 'medium', duration: 60 },
-            { title: 'Advanced Application', difficulty: 'hard', duration: 90 }
-          ] };
+          return {
+            topics: topics.length > 0 ? topics : [
+              { title: 'Core Fundamentals', difficulty: 'medium', duration: 60 },
+              { title: 'Advanced Application', difficulty: 'hard', duration: 90 }
+            ]
+          };
         } catch (error: any) {
           console.error("[AI Analysis Error]:", error?.message || error);
           return { topics: [{ title: 'Overview', difficulty: 'medium', duration: 60 }] };
@@ -405,8 +407,8 @@ export const appRouter = router({
     }),
 
     updateSession: protectedProcedure
-      .input(z.object({ 
-        sessionId: z.number(), 
+      .input(z.object({
+        sessionId: z.number(),
         completed: z.number().optional(),
         distractions: z.number().optional(),
         isLocked: z.boolean().optional(),
@@ -421,20 +423,20 @@ export const appRouter = router({
         await db.update(studySchedules).set({ completed, subject, duration }).where(eq(studySchedules.id, sessionId));
 
         if (input.completed === 1) {
-            let bonusXp = 0;
-            let reason = `Completed Study Session: ${session.subject}`;
-            
-            if (input.isLocked) {
-              await updateChallengeProgress(ctx.user.id, "focus", 1);
-              if (input.distractions === 0) {
-                bonusXp += 30; // Deep work bonus
-                reason += " (Zero Distractions Bonus!)";
-              }
-            }
+          let bonusXp = 0;
+          let reason = `Completed Study Session: ${session.subject}`;
 
-            await awardXP(ctx.user.id, 50 + bonusXp, reason);
-            await updateChallengeProgress(ctx.user.id, "study_time", session.duration);
-            await updateChallengeProgress(ctx.user.id, "consistency", 1);
+          if (input.isLocked) {
+            await updateChallengeProgress(ctx.user.id, "focus", 1);
+            if (input.distractions === 0) {
+              bonusXp += 30; // Deep work bonus
+              reason += " (Zero Distractions Bonus!)";
+            }
+          }
+
+          await awardXP(ctx.user.id, 50 + bonusXp, reason);
+          await updateChallengeProgress(ctx.user.id, "study_time", session.duration);
+          await updateChallengeProgress(ctx.user.id, "consistency", 1);
         }
         return { success: true };
       }),
@@ -446,7 +448,7 @@ export const appRouter = router({
         if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "الجلسة غير موجودة" });
         let material = null;
         if (session.materialId) {
-            material = await dbHelpers.getStudyMaterialById(session.materialId);
+          material = await dbHelpers.getStudyMaterialById(session.materialId);
         }
         return { ...session, material };
       }),
@@ -458,8 +460,10 @@ export const appRouter = router({
           const schedule = await dbHelpers.getStudySchedule(ctx.user.id);
           const scheduleContext = schedule.map(s => `ID: ${s.id}, Subject: ${s.subject}, Time: ${s.scheduledTime}`).join('\n');
 
-          const prompt = `You are ZED, the Friendly AI Study Buddy. The user wants to adjust their study schedule.
-          - Tone: Supportive, helpful, and concise.
+          const prompt = `You are ZED, a friendly and caring AI study buddy.
+Tone: Warm, attentive, and supportive.
+Style: Concise and straight to the point — no unnecessary introductions.
+Communication: Speaks simply, clearly, and only says what adds real value.
           - Context: Today is ${new Date().toISOString()}.
           - Current Schedule:
           ${scheduleContext}
@@ -490,7 +494,7 @@ export const appRouter = router({
           for (const action of actions) {
             if (action.action === "update") {
               await db.update(studySchedules)
-                .set({ 
+                .set({
                   ...(action.newTime && { scheduledTime: action.newTime }),
                   ...(action.newDuration && { duration: action.newDuration })
                 })
@@ -533,10 +537,10 @@ export const appRouter = router({
             ],
           });
           const content = response.choices[0]?.message?.content || "Error generating response";
-          const aiResponse = typeof content === 'string' 
-            ? content 
+          const aiResponse = typeof content === 'string'
+            ? content
             : content.map(part => 'text' in part ? part.text : '').join('\n');
-            
+
           await dbHelpers.saveAIChatMessage(ctx.user.id, input.message, aiResponse, input.topic);
           await updateChallengeProgress(ctx.user.id, "ai_usage", 1);
           return { response: aiResponse };
@@ -577,8 +581,8 @@ export const appRouter = router({
           });
 
           const content = response.choices[0]?.message?.content || "[]";
-          const rawContent = typeof content === "string" 
-            ? content 
+          const rawContent = typeof content === "string"
+            ? content
             : content.map(part => "text" in part ? part.text : "").join("\n");
           const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
           const quiz = JSON.parse(jsonMatch ? jsonMatch[0] : rawContent);
@@ -612,8 +616,8 @@ export const appRouter = router({
         return { success: true };
       }),
     getSettings: protectedProcedure.query(async ({ ctx }) => {
-        const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id));
-        return settings;
+      const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id));
+      return settings;
     }),
     updateSettings: protectedProcedure
       .input(z.object({
@@ -625,9 +629,9 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const [existing] = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id));
         if (!existing) {
-            await db.insert(userSettings).values({ userId: ctx.user.id, ...input });
+          await db.insert(userSettings).values({ userId: ctx.user.id, ...input });
         } else {
-            await db.update(userSettings).set(input).where(eq(userSettings.userId, ctx.user.id));
+          await db.update(userSettings).set(input).where(eq(userSettings.userId, ctx.user.id));
         }
         return { success: true };
       }),
@@ -641,10 +645,10 @@ export const appRouter = router({
         const profile = await dbHelpers.getUserProfile(ctx.user.id);
         const badges = await dbHelpers.getUserBadges(ctx.user.id);
         const activities = await db.select().from(userActivities).where(eq(userActivities.userId, ctx.user.id)).orderBy(desc(userActivities.createdAt)).limit(20);
-        
-        return { 
-          ...profile, 
-          badges, 
+
+        return {
+          ...profile,
+          badges,
           activities,
           name: ctx.user.name,
           email: ctx.user.email,
@@ -835,29 +839,29 @@ export const appRouter = router({
             xp: userProfiles.xp,
             level: userProfiles.level,
           })
-          .from(users)
-          .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
-          .where(and(
-            or(like(users.username, `%${input}%`), like(users.name, `%${input}%`)), 
-            not(eq(users.id, ctx.user.id))
-          ))
-          .limit(20);
+            .from(users)
+            .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+            .where(and(
+              or(like(users.username, `%${input}%`), like(users.name, `%${input}%`)),
+              not(eq(users.id, ctx.user.id))
+            ))
+            .limit(20);
 
           if (usersList.length === 0) {
-            return MOCK_USERS.filter(u => 
-              u.username.toLowerCase().includes(input.toLowerCase()) || 
+            return MOCK_USERS.filter(u =>
+              u.username.toLowerCase().includes(input.toLowerCase()) ||
               u.name.toLowerCase().includes(input.toLowerCase())
             );
           }
           return usersList;
         } catch (err: any) {
-          return MOCK_USERS.filter(u => 
-            u.username.toLowerCase().includes(input.toLowerCase()) || 
+          return MOCK_USERS.filter(u =>
+            u.username.toLowerCase().includes(input.toLowerCase()) ||
             u.name.toLowerCase().includes(input.toLowerCase())
           );
         }
       }),
-    
+
     getPublicProfile: publicProcedure
       .input(z.number())
       .query(async ({ input }) => {
@@ -867,7 +871,7 @@ export const appRouter = router({
           const profile = await dbHelpers.getUserProfile(input);
           const badges = await dbHelpers.getUserBadges(input);
           const activities = await db.select().from(userActivities).where(eq(userActivities.userId, input)).orderBy(desc(userActivities.createdAt)).limit(10);
-          
+
           return {
             id: user.id,
             name: user.name,
@@ -913,7 +917,7 @@ export const appRouter = router({
         });
         return { success: true };
       }),
-    
+
     getMessages: protectedProcedure
       .input(z.number()) // withUserId
       .query(async ({ ctx, input }) => {
@@ -930,7 +934,7 @@ export const appRouter = router({
       // Get unique users current user has messaged or received messages from
       const sentTo = await db.select({ id: directMessages.receiverId }).from(directMessages).where(eq(directMessages.senderId, ctx.user.id));
       const receivedFrom = await db.select({ id: directMessages.senderId }).from(directMessages).where(eq(directMessages.receiverId, ctx.user.id));
-      
+
       const userIds = Array.from(new Set([...sentTo.map(u => u.id), ...receivedFrom.map(u => u.id)]));
       if (userIds.length === 0) return [];
 
@@ -939,8 +943,8 @@ export const appRouter = router({
         name: users.name,
         username: users.username,
       })
-      .from(users)
-      .where(inArray(users.id, userIds));
+        .from(users)
+        .where(inArray(users.id, userIds));
     }),
   }),
 
@@ -955,7 +959,7 @@ export const appRouter = router({
           creatorId: ctx.user.id,
           isPrivate: input.isPublic === false ? 1 : 0,
         }).returning({ id: studyGroups.id });
-        
+
         const groupId = result.id;
         await db.insert(studyGroupMembers).values({
           groupId,
@@ -963,7 +967,7 @@ export const appRouter = router({
           role: "admin",
           status: "approved"
         });
-        
+
         return { groupId };
       }),
 
@@ -978,12 +982,12 @@ export const appRouter = router({
             description: studyGroups.description,
             memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
           })
-          .from(studyGroups)
-          .where(like(studyGroups.name, `%${input}%`))
-          .limit(20);
+            .from(studyGroups)
+            .where(like(studyGroups.name, `%${input}%`))
+            .limit(20);
 
           if (list.length === 0) {
-             return MOCK_GROUPS.filter(g => g.name.toLowerCase().includes(input.toLowerCase()));
+            return MOCK_GROUPS.filter(g => g.name.toLowerCase().includes(input.toLowerCase()));
           }
           return list;
         } catch (err) {
@@ -999,16 +1003,16 @@ export const appRouter = router({
         role: studyGroupMembers.role,
         memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
       })
-      .from(studyGroups)
-      .innerJoin(studyGroupMembers, eq(studyGroups.id, studyGroupMembers.groupId))
-      .where(and(eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.status, "approved")));
+        .from(studyGroups)
+        .innerJoin(studyGroupMembers, eq(studyGroups.id, studyGroupMembers.groupId))
+        .where(and(eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.status, "approved")));
     }),
 
     discover: protectedProcedure.query(async ({ ctx }) => {
       // Get groups user is NOT a member of
       const myGroupMemberships = await db.select({ id: studyGroupMembers.groupId }).from(studyGroupMembers).where(eq(studyGroupMembers.userId, ctx.user.id));
       const myGroupIds = myGroupMemberships.map(g => g.id);
-      
+
       const query = db.select({
         id: studyGroups.id,
         name: studyGroups.name,
@@ -1048,9 +1052,9 @@ export const appRouter = router({
           name: users.name,
           username: users.username,
         })
-        .from(users)
-        .innerJoin(studyGroupMembers, eq(users.id, studyGroupMembers.userId))
-        .where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.status, "pending")));
+          .from(users)
+          .innerJoin(studyGroupMembers, eq(users.id, studyGroupMembers.userId))
+          .where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.status, "pending")));
       }),
 
     handleMember: protectedProcedure
@@ -1078,13 +1082,13 @@ export const appRouter = router({
           isPrivate: studyGroups.isPrivate,
           memberCount: sql<number>`(SELECT COUNT(*) FROM ${studyGroupMembers} WHERE ${studyGroupMembers.groupId} = ${studyGroups.id})`,
         })
-        .from(studyGroups)
-        .where(eq(studyGroups.id, input));
+          .from(studyGroups)
+          .where(eq(studyGroups.id, input));
 
         if (!group) throw new TRPCError({ code: "NOT_FOUND" });
 
         const [membership] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id)));
-        
+
         return { ...group, role: membership?.role || null, status: membership?.status || null };
       }),
   }),
@@ -1101,10 +1105,10 @@ export const appRouter = router({
           createdAt: studyGroupPosts.createdAt,
           authorName: users.name,
         })
-        .from(studyGroupPosts)
-        .innerJoin(users, eq(studyGroupPosts.userId, users.id))
-        .where(eq(studyGroupPosts.groupId, input))
-        .orderBy(desc(studyGroupPosts.createdAt));
+          .from(studyGroupPosts)
+          .innerJoin(users, eq(studyGroupPosts.userId, users.id))
+          .where(eq(studyGroupPosts.groupId, input))
+          .orderBy(desc(studyGroupPosts.createdAt));
       }),
 
     createPost: protectedProcedure
@@ -1148,10 +1152,10 @@ export const appRouter = router({
           authorName: users.name,
           authorUsername: users.username,
         })
-        .from(studyGroupMessages)
-        .innerJoin(users, eq(studyGroupMessages.userId, users.id))
-        .where(eq(studyGroupMessages.groupId, input))
-        .orderBy(studyGroupMessages.createdAt);
+          .from(studyGroupMessages)
+          .innerJoin(users, eq(studyGroupMessages.userId, users.id))
+          .where(eq(studyGroupMessages.groupId, input))
+          .orderBy(studyGroupMessages.createdAt);
       }),
 
     sendChatMessage: protectedProcedure
@@ -1178,10 +1182,10 @@ export const appRouter = router({
           xp: userProfiles.xp,
           level: userProfiles.level,
         })
-        .from(userProfiles)
-        .innerJoin(users, eq(userProfiles.userId, users.id))
-        .orderBy(desc(userProfiles.xp))
-        .limit(50);
+          .from(userProfiles)
+          .innerJoin(users, eq(userProfiles.userId, users.id))
+          .orderBy(desc(userProfiles.xp))
+          .limit(50);
 
         if (usersList.length === 0) return MOCK_USERS;
         return usersList;
@@ -1203,11 +1207,11 @@ export const appRouter = router({
         xp: userProfiles.xp,
         level: userProfiles.level,
       })
-      .from(userProfiles)
-      .innerJoin(users, eq(userProfiles.userId, users.id))
-      .where(eq(userProfiles.level, userLevel))
-      .orderBy(desc(userProfiles.xp))
-      .limit(50);
+        .from(userProfiles)
+        .innerJoin(users, eq(userProfiles.userId, users.id))
+        .where(eq(userProfiles.level, userLevel))
+        .orderBy(desc(userProfiles.xp))
+        .limit(50);
     }),
 
     getSquads: publicProcedure.query(async () => {
@@ -1219,12 +1223,12 @@ export const appRouter = router({
           totalXp: sql<number>`sum(${userProfiles.xp})`.as('totalXp'),
           memberCount: sql<number>`count(${studyGroupMembers.id})`.as('memberCount'),
         })
-        .from(studyGroups)
-        .leftJoin(studyGroupMembers, and(eq(studyGroups.id, studyGroupMembers.groupId), eq(studyGroupMembers.status, "approved")))
-        .leftJoin(userProfiles, eq(studyGroupMembers.userId, userProfiles.userId))
-        .groupBy(studyGroups.id)
-        .orderBy(desc(sql`totalXp`))
-        .limit(50);
+          .from(studyGroups)
+          .leftJoin(studyGroupMembers, and(eq(studyGroups.id, studyGroupMembers.groupId), eq(studyGroupMembers.status, "approved")))
+          .leftJoin(userProfiles, eq(studyGroupMembers.userId, userProfiles.userId))
+          .groupBy(studyGroups.id)
+          .orderBy(desc(sql`totalXp`))
+          .limit(50);
 
         if (result.length === 0) return MOCK_GROUPS;
         return result.map(g => ({ ...g, totalXp: Number(g.totalXp) || 0 }));
@@ -1245,14 +1249,14 @@ export const appRouter = router({
           level: userProfiles.level,
           role: studyGroupMembers.role,
         })
-        .from(studyGroupMembers)
-        .innerJoin(users, eq(studyGroupMembers.userId, users.id))
-        .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
-        .where(and(
-          eq(studyGroupMembers.groupId, input),
-          eq(studyGroupMembers.status, "approved")
-        ))
-        .orderBy(desc(userProfiles.xp));
+          .from(studyGroupMembers)
+          .innerJoin(users, eq(studyGroupMembers.userId, users.id))
+          .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+          .where(and(
+            eq(studyGroupMembers.groupId, input),
+            eq(studyGroupMembers.status, "approved")
+          ))
+          .orderBy(desc(userProfiles.xp));
       }),
   }),
 });
