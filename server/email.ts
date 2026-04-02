@@ -7,6 +7,7 @@ import axios from 'axios';
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '584680300268-cjuo65ij8imsdhp3otrtgb0l4q9gl5mj.apps.googleusercontent.com';
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
+const FROM_EMAIL = 'lockedin.eg.support@gmail.com';
 
 async function getAccessToken() {
   if (!REFRESH_TOKEN || !CLIENT_SECRET) {
@@ -35,6 +36,7 @@ async function sendGmailApiEmail(to: string, subject: string, html: string) {
     const encodedSubject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
 
     const message = [
+      `From: LockedIn <${FROM_EMAIL}>`,
       `To: ${to}`,
       `Subject: ${encodedSubject}`,
       `MIME-Version: 1.0`,
