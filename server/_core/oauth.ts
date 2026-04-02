@@ -29,6 +29,8 @@ const getRedirectUri = (req: Request) => {
   return `${protocol}://${host}/api/oauth/callback`;
 };
 
+const processedCodes = new Set<string>();
+
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/google", (req: Request, res: Response) => {
     if (!GOOGLE_CLIENT_ID) {
@@ -49,6 +51,14 @@ export function registerOAuthRoutes(app: Express) {
       res.redirect("/auth?error=oauth_failed");
       return;
     }
+
+    if (processedCodes.has(code)) {
+      console.warn("[OAuth] Duplicate code received, ignoring:", code.substring(0, 5));
+      return;
+    }
+    processedCodes.add(code);
+    // Cleanup old codes eventually to prevent memory issues
+    setTimeout(() => processedCodes.delete(code), 60000); 
 
     try {
       const redirectUri = getRedirectUri(req);

@@ -5,8 +5,8 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: process.env.GMAIL_USER || 'lockedin.eg.support@gmail.com',
-    pass: process.env.GMAIL_PASS || 'xhqxbwhdmpmvfmrf',
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
   },
   // Ensure we use IPv4 to avoid ENETUNREACH on cloud providers like Railway
   tls: {
