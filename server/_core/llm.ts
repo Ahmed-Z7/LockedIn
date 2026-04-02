@@ -45,7 +45,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${ENV.geminiApiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${ENV.geminiApiKey}`;
 
   const response = await fetch(url, {
     method: "POST",
