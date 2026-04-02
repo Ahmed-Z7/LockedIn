@@ -488,7 +488,7 @@ export default function StudySessionPage() {
                             <div className="w-24 h-24 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-8" />
                             <h2 className="text-3xl font-black text-white mb-2 tracking-tighter italic uppercase">Analyzing Concepts</h2>
                             <p className="text-zinc-500 max-w-sm font-medium">
-                                LOCKEDIN AI is scanning your study material to generate critical validation questions...
+                                ZED is scanning your study material to generate critical validation questions...
                             </p>
                         </div>
                     ) : (
@@ -583,7 +583,7 @@ export default function StudySessionPage() {
                                         Fundamentals
                                     </h2>
                                     <p className="text-lg leading-relaxed text-foreground/70 font-medium">
-                                        {session?.material?.content || "No material content available for this session. Use the Nex Focus AI to generate a summary."}
+                                        {session?.material?.content || "No material content available for this session. Use the ZED Focus AI to generate a summary."}
                                     </p>
                                 </section>
                             </div>
@@ -685,7 +685,7 @@ export default function StudySessionPage() {
                                     <Lightbulb className="w-8 h-8" />
                                 </div>
                                 <h1 className="text-4xl font-black">Explain to a Child</h1>
-                                <p className="text-foreground/40 text-lg">Type a simple explanation of what you just learned. Nex AI will grade your clarity.</p>
+                                <p className="text-foreground/40 text-lg">Type a simple explanation of what you just learned. ZED AI will grade your clarity.</p>
                             </div>
                             <textarea 
                                 className="w-full h-64 bg-white/5 border border-white/10 rounded-[2rem] p-8 text-lg focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-foreground/10"
@@ -761,7 +761,7 @@ export default function StudySessionPage() {
                     <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center text-white">
                         <Sparkles className="w-4 h-4" />
                     </div>
-                    <h3 className="font-bold text-sm">Nex Focus Assist</h3>
+                    <h3 className="font-bold text-sm">ZED Focus Assist</h3>
                 </div>
                 
                 <div className="flex-1 p-6 overflow-y-auto space-y-4">

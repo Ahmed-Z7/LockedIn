@@ -39,43 +39,56 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  // Updated Model IDs for 2026 based on diagnostic logs
+  // Updated Stable Model IDs for 2026
   const modelsToTry = [
-    "gemini-2.5-flash",
-    "gemini-flash-latest",
-    "gemini-2.0-flash-lite",
-    "gemini-pro-latest"
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+    "gemini-pro"
   ];
 
   let lastError = "";
 
   for (const modelId of modelsToTry) {
     try {
-      // Using v1 for potentially better stability with 2026 models
-      const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
+      // Using v1beta for advanced features in 2026
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
 
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents }),
+        body: JSON.stringify({ 
+          contents,
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 2048,
+          }
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Error generating response";
+        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!aiText) {
+          const finishReason = data.candidates?.[0]?.finishReason;
+          throw new Error(`Empty response from model ${modelId}. Finish reason: ${finishReason}`);
+        }
+
         return {
           choices: [{ message: { role: "model", content: aiText } }]
         };
       } else {
-        const errorText = await response.text();
-        lastError = `Model ${modelId} failed: ${response.status} - ${errorText}`;
-        console.warn(`[AI] ${lastError}`);
+        const errorData = await response.json().catch(() => ({ error: { message: "Unknown API Error" } }));
+        lastError = `Model ${modelId} failed: ${response.status} - ${errorData.error?.message || "No error message"}`;
+        console.warn(`[AI DIAGNOSTIC] ${lastError}`);
       }
     } catch (err: any) {
       lastError = `Fetch failed for ${modelId}: ${err.message}`;
-      console.warn(`[AI] ${lastError}`);
+      console.warn(`[AI DIAG NOSTIC] ${lastError}`);
     }
   }
 
-  throw new Error(`All Gemini models failed. Last error: ${lastError}`);
+  throw new Error(`Neural Pulse Erratic: All models failed. Last error: ${lastError}`);
 }

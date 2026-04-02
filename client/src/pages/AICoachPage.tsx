@@ -116,7 +116,7 @@ export default function AICoachPage() {
       <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-purple-500/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-      <main className="max-w-6xl mx-auto pt-28 pb-20 px-4 relative z-10">
+      <main className="max-w-6xl mx-auto pt-32 pb-20 px-4 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             {/* Left: Chat Area */}
@@ -124,7 +124,7 @@ export default function AICoachPage() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-card/30 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[600px] shadow-2xl shadow-purple-500/5"
+                    className="bg-card/30 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[700px] shadow-2xl shadow-purple-500/5"
                 >
                     {/* Chat Header */}
                     <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
@@ -133,7 +133,7 @@ export default function AICoachPage() {
                                 <Sparkles className="w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold tracking-tight">Nex AI Coach</h2>
+                                <h2 className="text-xl font-bold tracking-tight">ZED AI Coach</h2>
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                                     <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Neural Link Active</span>

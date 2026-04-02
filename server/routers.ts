@@ -44,6 +44,45 @@ function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function getZEDSystemPrompt(params: { 
+  userName: string, 
+  tone?: string, 
+  language?: string, 
+  historyContext?: string, 
+  knowledgeContext?: string, 
+  scheduleContext?: string,
+  userStats?: string
+}) {
+  const { userName, tone, language, historyContext, knowledgeContext, scheduleContext, userStats } = params;
+  
+  return `You are ZED, the Intelligent AI Study Buddy for LOCKEDIN.
+  - USER: ${userName}.
+  - STYLE: EXTREMELY CONCISE ("ما قل ودل"). Direct, impactful, and genius.
+  - PERSONA: A brilliant friend with FULL SYSTEM ACCESS. You remember everything and see everything the user does on the platform.
+  - TONE: ${tone === 'strict' ? 'Firm, demanding, and highly disciplined.' : tone === 'scientific' ? 'Scientific terms, focus on neuro-efficiency.' : 'Supportive, funny, and energetic.'}
+  - LANGUAGE: ${language === 'arabic' ? 'Egyptian Arabic primary.' : language === 'english' ? 'English primary.' : 'Dual Arabic (Egyptian/Amiya) and English.'}
+  - CONTEXT: Today is ${new Date().toISOString()}.
+  
+  USER PROGRESS & ACTIVITY:
+  ${userStats || "No stats available."}
+  
+  INTERNAL MEMORY (Last messages):
+  ${historyContext || "None"}
+  
+  ESTABLISHED FACTS ABOUT USER:
+  ${knowledgeContext || "None yet. Learn habits/goals/preferences."}
+  
+  CURRENT SCHEDULE:
+  ${scheduleContext || "Empty"}
+  
+  CAPABILITIES & OUTPUT RULES (JSON ONLY):
+  1. "response": Your direct reply.
+  2. "actions": Array of database changes [{ "action": "add"|"update"|"delete", "id": number (for update/delete), "subject": "string", "newTime": "ISO_DATE", "newDuration": number }]. 
+     - You have FULL PERMISSION to modify the user's schedule if helpful.
+  3. "newKnowledge": Array of strings. Extract NEW persistent facts.
+  4. Always respond with strict JSON: { "response": "...", "actions": [], "newKnowledge": [] }.`;
+}
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -425,29 +464,30 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         try {
           const history = await dbHelpers.getUserAIChatHistory(ctx.user.id);
-          const recentHistory = history.slice(0, 5).reverse();
-          const historyContext = recentHistory.map(h => `User: ${h.message}\nAI: ${h.response}`).join("\n");
-
+          const recentHistory = (history as any[]).slice(0, 10).reverse();
+          const historyContext = recentHistory.map((h: any) => `User: ${h.message}\nAI: ${h.response}`).join("\n");
+          
           const schedule = await dbHelpers.getStudySchedule(ctx.user.id);
-          const scheduleContext = schedule.map(s => `ID: ${s.id}, Subject: ${s.subject}, Time: ${s.scheduledTime}`).join('\n');
+          const scheduleContext = (schedule as any[]).map((s: any) => `ID: ${s.id}, Subject: ${s.subject}, Time: ${s.scheduledTime}`).join('\n');
 
-          const prompt = `You are ZED, the Intelligent AI Study Buddy.
-          - Tone: Warm but EXTREMELY CONCISE ("ما قل ودل").
-          - Context: Today is ${new Date().toISOString()}.
-          - History: ${historyContext}
-          - Current Schedule:
-          ${scheduleContext}
-          User Message: "${input.message}"
-          Output format (JSON):
-          {
-            "actions": [{ "id": 123, "newTime": "ISO_DATE", "newDuration": 60, "action": "update" | "delete" | "add", "subject": "..." }],
-            "friendlyMessage": "Your concise response in Egyptian Arabic/English"
-          }`;
+          const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id));
+          const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, ctx.user.id));
+          const userStats = `Level: ${profile?.level || 1}, XP: ${profile?.xp || 0}, Streak: ${profile?.streak || 0}. Total Tasks in Schedule: ${schedule.length}. Completed Tasks: ${schedule.filter(s => (s as any).completed === 1).length}.`;
+
+          const prompt = getZEDSystemPrompt({
+            userName: ctx.user.name || "User",
+            tone: settings?.aiTone || 'friendly',
+            language: settings?.aiLanguage || 'bilingual',
+            historyContext,
+            scheduleContext,
+            knowledgeContext: (await dbHelpers.getUserAIKnowledge(ctx.user.id)).map(k => k.content).join("\n"),
+            userStats
+          });
 
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are an expert schedule optimizer AI. Return only strict JSON." },
-              { role: "user", content: prompt },
+              { role: "system", content: "Expert Schedule Optimizer AI (ZED). Return strict JSON." },
+              { role: "user", content: `REQUEST: ${input.message}\n\n${prompt}` },
             ],
           });
 
@@ -456,13 +496,14 @@ export const appRouter = router({
           const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
           const result = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
           const actions = result.actions || [];
-          const friendlyMessage = result.friendlyMessage || "Processed! 🔒";
+          const friendlyMessage = result.response || result.friendlyMessage || "Processed! 🔒";
 
           for (const action of actions) {
             if (action.action === "update") {
               await db.update(studySchedules).set({ 
                   ...(action.newTime && { scheduledTime: action.newTime }),
-                  ...(action.newDuration && { duration: action.newDuration })
+                  ...(action.newDuration && { duration: action.newDuration }),
+                  ...(action.subject && { subject: action.subject })
                 }).where(and(eq(studySchedules.id, action.id), eq(studySchedules.userId, ctx.user.id)));
             } else if (action.action === "delete") {
               await db.delete(studySchedules).where(and(eq(studySchedules.id, action.id), eq(studySchedules.userId, ctx.user.id)));
@@ -506,25 +547,18 @@ export const appRouter = router({
           const knowledgeContext = (knowledge as any[]).map((k: any) => `- ${k.content}`).join('\n');
 
           const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, ctx.user.id));
-          const aiTone = settings?.aiTone || 'friendly';
-          const aiLanguage = settings?.aiLanguage || 'bilingual';
+          const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, ctx.user.id));
+          const userStats = `Level: ${profile?.level || 1}, XP: ${profile?.xp || 0}, Streak: ${profile?.streak || 0}. Total Tasks in Schedule: ${schedule.length}. Completed Tasks: ${schedule.filter(s => (s as any).completed === 1).length}.`;
 
-          const systemMsg = `You are ZED, the Intelligent AI Study Buddy for LOCKEDIN.
-          - STYLE: EXTREMELY CONCISE ("ما قل ودل"). Direct and impactful.
-          - PERSONA: A genius friend. ${aiTone === 'strict' ? 'Be firm, demanding, and highly disciplined.' : aiTone === 'scientific' ? 'Use scientific terms, focus on neuro-efficiency.' : 'Be supportive, funny, and energetic.'}
-          - LANGUAGE: ${aiLanguage === 'arabic' ? 'Egyptian Arabic primary.' : aiLanguage === 'english' ? 'English primary.' : 'Dual Arabic (Egyptian/Amiya) and English.'}
-          - CONTEXT: Today is ${new Date().toISOString()}.
-          - INTERNAL MEMORY (Last 10 msgs):
-          ${historyContext}
-          - ESTABLISHED FACTS ABOUT USER:
-          ${knowledgeContext || "None yet. Learn about the user's habits/goals."}
-          - CURRENT SCHEDULE:
-          ${scheduleContext}
-          
-          OUTPUT RULES (JSON ONLY):
-          1. "response": Your reply to the user.
-          2. "actions": Array of database changes [{ "action": "add"|"update"|"delete", ... }].
-          3. "newKnowledge": Array of strings. If the user mentions a NEW persistent fact about themselves (habit, goal, preference, exam date), extract it here. (e.g. ["User has biology exam on Tuesday", "User hates evening study"]).`;
+          const systemMsg = getZEDSystemPrompt({
+            userName: ctx.user.name || "User",
+            tone: settings?.aiTone || 'friendly',
+            language: settings?.aiLanguage || 'bilingual',
+            historyContext,
+            knowledgeContext,
+            scheduleContext,
+            userStats
+          });
 
           const response = await invokeLLM({
             messages: [
