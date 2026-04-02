@@ -21,7 +21,7 @@ export default function LeaderboardPage() {
         return { 
             data: squadsQuery.data?.map(s => ({ 
                 id: s.id, 
-                avatar: s.avatar, 
+                avatar: (s as any).avatar || null, 
                 identifier: `Members: ${s.memberCount}`, 
                 primaryLabel: s.name, 
                 score: s.totalXp,

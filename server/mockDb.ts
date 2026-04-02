@@ -63,13 +63,13 @@ export const MOCK_USERS = [
 ];
 
 export const MOCK_GROUPS = [
-  { id: 201, name: "Neural Architects", description: "Deep work and systems thinking collective.", memberCount: 14, totalXp: 12500 },
-  { id: 202, name: "Global Hackers", description: "Coding the future, 25 hours a day.", memberCount: 8, totalXp: 8400 },
-  { id: 203, name: "Focus Collective", description: "Eliminate all distractions.", memberCount: 22, totalXp: 15600 },
+  { id: 201, name: "Neural Architects", description: "Deep work and systems thinking collective.", memberCount: 14, totalXp: 12500, avatar: null },
+  { id: 202, name: "Global Hackers", description: "Coding the future, 25 hours a day.", memberCount: 8, totalXp: 8400, avatar: null },
+  { id: 203, name: "Focus Collective", description: "Eliminate all distractions.", memberCount: 22, totalXp: 15600, avatar: null },
 ];
 
 // In-memory messages (persists across reloads on local dev server)
 export const MOCK_MESSAGES: any[] = [
-  { id: 1, senderId: 101, receiverId: 999, content: "Hey! Ready to study?", createdAt: new Date(Date.now() - 1000 * 60 * 5) },
-  { id: 2, senderId: 999, receiverId: 101, content: "Yes! Joining the focus room now.", createdAt: new Date(Date.now() - 1000 * 60 * 2) },
+  { id: 1, senderId: 101, receiverId: 999, content: "Hey! Ready to study?", createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+  { id: 2, senderId: 999, receiverId: 101, content: "Yes! Joining the focus room now.", createdAt: new Date(Date.now() - 1000 * 60 * 2).toISOString() },
 ];

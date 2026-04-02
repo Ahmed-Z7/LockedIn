@@ -24,25 +24,30 @@ async function seed() {
     username: "devuser",
     loginMethod: "mock",
     role: "user",
+    password: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    lastSignedIn: new Date().toISOString(),
   }).onConflictDoUpdate({ target: users.id, set: { name: "Dev User" } });
 
   // 2. Ensure other users exist for "From" field
-  await db.insert(users).values([
-    { id: 2, openId: "id-mahmoud", name: "Mahmoud", email: "m@ex.com", username: "mahmoud", loginMethod: "mock", role: "user" },
-    { id: 3, openId: "id-ahmed", name: "Ahmed", email: "a@ex.com", username: "ahmed", loginMethod: "mock", role: "user" },
-    { id: 4, openId: "id-sara", name: "Sara", email: "s@ex.com", username: "sara", loginMethod: "mock", role: "user" },
-  ]).onConflictDoUpdate({ target: users.id, set: { id: 2 } });
-
-  // 3. Clear old notifications for Dev User to avoid clutter
-  // await db.delete(notifications).where(eq(notifications.userId, 1));
+  const otherUsers = [
+    { id: 2, openId: "id-mahmoud", name: "Mahmoud", email: "m@ex.com", username: "mahmoud", loginMethod: "mock", role: "user", password: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), lastSignedIn: new Date().toISOString() },
+    { id: 3, openId: "id-ahmed", name: "Ahmed", email: "a@ex.com", username: "ahmed", loginMethod: "mock", role: "user", password: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), lastSignedIn: new Date().toISOString() },
+    { id: 4, openId: "id-sara", name: "Sara", email: "s@ex.com", username: "sara", loginMethod: "mock", role: "user", password: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), lastSignedIn: new Date().toISOString() },
+  ];
+  
+  for (const u of otherUsers) {
+    await db.insert(users).values(u as any).onConflictDoUpdate({ target: users.id, set: { name: u.name } });
+  }
 
   // 4. Add mock notifications
-  const mockNotifs: { userId: number; fromUserId: number; type: "like" | "comment" | "follow" | "badge" | "study_session"; read: number; createdAt: Date }[] = [
-    { userId: 1, fromUserId: 2, type: "like", read: 0, createdAt: new Date(Date.now() - 1000 * 60 * 5) },
-    { userId: 1, fromUserId: 3, type: "comment", read: 0, createdAt: new Date(Date.now() - 1000 * 60 * 60) },
-    { userId: 1, fromUserId: 4, type: "badge", read: 0, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2) },
-    { userId: 1, fromUserId: 2, type: "follow", read: 1, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24) },
-    { userId: 1, fromUserId: 3, type: "like", read: 1, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 25) },
+  const mockNotifs = [
+    { userId: 1, fromUserId: 2, type: "like" as const, read: 0, createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
+    { userId: 1, fromUserId: 3, type: "comment" as const, read: 0, createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString() },
+    { userId: 1, fromUserId: 4, type: "badge" as const, read: 0, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+    { userId: 1, fromUserId: 2, type: "follow" as const, read: 1, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+    { userId: 1, fromUserId: 3, type: "like" as const, read: 1, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString() },
   ];
 
   for (const notif of mockNotifs) {

@@ -411,6 +411,7 @@ export const users = pgTable("users", {
 	username: varchar({ length: 100 }),
 	loginMethod: varchar({ length: 64 }),
 	role: role().default('user').notNull(),
+	password: text(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 	lastSignedIn: timestamp({ mode: 'string' }).defaultNow().notNull(),
@@ -535,7 +536,8 @@ export const verificationCodes = pgTable("verificationCodes", {
 	type: varchar({ length: 50 }).notNull(), // 'signup' or 'reset'
 	name: text(), // Stored temporarily during signup
 	passwordHash: text(), // Stored temporarily during signup
-	expiresAt: timestamp({ mode: 'number' }).notNull(),
+	expiresAt: timestamp({ mode: 'string' }).notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 });
 export type InsertVerificationCode = typeof verificationCodes.$inferInsert;
+export type User = typeof users.$inferSelect;

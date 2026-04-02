@@ -39,7 +39,7 @@ export async function awardXP(userId: number, amount: number, reason: string) {
   }
 
   await db.update(userProfiles)
-    .set({ xp: newXP, level: newLevel, updatedAt: new Date() })
+    .set({ xp: newXP, level: newLevel, updatedAt: new Date().toISOString() })
     .where(eq(userProfiles.userId, userId));
 
   // Log activity
@@ -61,7 +61,7 @@ export async function updateStreak(userId: number) {
     const lastUpdate = profile.updatedAt ? new Date(profile.updatedAt) : null;
     
     if (!lastUpdate) {
-        await db.update(userProfiles).set({ streak: 1, updatedAt: now }).where(eq(userProfiles.userId, userId));
+        await db.update(userProfiles).set({ streak: 1, updatedAt: now.toISOString() }).where(eq(userProfiles.userId, userId));
         return 1;
     }
 
@@ -70,7 +70,7 @@ export async function updateStreak(userId: number) {
     if (diffDays === 1) {
         // Increment streak
         const newStreak = (profile.streak || 0) + 1;
-        await db.update(userProfiles).set({ streak: newStreak, updatedAt: now }).where(eq(userProfiles.userId, userId));
+        await db.update(userProfiles).set({ streak: newStreak, updatedAt: now.toISOString() }).where(eq(userProfiles.userId, userId));
         
         // Award daily XP
         await awardXP(userId, 10, "Daily Streak Maintained!");
@@ -83,7 +83,7 @@ export async function updateStreak(userId: number) {
         return newStreak;
     } else if (diffDays > 1) {
         // Reset streak
-        await db.update(userProfiles).set({ streak: 1, updatedAt: now }).where(eq(userProfiles.userId, userId));
+        await db.update(userProfiles).set({ streak: 1, updatedAt: now.toISOString() }).where(eq(userProfiles.userId, userId));
         return 1;
     }
 
@@ -105,7 +105,8 @@ export async function updateChallengeProgress(userId: number, category: string, 
             challengeId: c.id,
             currentProgress: amount,
             completed: amount >= c.targetValue ? 1 : 0,
-            completedAt: amount >= c.targetValue ? new Date() : null
+            completedAt: amount >= c.targetValue ? new Date().toISOString() : null,
+            updatedAt: new Date().toISOString()
         });
         if (amount >= c.targetValue) {
             await awardXP(userId, c.rewardXp, `Completed Challenge: ${c.title}`);
@@ -118,7 +119,8 @@ export async function updateChallengeProgress(userId: number, category: string, 
             .set({ 
                 currentProgress: newProgress, 
                 completed: isCompleted,
-                completedAt: isCompleted ? new Date() : null
+                completedAt: isCompleted ? new Date().toISOString() : null,
+                updatedAt: new Date().toISOString()
             })
             .where(eq(userChallenges.id, userChallenge.id));
         

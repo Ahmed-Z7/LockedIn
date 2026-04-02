@@ -90,11 +90,11 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     }
 
     if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
+      values.lastSignedIn = new Date().toISOString();
     }
 
     if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
+      updateSet.lastSignedIn = new Date().toISOString();
     }
 
     await db.insert(users).values(values).onConflictDoUpdate({
@@ -420,7 +420,7 @@ export async function updateProfilePhoto(userId: number, photoBase64: string) {
   if (!db) return;
   const profile = await getUserProfile(userId);
   if (profile) {
-    await db.update(userProfiles).set({ profilePhoto: photoBase64, updatedAt: new Date() }).where(eq(userProfiles.userId, userId));
+    await db.update(userProfiles).set({ profilePhoto: photoBase64, updatedAt: new Date().toISOString() }).where(eq(userProfiles.userId, userId));
   } else {
     await db.insert(userProfiles).values({ userId, profilePhoto: photoBase64 });
   }
@@ -431,7 +431,7 @@ export async function updateUserBio(userId: number, bio: string) {
   if (!db) return;
   const profile = await getUserProfile(userId);
   if (profile) {
-    await db.update(userProfiles).set({ bio, updatedAt: new Date() }).where(eq(userProfiles.userId, userId));
+    await db.update(userProfiles).set({ bio, updatedAt: new Date().toISOString() }).where(eq(userProfiles.userId, userId));
   } else {
     await db.insert(userProfiles).values({ userId, bio });
   }
@@ -490,7 +490,7 @@ export async function updateScheduleStatus(id: number, userId: number, completed
   const db = await getDb();
   if (!db) return;
   await db.update(studySchedules)
-    .set({ completed, ...meta })
+    .set({ completed, ...meta, scheduledTime: meta?.scheduledTime?.toISOString() })
     .where(and(eq(studySchedules.id, id), eq(studySchedules.userId, userId)));
 }
 

@@ -26,9 +26,10 @@ export async function createContext(
         username: "devuser",
         loginMethod: "mock",
         role: "user",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastSignedIn: new Date(),
+        password: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastSignedIn: new Date().toISOString(),
       };
     } else {
       user = null;

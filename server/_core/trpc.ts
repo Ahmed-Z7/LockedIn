@@ -1,10 +1,20 @@
 import { NOT_ADMIN_ERR_MSG, UNAUTHED_ERR_MSG } from '@shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
+import { z } from "zod";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
+  errorFormatter: ({ shape, error }) => {
+    return {
+      ...shape,
+      message: 
+        error.cause instanceof z.ZodError 
+          ? error.cause.issues[0]?.message || shape.message 
+          : shape.message,
+    };
+  },
 });
 
 export const router = t.router;

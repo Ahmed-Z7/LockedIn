@@ -29,9 +29,13 @@ export default function ChallengesPage() {
   const profile = profileQuery.data?.profile;
 
   const filteredChallenges = useMemo(() => {
-    let filtered = challenges;
+    let filtered = challenges.map(c => ({
+      ...c,
+      currentProgress: c.currentProgress ?? 0,
+      completed: c.completed ?? 0,
+    }));
     if (activeCategory !== 'all') {
-      filtered = challenges.filter(c => c.category === activeCategory);
+      filtered = filtered.filter(c => c.category === activeCategory);
     }
     
     // Sort logic: 

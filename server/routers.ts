@@ -54,7 +54,11 @@ export const appRouter = router({
       return { success: true } as const;
     }),
     register: publicProcedure
-      .input(z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(6) }))
+      .input(z.object({ 
+        name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"), 
+        email: z.string().email("البريد الإلكتروني غير صالح"), 
+        password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل") 
+      }))
       .mutation(async ({ ctx, input }) => {
         const existing = await db.select().from(users).where(eq(users.email, input.email));
         if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
@@ -76,7 +80,11 @@ export const appRouter = router({
         
       }),
     sendVerificationCode: publicProcedure
-      .input(z.object({ name: z.string().min(2), email: z.string().email(), password: z.string().min(6) }))
+      .input(z.object({ 
+        name: z.string().min(2, "الاسم يجب أن يكون حرفين على الأقل"), 
+        email: z.string().email("البريد الإلكتروني غير صالح"), 
+        password: z.string().min(6, "كلمة المرور يجب أن تكون 6 أحرف على الأقل") 
+      }))
       .mutation(async ({ input }) => {
         const existing = await db.select().from(users).where(eq(users.email, input.email));
         if (existing.length > 0) throw new TRPCError({ code: "CONFLICT", message: "Email already exists" });
@@ -92,7 +100,7 @@ export const appRouter = router({
           type: 'signup',
           name: input.name,
           passwordHash: hashedPassword,
-          expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
         });
 
         await sendVerificationEmail(input.email, code);
@@ -113,7 +121,7 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid verification code" });
         }
         
-        if (Date.now() > verification.expiresAt) {
+        if (new Date().toISOString() > verification.expiresAt) {
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
           throw new TRPCError({ code: "BAD_REQUEST", message: "Verification code expired. Please sign up again." });
         }
@@ -145,7 +153,10 @@ export const appRouter = router({
         return { success: true };
       }),
     login: publicProcedure
-      .input(z.object({ email: z.string().email(), password: z.string() }))
+      .input(z.object({ 
+        email: z.string().email("البريد الإلكتروني غير صالح"), 
+        password: z.string().min(1, "كلمة المرور مطلوبة") 
+      }))
       .mutation(async ({ ctx, input }) => {
         const [user] = await db.select().from(users).where(eq(users.email, input.email));
         if (!user || !user.password) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
@@ -160,7 +171,7 @@ export const appRouter = router({
         return { success: true };
       }),
     requestPasswordReset: publicProcedure
-      .input(z.object({ email: z.string().email() }))
+      .input(z.object({ email: z.string().email("البريد الإلكتروني غير صالح") }))
       .mutation(async ({ input }) => {
         const [existing] = await db.select().from(users).where(eq(users.email, input.email));
         if (!existing) return { success: true }; // Silently return true to prevent email enumeration
@@ -172,7 +183,7 @@ export const appRouter = router({
           email: input.email,
           code,
           type: 'reset',
-          expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
         });
 
         await sendPasswordResetEmail(input.email, code);
@@ -180,7 +191,11 @@ export const appRouter = router({
         return { success: true };
       }),
     resetPassword: publicProcedure
-      .input(z.object({ email: z.string().email(), code: z.string(), newPassword: z.string().min(6) }))
+      .input(z.object({ 
+        email: z.string().email("البريد الإلكتروني غير صالح"), 
+        code: z.string().min(1, "كود التحقق مطلوب"), 
+        newPassword: z.string().min(6, "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل") 
+      }))
       .mutation(async ({ input }) => {
         const [verification] = await db.select().from(verificationCodes)
           .where(and(eq(verificationCodes.email, input.email), eq(verificationCodes.type, 'reset')));
@@ -189,7 +204,7 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired code." });
         }
 
-        if (Date.now() > verification.expiresAt) {
+        if (new Date().toISOString() > verification.expiresAt) {
           await db.delete(verificationCodes).where(eq(verificationCodes.email, input.email));
           throw new TRPCError({ code: "BAD_REQUEST", message: "Code expired. Please request a new one." });
         }
@@ -269,7 +284,11 @@ export const appRouter = router({
             return MOCK_CHALLENGES;
           }
 
-          return userChallengesList;
+          return userChallengesList.map(c => ({
+            ...c,
+            currentProgress: c.currentProgress ?? 0,
+            completed: c.completed ?? 0,
+          }));
         } catch (err: any) {
           console.error("Error fetching challenges:", err);
           return MOCK_CHALLENGES;
@@ -316,7 +335,7 @@ export const appRouter = router({
           ...s,
           userId: ctx.user.id,
           materialId: input.materialId,
-          scheduledTime: new Date(s.scheduledTime),
+          scheduledTime: new Date(s.scheduledTime).toISOString(),
           completed: 0
         }));
         await dbHelpers.createStudySchedule(sessions);
@@ -328,9 +347,9 @@ export const appRouter = router({
         return await dbHelpers.getStudySchedule(ctx.user.id);
       } catch (err: any) {
         return [
-          { id: 1, subject: "Neural Architecture", duration: 45, scheduledTime: new Date(), completed: 0, difficulty: 'hard', sessionType: 'study', materialId: null },
-          { id: 2, subject: "Quantum Learning", duration: 30, scheduledTime: new Date(Date.now() + 3600000), completed: 0, difficulty: 'medium', sessionType: 'review', materialId: null },
-          { id: 3, subject: "Data Structures", duration: 60, scheduledTime: new Date(Date.now() + 7200000), completed: 1, difficulty: 'easy', sessionType: 'study', materialId: null },
+          { id: 1, subject: "Neural Architecture", duration: 45, scheduledTime: new Date().toISOString(), completed: 0, difficulty: 'hard', sessionType: 'study', materialId: null },
+          { id: 2, subject: "Quantum Learning", duration: 30, scheduledTime: new Date(Date.now() + 3600000).toISOString(), completed: 0, difficulty: 'medium', sessionType: 'review', materialId: null },
+          { id: 3, subject: "Data Structures", duration: 60, scheduledTime: new Date(Date.now() + 7200000).toISOString(), completed: 1, difficulty: 'easy', sessionType: 'study', materialId: null },
         ];
       }
     }),
@@ -677,8 +696,8 @@ export const appRouter = router({
         return enrichedPosts;
       } catch (err: any) {
         return [
-          { id: 1, title: "How to stay focused?", content: "I'm struggling with long sessions. Any tips?", category: "general", authorName: "Ahmed", authorUsername: "ahmed_dev", authorAvatar: null, createdAt: new Date(), likes: 5, commentsCount: 2 },
-          { id: 2, title: "New Study Group!", content: "Join our Neural Architecture group.", category: "groups", authorName: "Alice", authorUsername: "alice_wonder", authorAvatar: null, createdAt: new Date(), likes: 12, commentsCount: 4 },
+          { id: 1, title: "How to stay focused?", content: "I'm struggling with long sessions. Any tips?", category: "general", authorName: "Ahmed", authorUsername: "ahmed_dev", authorAvatar: null, createdAt: new Date().toISOString(), likes: 5, commentsCount: 2 },
+          { id: 2, title: "New Study Group!", content: "Join our Neural Architecture group.", category: "groups", authorName: "Alice", authorUsername: "alice_wonder", authorAvatar: null, createdAt: new Date().toISOString(), likes: 12, commentsCount: 4 },
         ];
       }
     }),
@@ -1004,7 +1023,7 @@ export const appRouter = router({
           groupId: input.groupId,
           title: input.title,
           description: input.description,
-          dueDate: input.dueDate ? new Date(input.dueDate) : null,
+          dueDate: input.dueDate ? new Date(input.dueDate).toISOString() : null,
         });
         return { success: true };
       }),

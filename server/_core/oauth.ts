@@ -74,7 +74,7 @@ export function registerOAuthRoutes(app: Express) {
         name: userInfo.name || userInfo.email.split('@')[0],
         email: userInfo.email,
         loginMethod: "google",
-        lastSignedIn: new Date(),
+        lastSignedIn: new Date().toISOString(),
       });
 
       const sessionToken = await sdk.createSessionToken(openId, {
@@ -85,7 +85,8 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect("/");
+      const frontendUrl = process.env.FRONTEND_URL || "https://lockedin-eg.vercel.app";
+      res.redirect(frontendUrl);
     } catch (err) {
       console.error("[OAuth] Callback failed", err);
       res.redirect("/auth?error=oauth_failed");
