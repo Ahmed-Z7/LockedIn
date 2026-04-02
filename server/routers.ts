@@ -458,29 +458,34 @@ export const appRouter = router({
           const schedule = await dbHelpers.getStudySchedule(ctx.user.id);
           const scheduleContext = schedule.map(s => `ID: ${s.id}, Subject: ${s.subject}, Time: ${s.scheduledTime}`).join('\n');
 
-          const prompt = `You are a scheduling AI. The user wants to adjust their study schedule.
-          User Message: "${input.message}"
-          Current Schedule:
+          const prompt = `You are ZED, the Friendly AI Study Buddy. The user wants to adjust their study schedule.
+          - Tone: Supportive, helpful, and concise.
+          - Context: Today is ${new Date().toISOString()}.
+          - Current Schedule:
           ${scheduleContext}
 
-          Analyze the user's request and identify which session IDs need to change and what their new times or durations should be.
-          Relative time context: Today is ${new Date().toISOString()}.
+          User Message: "${input.message}"
 
-          Output format (JSON Array of Actions):
-          [{ "id": 123, "newTime": "ISO_DATE", "newDuration": 60, "action": "update" | "delete" }]
+          Output format (JSON):
+          {
+            "actions": [{ "id": 123, "newTime": "ISO_DATE", "newDuration": 60, "action": "update" | "delete" }],
+            "friendlyMessage": "Your response to the user in Egyptian Arabic (or English if they use it)"
+          }
           `;
 
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are an expert schedule optimizer. Interpret the user's intent and provide specific DB updates in JSON." },
+              { role: "system", content: "You are an expert schedule optimizer and study buddy. Interpret the user's intent and provide specific DB updates AND a friendly message in JSON." },
               { role: "user", content: prompt },
             ],
           });
 
-          const content = response.choices[0]?.message?.content || "[]";
+          const content = response.choices[0]?.message?.content || "{}";
           const rawContent = typeof content === "string" ? content : content.map(part => "text" in part ? part.text : "").join("\n");
-          const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
-          const actions = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
+          const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+          const result = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
+          const actions = result.actions || [];
+          const friendlyMessage = result.friendlyMessage || "I've handled that for you! 🔒✨";
 
           for (const action of actions) {
             if (action.action === "update") {
@@ -495,7 +500,7 @@ export const appRouter = router({
             }
           }
 
-          return { response: "I've updated your schedule as requested! 📅✨" };
+          return { response: friendlyMessage };
         } catch (error: any) {
           console.error("[AI Schedule Adjustment Error]:", error?.message || error);
           return { response: "I had trouble adjusting your schedule. 😓 (Error: " + (error?.message || "Internal Error") + ")" };
