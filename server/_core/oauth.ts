@@ -17,12 +17,14 @@ const getRedirectUri = (req: Request) => {
   if (isDev) {
     return "http://localhost:3000/api/oauth/callback";
   }
-  // Try to use the backend API URL from env, default to Railway domain
-  const baseUrl = process.env.VITE_API_URL 
-    ? process.env.VITE_API_URL.replace(/\/$/, "") 
-    : "https://lockedinbackendlink.up.railway.app";
-    
-  return `${baseUrl}/api/oauth/callback`;
+  
+  // Use BACKEND_URL if provided, else deduce from the incoming host header
+  if (process.env.BACKEND_URL) {
+    return `${process.env.BACKEND_URL}/api/oauth/callback`;
+  }
+  const host = req.get("host") || "lockedin.up.railway.app";
+  const protocol = req.get("x-forwarded-proto") || "https";
+  return `${protocol}://${host}/api/oauth/callback`;
 };
 
 export function registerOAuthRoutes(app: Express) {
