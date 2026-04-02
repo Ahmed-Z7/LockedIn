@@ -8,10 +8,18 @@ import Navbar from "@/components/Navbar";
 import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/auth" });
   const [, setLocation] = useLocation();
   const { data: profile } = trpc.userAccount.getProfile.useQuery(undefined, { enabled: isAuthenticated });
   const { data: sessions } = trpc.study.getSchedule.useQuery(undefined, { enabled: isAuthenticated });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) return null;
 
