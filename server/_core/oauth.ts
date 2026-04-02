@@ -18,10 +18,12 @@ const getRedirectUri = (req: Request) => {
     return "http://localhost:3000/api/oauth/callback";
   }
   
-  // Use BACKEND_URL if provided, else deduce from the incoming host header
+  // Directly use BACKEND_URL from Railway to ensure 100% match with Google Console
   if (process.env.BACKEND_URL) {
-    return `${process.env.BACKEND_URL}/api/oauth/callback`;
+    const baseUrl = process.env.BACKEND_URL.replace(/\/$/, "");
+    return `${baseUrl}/api/oauth/callback`;
   }
+  
   const host = req.get("host") || "lockedin.up.railway.app";
   const protocol = req.get("x-forwarded-proto") || "https";
   return `${protocol}://${host}/api/oauth/callback`;
@@ -86,8 +88,17 @@ export function registerOAuthRoutes(app: Express) {
         lastSignedIn: new Date().toISOString(),
       });
 
+      const name = userInfo.name || "";
+      if (
+        !openId ||
+        !name
+      ) {
+        console.warn("[Auth] Session payload missing required fields (openId or name)");
+        throw new Error("Invalid session payload");
+      }
+
       const sessionToken = await sdk.createSessionToken(openId, {
-        name: userInfo.name || "",
+        name: name,
         expiresInMs: ONE_YEAR_MS,
       });
 

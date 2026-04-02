@@ -1,11 +1,17 @@
 import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.GMAIL_USER || 'lockedin.eg.support@gmail.com',
     pass: process.env.GMAIL_PASS || 'xhqxbwhdmpmvfmrf',
   },
+  // Ensure we use IPv4 to avoid ENETUNREACH on cloud providers like Railway
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 const FROM = process.env.SMTP_USER || 'LockedIn <lockedin.eg.support@gmail.com>';

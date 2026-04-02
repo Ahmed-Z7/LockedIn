@@ -214,17 +214,16 @@ class SDKServer {
 
       if (
         !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
         !isNonEmptyString(name)
       ) {
-        console.warn("[Auth] Session payload missing required fields");
+        console.warn("[Auth] Session payload missing required fields (openId or name)");
         return null;
       }
 
       return {
-        openId,
-        appId,
-        name,
+        openId: openId as string,
+        appId: (appId as string) || "lockedin-default",
+        name: name as string,
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));
