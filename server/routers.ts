@@ -361,8 +361,8 @@ export const appRouter = router({
             { title: 'Core Fundamentals', difficulty: 'medium', duration: 60 },
             { title: 'Advanced Application', difficulty: 'hard', duration: 90 }
           ] };
-        } catch (error) {
-          console.error("Material analysis failed:", error);
+        } catch (error: any) {
+          console.error("[AI Analysis Error]:", error?.message || error);
           return { topics: [{ title: 'Overview', difficulty: 'medium', duration: 60 }] };
         }
       }),
@@ -496,9 +496,9 @@ export const appRouter = router({
           }
 
           return { response: "I've updated your schedule as requested! 📅✨" };
-        } catch (error) {
-          console.error("Schedule adjustment failed:", error);
-          return { response: "I had trouble adjusting your schedule. Please try saying it differently! 😓" };
+        } catch (error: any) {
+          console.error("[AI Schedule Adjustment Error]:", error?.message || error);
+          return { response: "I had trouble adjusting your schedule. 😓 (Error: " + (error?.message || "Internal Error") + ")" };
         }
       }),
   }),
@@ -535,8 +535,9 @@ export const appRouter = router({
           await dbHelpers.saveAIChatMessage(ctx.user.id, input.message, aiResponse, input.topic);
           await updateChallengeProgress(ctx.user.id, "ai_usage", 1);
           return { response: aiResponse };
-        } catch (error) {
-          return { response: "I encountered an error. 😓" };
+        } catch (error: any) {
+          console.error("[AI Coach Error]:", error?.message || error);
+          return { response: "I encountered an error. 😓 (Make sure GEMINI_API_KEY is set in Railway)" };
         }
       }),
     getHistory: protectedProcedure.query(async ({ ctx }) => {
