@@ -107,7 +107,7 @@ export const appRouter = router({
         });
 
         console.log(`[Verification] Sent signup code to ${input.email}. DEV PIN: ${code}`);
-        await sendVerificationEmail(input.email, code).catch(e => console.error(e));
+        sendVerificationEmail(input.email, code).catch(e => console.error('[Email Error]', e));
 
         return { success: true };
       }),
@@ -200,7 +200,7 @@ export const appRouter = router({
         });
 
         console.log(`[Verification] Sent reset code for ${input.email}. DEV PIN: ${code}`);
-        await sendPasswordResetEmail(input.email, code).catch(e => console.error(e));
+        sendPasswordResetEmail(input.email, code).catch(e => console.error('[Email Error]', e));
 
         return { success: true };
       }),

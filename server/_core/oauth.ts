@@ -17,8 +17,12 @@ const getRedirectUri = (req: Request) => {
   if (isDev) {
     return "http://localhost:3000/api/oauth/callback";
   }
-  // This matches the authorized redirect URI in Google Cloud Console
-  return "https://lockedin.up.railway.app/api/oauth/callback";
+  // Try to use the backend API URL from env, default to Railway domain
+  const baseUrl = process.env.VITE_API_URL 
+    ? process.env.VITE_API_URL.replace(/\/$/, "") 
+    : "https://lockedinbackendlink.up.railway.app";
+    
+  return `${baseUrl}/api/oauth/callback`;
 };
 
 export function registerOAuthRoutes(app: Express) {
@@ -60,7 +64,7 @@ export function registerOAuthRoutes(app: Express) {
       const tokenData = await tokenResponse.json();
       if (!tokenData.access_token) {
         console.error("Token Exchange Failed:", tokenData);
-        throw new Error("No access token");
+        throw new Error(tokenData.error_description || tokenData.error || "No access token");
       }
 
       const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -90,10 +94,11 @@ export function registerOAuthRoutes(app: Express) {
       
       const frontendUrl = process.env.FRONTEND_URL || "https://lockedin-eg.vercel.app";
       res.redirect(`${frontendUrl}/auth?token=${sessionToken}`);
-    } catch (err) {
+    } catch (err: any) {
       console.error("[OAuth] Callback failed", err);
       const frontendUrl = process.env.FRONTEND_URL || "https://lockedin-eg.vercel.app";
-      res.redirect(`${frontendUrl}/auth?error=oauth_failed`);
+      const errorMessage = encodeURIComponent(err.message || "oauth_failed");
+      res.redirect(`${frontendUrl}/auth?error=oauth_failed&reason=${errorMessage}`);
     }
   });
 }
