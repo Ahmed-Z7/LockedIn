@@ -328,16 +328,43 @@ export const appRouter = router({
         hoursPerDay: z.number().min(1).max(12)
       }))
       .mutation(async ({ input }) => {
-        const lines = input.content.split('\n').filter(l => l.trim().length > 5).slice(0, 20);
-        const topics = lines.length > 0 ? lines : ['Core Fundamentals', 'Advanced Concepts', 'Practical Application'];
-        
-        return {
-          topics: topics.map(t => ({
-            title: t.replace(/^(chapter|module|unit|section|part)?\s*\d+[:\-.]?\s*/i, '').trim(),
-            difficulty: ['easy', 'medium', 'hard'][Math.floor(Math.random() * 3)] as 'easy' | 'medium' | 'hard',
-            duration: 60
-          }))
-        };
+        try {
+          const prompt = `Analyze the following study material and extract exactly 5 to 10 logical study topics.
+          For each topic, provide:
+          1. A concise title.
+          2. Difficulty (easy, medium, hard).
+          3. Estimated duration in minutes.
+
+          Material Content:
+          ${input.content.substring(0, 5000)}
+
+          Output formatting (JSON array):
+          [{ "title": "...", "difficulty": "...", "duration": 60 }]
+          `;
+
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: "You are an expert curriculum analyzer. Extract structured study topics accurately." },
+              { role: "user", content: prompt },
+            ],
+          });
+
+          const content = response.choices[0]?.message?.content || "[]";
+          const rawContent = typeof content === "string" 
+            ? content 
+            : content.map(part => "text" in part ? part.text : "").join("\n");
+          
+          const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+          const topics = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
+
+          return { topics: topics.length > 0 ? topics : [
+            { title: 'Core Fundamentals', difficulty: 'medium', duration: 60 },
+            { title: 'Advanced Application', difficulty: 'hard', duration: 90 }
+          ] };
+        } catch (error) {
+          console.error("Material analysis failed:", error);
+          return { topics: [{ title: 'Overview', difficulty: 'medium', duration: 60 }] };
+        }
       }),
 
     savePlan: protectedProcedure
@@ -427,7 +454,52 @@ export const appRouter = router({
     adjustSchedule: protectedProcedure
       .input(z.object({ message: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        return { response: "I've adjusted your schedule based on your request!" };
+        try {
+          const schedule = await dbHelpers.getStudySchedule(ctx.user.id);
+          const scheduleContext = schedule.map(s => `ID: ${s.id}, Subject: ${s.subject}, Time: ${s.scheduledTime}`).join('\n');
+
+          const prompt = `You are a scheduling AI. The user wants to adjust their study schedule.
+          User Message: "${input.message}"
+          Current Schedule:
+          ${scheduleContext}
+
+          Analyze the user's request and identify which session IDs need to change and what their new times or durations should be.
+          Relative time context: Today is ${new Date().toISOString()}.
+
+          Output format (JSON Array of Actions):
+          [{ "id": 123, "newTime": "ISO_DATE", "newDuration": 60, "action": "update" | "delete" }]
+          `;
+
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: "You are an expert schedule optimizer. Interpret the user's intent and provide specific DB updates in JSON." },
+              { role: "user", content: prompt },
+            ],
+          });
+
+          const content = response.choices[0]?.message?.content || "[]";
+          const rawContent = typeof content === "string" ? content : content.map(part => "text" in part ? part.text : "").join("\n");
+          const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+          const actions = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
+
+          for (const action of actions) {
+            if (action.action === "update") {
+              await db.update(studySchedules)
+                .set({ 
+                  ...(action.newTime && { scheduledTime: action.newTime }),
+                  ...(action.newDuration && { duration: action.newDuration })
+                })
+                .where(and(eq(studySchedules.id, action.id), eq(studySchedules.userId, ctx.user.id)));
+            } else if (action.action === "delete") {
+              await db.delete(studySchedules).where(and(eq(studySchedules.id, action.id), eq(studySchedules.userId, ctx.user.id)));
+            }
+          }
+
+          return { response: "I've updated your schedule as requested! 📅✨" };
+        } catch (error) {
+          console.error("Schedule adjustment failed:", error);
+          return { response: "I had trouble adjusting your schedule. Please try saying it differently! 😓" };
+        }
       }),
   }),
 
@@ -441,9 +513,17 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         try {
+          const systemMsg = `You are ZED, the Friendly AI Study Buddy for the LOCKEDIN platform.
+          - Tone: Supportive, funny, and encouraging. Like a close friend who is a genius.
+          - Language: Respond in the language used by the user. If they use Arabic, use Egyptian Arabic (Amiya).
+          - Goal: Help users stay focused, explain difficult concepts, and motivate them to reach their study goals.
+          - Context: ${input.documentContext ? "The user is studying: " + input.documentContext : "General study assistance"}.
+          
+          Always keep your responses relatively concise but impactful. Use emojis! 🔒🚀`;
+
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are LOCKEDIN's AI Study Coach." },
+              { role: "system", content: systemMsg },
               { role: "user", content: input.message },
             ],
           });
@@ -456,7 +536,7 @@ export const appRouter = router({
           await updateChallengeProgress(ctx.user.id, "ai_usage", 1);
           return { response: aiResponse };
         } catch (error) {
-          return { response: "I encountered an error." };
+          return { response: "I encountered an error. 😓" };
         }
       }),
     getHistory: protectedProcedure.query(async ({ ctx }) => {
@@ -485,7 +565,7 @@ export const appRouter = router({
 
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are a professional educational assessment AI." },
+              { role: "system", content: "You are a professional educational assessment AI. Always respond with high-quality multiple choice questions." },
               { role: "user", content: prompt },
             ],
           });
