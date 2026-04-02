@@ -25,12 +25,6 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     throw new Error("GEMINI_API_KEY is not configured in Environment Variables");
   }
 
-  // Convert OpenAI-style messages to Gemini-style contents
-  // Gemini roles: 'user' and 'model' (assistant)
-  // System instructions go into a specific field or as the first user message if needed.
-  // For Gemini 1.5, we can use system_instruction if using the full SDK, 
-  // but for a simple fetch, we'll prefix it to the first user message for simplicity and reliability.
-
   const systemMessage = params.messages.find(m => m.role === "system")?.content || "";
   const otherMessages = params.messages.filter(m => m.role !== "system");
 
@@ -45,30 +39,44 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${ENV.geminiApiKey}`;
+  // Try multiple model IDs to find one that is active in 2026
+  const modelsToTry = [
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-latest",
+    "gemini-2.0-flash",
+    "gemini-pro"
+  ];
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ contents }),
-  });
+  let lastError = "";
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini API failed: ${response.status} - ${errorText}`);
+  for (const modelId of modelsToTry) {
+    try {
+      console.log(`[AI] Attempting to invoke model: ${modelId}`);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Error generating response";
+        console.log(`[AI] Successfully used model: ${modelId}`);
+        return {
+          choices: [{ message: { role: "model", content: aiText } }]
+        };
+      } else {
+        const errorText = await response.text();
+        lastError = `Model ${modelId} failed: ${response.status} - ${errorText}`;
+        console.warn(`[AI] ${lastError}`);
+      }
+    } catch (err: any) {
+      lastError = `Fetch failed for ${modelId}: ${err.message}`;
+      console.warn(`[AI] ${lastError}`);
+    }
   }
 
-  const data = await response.json();
-  const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Error generating response";
-
-  return {
-    choices: [{
-      message: {
-        role: "model",
-        content: aiText,
-      }
-    }]
-  };
+  throw new Error(`All Gemini models failed. Last error: ${lastError}`);
 }
