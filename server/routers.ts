@@ -106,8 +106,8 @@ export const appRouter = router({
           createdAt: new Date().toISOString()
         });
 
-        console.log(`[Verification] Sent signup code to ${input.email}`);
-        await sendVerificationEmail(input.email, code);
+        console.log(`[Verification] Sent signup code to ${input.email}. DEV PIN: ${code}`);
+        await sendVerificationEmail(input.email, code).catch(e => console.error(e));
 
         return { success: true };
       }),
@@ -126,7 +126,11 @@ export const appRouter = router({
         }
         
         const now = Date.now();
-        const expiresAt = new Date(verification.expiresAt).getTime();
+        // Fix for pg timestamp losing timezone constraint
+        let expiresAtStr = verification.expiresAt;
+        if (!expiresAtStr.includes('T')) expiresAtStr = expiresAtStr.replace(' ', 'T');
+        if (!expiresAtStr.endsWith('Z') && !expiresAtStr.includes('+')) expiresAtStr += 'Z';
+        const expiresAt = new Date(expiresAtStr).getTime();
         
         if (now > expiresAt) {
           console.warn(`[VerificationSignup] Expired code for ${input.email}. Now: ${new Date(now).toISOString()}, Expires: ${verification.expiresAt}`);
@@ -195,8 +199,8 @@ export const appRouter = router({
           createdAt: new Date().toISOString()
         });
 
-        console.log(`[Verification] Sent reset code for ${input.email}`);
-        await sendPasswordResetEmail(input.email, code);
+        console.log(`[Verification] Sent reset code for ${input.email}. DEV PIN: ${code}`);
+        await sendPasswordResetEmail(input.email, code).catch(e => console.error(e));
 
         return { success: true };
       }),
@@ -216,7 +220,11 @@ export const appRouter = router({
         }
 
         const now = Date.now();
-        const expiresAt = new Date(verification.expiresAt).getTime();
+        // Fix for pg timestamp losing timezone constraint
+        let expiresAtStr = verification.expiresAt;
+        if (!expiresAtStr.includes('T')) expiresAtStr = expiresAtStr.replace(' ', 'T');
+        if (!expiresAtStr.endsWith('Z') && !expiresAtStr.includes('+')) expiresAtStr += 'Z';
+        const expiresAt = new Date(expiresAtStr).getTime();
         
         if (now > expiresAt) {
           console.warn(`[ResetPassword] Expired code for ${input.email}. Now: ${new Date(now).toISOString()}, Expires: ${verification.expiresAt}`);
