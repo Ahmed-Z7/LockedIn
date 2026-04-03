@@ -89,9 +89,10 @@ export function registerOAuthRoutes(app: Express) {
       
       if (!userInfo.email) throw new Error("No email from Google");
 
-      const openId = userInfo.id || userInfo.email;
+      const openId = String(userInfo.id || userInfo.email);
+      console.log("[OAuth] Using openId:", openId);
 
-      await db.upsertUser({
+      const user = await db.upsertUser({
         openId: openId,
         name: userInfo.name || userInfo.email.split('@')[0],
         email: userInfo.email,
@@ -99,17 +100,31 @@ export function registerOAuthRoutes(app: Express) {
         lastSignedIn: new Date().toISOString(),
       });
 
-      const name = userInfo.name || "";
-      if (
-        !openId ||
-        !name
-      ) {
-        console.warn("[Auth] Session payload missing required fields (openId or name)");
-        throw new Error("Invalid session payload");
+      if (!user) throw new Error("Failed to upsert user");
+
+      // Verify and initialize Profile & Settings for new users
+      const profile = await db.getUserProfile(user.id);
+      if (!profile) {
+        console.log("[OAuth] Initializing user profile for user:", user.id);
+        await db.createOrUpdateUserProfile(user.id, { 
+          xp: 0, 
+          level: 1, 
+          streak: 0, 
+          status: "Ana LOCKEDIN" 
+        });
+      }
+
+      const settings = await db.getUserSettings(user.id);
+      if (!settings) {
+        console.log("[OAuth] Initializing user settings for user:", user.id);
+        await db.upsertUserSettings(user.id, { 
+          aiTone: "friendly", 
+          aiLanguage: "bilingual" 
+        });
       }
 
       const sessionToken = await sdk.createSessionToken(openId, {
-        name: userInfo.name || userInfo.email.split('@')[0] || "User",
+        name: user.name || userInfo.name || userInfo.email.split('@')[0] || "User",
         expiresInMs: ONE_YEAR_MS,
       });
 

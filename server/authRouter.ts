@@ -10,12 +10,9 @@ import { COOKIE_NAME, ONE_YEAR_MS } from '@shared/const';
 import { getSessionCookieOptions } from './_core/cookies';
 import { sendVerificationEmail, sendPasswordResetEmail } from './email';
 
-// Re-defining context type or importing it
-interface Context {
-  user?: { id: number; email: string; name: string };
-  req: any;
-  res: any;
-}
+import type { TrpcContext } from './_core/context';
+
+type Context = TrpcContext;
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,

@@ -11,10 +11,9 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 import { invokeLLM } from './_core/llm';
 import superjson from 'superjson';
 
-// Define context type for type-safety
-interface Context {
-  user?: { id: number; email: string; name: string };
-}
+import type { TrpcContext } from './_core/context';
+
+type Context = TrpcContext;
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
@@ -251,7 +250,12 @@ export const appRouter = router({
         const inserts = input.sessions.map(s => ({
           userId: ctx.user!.id,
           materialId: input.materialId,
-          ...s,
+          subject: s.subject,
+          scheduledTime: s.scheduledTime,
+          duration: s.duration,
+          priority: s.priority as any,
+          difficulty: s.difficulty as any,
+          sessionType: s.sessionType as any,
           createdAt: new Date().toISOString()
         }));
         return await db.insert(studySchedules).values(inserts).returning();
@@ -293,9 +297,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const [updated] = await db.update(studySchedules)
           .set({ 
-            completed: input.completed, 
-            focusScore: input.focusScore || 0,
-            updatedAt: new Date().toISOString()
+            completed: input.completed
           })
           .where(and(eq(studySchedules.id, input.sessionId), eq(studySchedules.userId, ctx.user!.id)))
           .returning();
@@ -466,7 +468,7 @@ export const appRouter = router({
       return settings || { aiTone: 'friendly', aiLanguage: 'bilingual' };
     }),
     updateSettings: protectedProcedure
-      .input(z.record(z.any()))
+      .input(z.record(z.string(), z.any()))
       .mutation(async ({ ctx, input }) => {
         return await db.update(userSettings).set(input).where(eq(userSettings.userId, ctx.user!.id)).returning();
       }),
