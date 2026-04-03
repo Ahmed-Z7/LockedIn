@@ -21,7 +21,7 @@ export default function SchedulePage() {
 
   const [chatInp, setChatInp] = useState('');
   const [messages, setMessages] = useState<Array<{ role: 'ai' | 'user', content: string }>>([
-    { role: 'ai', content: "Welcome back! I can help you adjust your schedule. Just say 'make it easier' or 'add a review session'." }
+    { role: 'ai', content: "Welcome back! I'm ZED. I can help you adjust your schedule. Just say 'make it easier' or 'add a review session'." }
   ]);
   const [editingSession, setEditingSession] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ subject: '', duration: 0 });
@@ -77,7 +77,7 @@ export default function SchedulePage() {
   const progressPercent = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
 
   return (
-    <div className="min-h-screen pt-32 pb-12 px-6 bg-[#09090b] relative overflow-hidden">
+    <div className="min-h-screen pt-44 pb-12 px-6 bg-[#09090b] relative overflow-hidden">
       {/* Dynamic Background Elements */}
       <div className="absolute top-0 right-0 w-[50vw] h-[50vw] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-0 left-0 w-[30vw] h-[30vw] bg-indigo-600/5 rounded-full blur-[100px] pointer-events-none" />
@@ -279,7 +279,7 @@ export default function SchedulePage() {
                   <Bot className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-black text-white text-lg tracking-tight">Nex Neural Link</h2>
+                  <h2 className="font-black text-white text-lg tracking-tight">ZED Neural Link</h2>
                   <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-black uppercase tracking-widest">
                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                       Protocol Active

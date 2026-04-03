@@ -8,7 +8,7 @@ import { z } from "zod";
 import * as dbHelpers from "./db";
 import { db } from "./db";
 import { TRPCError } from "@trpc/server";
-import { and, eq, desc, or, like, not, inArray, sql } from "drizzle-orm";
+import { and, eq, desc, asc, or, like, not, inArray, sql } from "drizzle-orm";
 import { sdk } from "./_core/sdk";
 import { randomBytes, scryptSync, timingSafeEqual, randomUUID } from "crypto";
 import {
@@ -17,7 +17,8 @@ import {
   directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts,
   studyGroupTasks, studyGroupMessages, studyGroupMaterials,
   notifications, userSettings, InsertUserSetting, verificationCodes,
-  userAIKnowledge, InsertUserAIKnowledge
+  userAIKnowledge, InsertUserAIKnowledge,
+  aiConversations, aiChatHistory
 } from "../drizzle/schema";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
@@ -528,9 +529,29 @@ export const appRouter = router({
 
   // AI Study Coach
   aiCoach: router({
+    getConversations: protectedProcedure.query(async ({ ctx }) => {
+      return await db.select().from(aiConversations).where(eq(aiConversations.userId, ctx.user.id)).orderBy(desc(aiConversations.updatedAt));
+    }),
+    createConversation: protectedProcedure.mutation(async ({ ctx }) => {
+      const [conversation] = await db.insert(aiConversations).values({ 
+        userId: ctx.user.id, 
+        title: "New Neural Thread" 
+      }).returning();
+      return conversation;
+    }),
+    deleteConversation: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      await db.delete(aiChatHistory).where(eq(aiChatHistory.conversationId, input.id));
+      await db.delete(aiConversations).where(and(eq(aiConversations.id, input.id), eq(aiConversations.userId, ctx.user.id)));
+      return { success: true };
+    }),
+    renameConversation: protectedProcedure.input(z.object({ id: z.number(), title: z.string() })).mutation(async ({ ctx, input }) => {
+      await db.update(aiConversations).set({ title: input.title }).where(and(eq(aiConversations.id, input.id), eq(aiConversations.userId, ctx.user.id)));
+      return { success: true };
+    }),
     chat: protectedProcedure
       .input(z.object({
         message: z.string(),
+        conversationId: z.number().optional(),
         topic: z.string().optional(),
         documentContext: z.string().optional(),
       }))
@@ -567,14 +588,46 @@ export const appRouter = router({
             ],
           });
 
-          const content = response.choices[0]?.message?.content || "{}";
-          const rawContent = typeof content === "string" ? content : String(content);
-          const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-          const result = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
+          const content = response.choices[0]?.message?.content || "";
+          let aiResponse = "Neural link stable. 🔒";
+          let actions: any[] = [];
+          let newKnowledge: any[] = [];
+
+          try {
+            const rawContent = typeof content === "string" ? content : String(content);
+            const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+            const result = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
+            aiResponse = result.response || rawContent || aiResponse;
+            actions = result.actions || [];
+            newKnowledge = result.newKnowledge || [];
+          } catch (e) {
+            console.error("[AI JSON Fallback]: Response was not valid JSON, using raw text.");
+            aiResponse = content;
+          }
+
+          let conversationId = input.conversationId;
           
-          const aiResponse = result.response || "Neural link stable. 🔒";
-          const actions = result.actions || [];
-          const newKnowledge = result.newKnowledge || [];
+          if (!conversationId) {
+            const [latestConv] = await db.select().from(aiConversations)
+              .where(eq(aiConversations.userId, ctx.user.id))
+              .orderBy(desc(aiConversations.updatedAt))
+              .limit(1);
+            if (latestConv) {
+              conversationId = latestConv.id;
+            } else {
+              const [newConv] = await db.insert(aiConversations).values({ userId: ctx.user.id, title: "Initial Link" }).returning();
+              conversationId = newConv.id;
+            }
+          }
+
+          // Generate Title if it's the first message or generic title
+          const [conv] = await db.select().from(aiConversations).where(eq(aiConversations.id, conversationId!)).limit(1);
+          if (conv && (conv.title === "New Neural Thread" || conv.title === "Initial Link")) {
+            const topicPrompt = `Generate a very short (max 4 words) descriptive title for a chat that starts with: "${input.message}". Respond ONLY with the title.`;
+            const titleRes = await invokeLLM({ messages: [{ role: "user", content: topicPrompt }] });
+            const newTitle = titleRes.choices[0]?.message?.content.replace(/["']/g, "").substring(0, 50) || "Neural Thread";
+            await db.update(aiConversations).set({ title: newTitle }).where(eq(aiConversations.id, conversationId!));
+          }
 
           // Process Schedule Actions
           for (const action of actions) {
@@ -602,11 +655,21 @@ export const appRouter = router({
             await dbHelpers.saveAIKnowledge(ctx.user.id, fact);
           }
 
-          await dbHelpers.saveAIChatMessage(ctx.user.id, input.message, aiResponse, input.topic);
+          // Save Message with conversationId
+          await db.insert(aiChatHistory).values({
+            userId: ctx.user.id,
+            conversationId: conversationId!,
+            message: input.message,
+            response: aiResponse,
+            topic: input.topic
+          });
+          
+          await db.update(aiConversations).set({ updatedAt: new Date().toISOString() }).where(eq(aiConversations.id, conversationId!));
           await updateChallengeProgress(ctx.user.id, "ai_usage", 1);
           
           return { 
             response: aiResponse, 
+            conversationId,
             actionsCount: actions.length,
             learnedSomething: newKnowledge.length > 0 
           };
@@ -615,7 +678,10 @@ export const appRouter = router({
           return { response: "Neural pulse erratic. Try again.", actionsCount: 0 };
         }
       }),
-    getHistory: protectedProcedure.query(async ({ ctx }) => {
+    getHistory: protectedProcedure.input(z.object({ conversationId: z.number().optional() })).query(async ({ ctx, input }) => {
+      if (input.conversationId) {
+        return await db.select().from(aiChatHistory).where(and(eq(aiChatHistory.userId, ctx.user.id), eq(aiChatHistory.conversationId, input.conversationId))).orderBy(asc(aiChatHistory.createdAt));
+      }
       return await dbHelpers.getUserAIChatHistory(ctx.user.id);
     }),
     getKnowledge: protectedProcedure.query(async ({ ctx }) => {

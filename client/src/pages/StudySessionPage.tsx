@@ -1011,7 +1011,7 @@ export default function StudySessionPage() {
                         </div>
                         
                         <p className="text-sm text-foreground/40 leading-relaxed">
-                            Requesting temporary access will freeze your study timers and unlock the browser for <strong className="text-amber-500">7 minutes</strong>. Nex AI will evaluate your reason.
+                            Requesting temporary access will freeze your study timers and unlock the browser for <strong className="text-amber-500">7 minutes</strong>. ZED AI will evaluate your reason.
                         </p>
 
                         <div className="space-y-4">

@@ -50,7 +50,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   for (const modelId of modelsToTry) {
     try {
-      // Using v1beta for advanced features in 2026
+      console.log(`[AI ATTEMPT] invoking ${modelId}...`);
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
 
       const response = await fetch(url, {
@@ -73,20 +73,22 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
         
         if (!aiText) {
           const finishReason = data.candidates?.[0]?.finishReason;
-          throw new Error(`Empty response from model ${modelId}. Finish reason: ${finishReason}`);
+          console.warn(`[AI WARNING] Model ${modelId} returned no text. Reason: ${finishReason}`);
+          throw new Error(`Empty response from ${modelId}`);
         }
 
+        console.log(`[AI SUCCESS] ${modelId} responded successfully.`);
         return {
           choices: [{ message: { role: "model", content: aiText } }]
         };
       } else {
-        const errorData = await response.json().catch(() => ({ error: { message: "Unknown API Error" } }));
-        lastError = `Model ${modelId} failed: ${response.status} - ${errorData.error?.message || "No error message"}`;
-        console.warn(`[AI DIAGNOSTIC] ${lastError}`);
+        const errorData = await response.json().catch(() => ({ error: { message: "Internal API Error" } }));
+        lastError = `Status ${response.status}: ${errorData.error?.message || "Unknown error"}`;
+        console.error(`[AI ERROR] ${modelId} failed:`, lastError);
       }
     } catch (err: any) {
-      lastError = `Fetch failed for ${modelId}: ${err.message}`;
-      console.warn(`[AI DIAG NOSTIC] ${lastError}`);
+      lastError = err.message;
+      console.error(`[AI FETCH FAILURE] ${modelId}:`, err.message);
     }
   }
 

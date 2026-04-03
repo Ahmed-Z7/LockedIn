@@ -230,15 +230,20 @@ export async function removeBlockedWebsite(websiteId: number) {
 }
 
 // AI Chat History Functions
-export async function saveAIChatMessage(userId: number, message: string, response: string, topic?: string) {
+export async function saveAIChatMessage(userId: number, message: string, response: string, conversationId: number, topic?: string) {
   const db = await getDb();
   if (!db) return;
-  await db.insert(aiChatHistory).values({ userId, message, response, topic });
+  await db.insert(aiChatHistory).values({ userId, message, response, conversationId, topic });
 }
 
-export async function getUserAIChatHistory(userId: number) {
+export async function getUserAIChatHistory(userId: number, conversationId?: number) {
   const db = await getDb();
   if (!db) return [];
+  if (conversationId) {
+    return await db.select().from(aiChatHistory)
+      .where(and(eq(aiChatHistory.userId, userId), eq(aiChatHistory.conversationId, conversationId)))
+      .orderBy(desc(aiChatHistory.createdAt));
+  }
   return await db.select().from(aiChatHistory).where(eq(aiChatHistory.userId, userId)).orderBy(desc(aiChatHistory.createdAt));
 }
 

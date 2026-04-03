@@ -68,7 +68,7 @@ export default function LeaderboardPage() {
                         <Crown className="w-12 h-12 text-purple-400" />
                     </motion.div>
                     <h1 className="text-5xl font-black tracking-tight mb-4 bg-gradient-to-r from-white via-purple-100 to-purple-400 bg-clip-text text-transparent">
-                        Nex Hall of Fame
+                        ZED Hall of Fame
                     </h1>
                     <p className="text-xl text-foreground/40 font-medium">Rankings refresh in real-time. Dominate your tier.</p>
                 </div>

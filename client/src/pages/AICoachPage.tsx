@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Send, MessageCircle, Loader2, Sparkles, Moon, 
   AlertTriangle, Feather, Dumbbell, RotateCcw,
-  TrendingUp, Zap, Target, Brain, Trash2, Globe, Settings2, X
+  TrendingUp, Zap, Target, Brain, Trash2, Globe, Settings2, X, Edit2, Check
 } from "lucide-react";
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger 
@@ -27,45 +27,71 @@ export default function AICoachPage() {
   
   const utils = trpc.useUtils();
   const chatMutation = trpc.aiCoach.chat.useMutation();
-  const { data: history, isLoading: isHistoryLoading } = trpc.aiCoach.getHistory.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: profile } = trpc.userAccount.getProfile.useQuery(undefined, { enabled: isAuthenticated });
-  
   // ZED Training & Config
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
+  const [editingConversationId, setEditingConversationId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  
+  const { data: conversations, refetch: refetchConversations } = trpc.aiCoach.getConversations.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: history, isLoading: isHistoryLoading, refetch: refetchHistory } = trpc.aiCoach.getHistory.useQuery(
+    { conversationId: activeConversationId || undefined }, 
+    { enabled: isAuthenticated }
+  );
   const { data: knowledge, refetch: refetchKnowledge } = trpc.aiCoach.getKnowledge.useQuery(undefined, { enabled: isAuthenticated });
   const { data: settings } = trpc.notifications.getSettings.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: profile } = trpc.userAccount.getProfile.useQuery(undefined, { enabled: isAuthenticated });
   
+  const createConvMutation = trpc.aiCoach.createConversation.useMutation();
+  const deleteConvMutation = trpc.aiCoach.deleteConversation.useMutation();
+  const renameConvMutation = trpc.aiCoach.renameConversation.useMutation();
   const deleteKnowledgeMutation = trpc.aiCoach.deleteKnowledge.useMutation();
   const updateSettingsMutation = trpc.notifications.updateSettings.useMutation();
 
   useEffect(() => {
-    if (history && history.length > 0) {
+    if (history) {
       const mapped = history.flatMap(h => [
         { role: "user" as const, content: h.message },
         { role: "assistant" as const, content: h.response || "" }
-      ]).slice(-20); // Show last 20 messages
-      setMessages(mapped);
+      ]);
+      
+      // Only set messages from history if we haven't manually added NEW ones 
+      // or if we just switched conversations
+      setMessages(prev => {
+         // Simple check: if prev has more messages than history * 2, keep prev
+         if (prev.length > mapped.length && activeConversationId) return prev;
+         return mapped.length > 0 ? mapped : [
+           { role: "assistant", content: "Welcome back! 🔒 I'm ZED. How can I assist your neural growth today?" }
+         ];
+      });
     }
-  }, [history]);
+  }, [history, activeConversationId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = async (text: string = input) => {
-    if (!text.trim()) return;
+  const handleSendMessage = async (message: string = input) => {
+    if (!message.trim()) return;
 
-    setMessages(prev => [...prev, { role: "user", content: text }]);
-    if (text === input) setInput("");
+    setMessages(prev => [...prev, { role: "user", content: message }]);
+    if (message === input) setInput("");
 
     try {
-      const response = await chatMutation.mutateAsync({ message: text });
+      const response = await chatMutation.mutateAsync({ 
+        message, 
+        conversationId: activeConversationId || undefined 
+      });
+      
       setMessages(prev => [...prev, { role: "assistant", content: response.response }]);
       
+      if (!activeConversationId) {
+        setActiveConversationId(response.conversationId ?? null);
+        refetchConversations();
+      }
+
       if (response.learnedSomething) {
-        toast.info("ZED learned a new fact about you! 🧠", {
-            description: "Check the Training Center to see what I've added."
-        });
+        toast.info("ZED learned a new fact about you! 🧠");
         refetchKnowledge();
       }
 
@@ -74,7 +100,43 @@ export default function AICoachPage() {
         setMessages(prev => [...prev, { role: "assistant", content: "⚡ Schedule synchronized with neural intent." }]);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: "assistant", content: "Connection pulse lost. Trying to reconnect..." }]);
+      setMessages(prev => [...prev, { role: "assistant", content: "Neural pulse erratic. Try again." }]);
+    }
+  };
+
+  const handleNewChat = async () => {
+    try {
+      const newConv = await createConvMutation.mutateAsync();
+      setActiveConversationId(newConv.id);
+      setMessages([]);
+      refetchConversations();
+      toast.success("New neural thread initialized.");
+    } catch (error) {
+      toast.error("Failed to initialize new thread.");
+    }
+  };
+
+  const handleDeleteConv = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteConvMutation.mutateAsync({ id });
+      if (activeConversationId === id) setActiveConversationId(null);
+      refetchConversations();
+      toast.success("Neural thread purged.");
+    } catch (error) {
+      toast.error("Failed to purge thread.");
+    }
+  };
+
+  const handleRenameConv = async (id: number) => {
+    if (!editingTitle.trim()) return;
+    try {
+      await renameConvMutation.mutateAsync({ id, title: editingTitle });
+      setEditingConversationId(null);
+      refetchConversations();
+      toast.success("Neural thread renamed.");
+    } catch (error) {
+      toast.error("Failed to rename thread.");
     }
   };
 
@@ -116,15 +178,93 @@ export default function AICoachPage() {
       <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-purple-500/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-      <main className="max-w-6xl mx-auto pt-32 pb-20 px-4 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="max-w-7xl mx-auto pt-44 pb-20 px-6 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             
-            {/* Left: Chat Area */}
+            {/* Left Sidebar: Conversations */}
+            <div className="hidden lg:flex flex-col gap-6">
+                <Button 
+                    onClick={handleNewChat}
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl py-6 shadow-xl shadow-purple-500/20 gap-2 border-none"
+                    disabled={createConvMutation.isPending}
+                >
+                    {createConvMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    New Neural Link
+                </Button>
+
+                <div className="bg-card/30 backdrop-blur-xl border border-white/5 rounded-3xl p-4 flex-1 flex flex-col min-h-[500px]">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40 px-4 mb-4">Neural History</h3>
+                    <div className="space-y-1 overflow-y-auto max-h-[600px] scrollbar-hide">
+                        {conversations?.map((conv) => (
+                            <div
+                                key={conv.id}
+                                onClick={() => {
+                                    if (editingConversationId !== conv.id) {
+                                        setActiveConversationId(conv.id);
+                                    }
+                                }}
+                                className={cn(
+                                    "group relative p-4 rounded-2xl cursor-pointer transition-all border",
+                                    activeConversationId === conv.id 
+                                        ? "bg-purple-500/10 border-purple-500/30 text-purple-400" 
+                                        : "bg-transparent border-white/0 hover:bg-white/5 text-foreground/50 hover:text-foreground"
+                                )}
+                            >
+                                <div className="flex items-center gap-3 w-full">
+                                    <MessageCircle className="w-4 h-4 shrink-0" />
+                                    {editingConversationId === conv.id ? (
+                                        <div className="flex items-center gap-1 w-full" onClick={e => e.stopPropagation()}>
+                                            <input 
+                                                autoFocus
+                                                value={editingTitle}
+                                                onChange={e => setEditingTitle(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && handleRenameConv(conv.id)}
+                                                className="bg-background/50 border border-white/10 rounded-lg px-2 py-1 text-[10px] w-full focus:outline-none focus:border-purple-500"
+                                            />
+                                            <button onClick={() => handleRenameConv(conv.id)} className="p-1 hover:text-white">
+                                                <Check className="w-3 h-3" />
+                                            </button>
+                                            <button onClick={() => setEditingConversationId(null)} className="p-1 hover:text-white">
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <span className="text-xs font-bold truncate pr-12">{conv.title}</span>
+                                    )}
+                                </div>
+                                
+                                {editingConversationId !== conv.id && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingConversationId(conv.id);
+                                                setEditingTitle(conv.title);
+                                            }}
+                                            className="p-1.5 hover:bg-white/10 rounded-lg transition-all"
+                                        >
+                                            <Edit2 className="w-3 h-3" />
+                                        </button>
+                                        <button 
+                                            onClick={(e) => handleDeleteConv(conv.id, e)}
+                                            className="p-1.5 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-all"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Middle: Chat Area */}
             <div className="lg:col-span-2 space-y-6">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-card/30 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[700px] shadow-2xl shadow-purple-500/5"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-card/30 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[750px] shadow-2xl shadow-purple-500/5"
                 >
                     {/* Chat Header */}
                     <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">

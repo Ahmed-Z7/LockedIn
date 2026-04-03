@@ -32,9 +32,24 @@ export const studySessions = pgTable("studySessions", {
 		}),
 ]);
 
+export const aiConversations = pgTable("aiConversations", {
+	id: serial().primaryKey().notNull(),
+	userId: integer().notNull(),
+	title: varchar({ length: 200 }).notNull().default('New Concept'),
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "aiConversations_userId_users_id_fk"
+		}),
+]);
+
 export const aiChatHistory = pgTable("aiChatHistory", {
 	id: serial().primaryKey().notNull(),
 	userId: integer().notNull(),
+	conversationId: integer(), // Nullable for legacy or global history
 	message: text().notNull(),
 	response: text(),
 	topic: varchar({ length: 100 }),
@@ -44,6 +59,11 @@ export const aiChatHistory = pgTable("aiChatHistory", {
 			columns: [table.userId],
 			foreignColumns: [users.id],
 			name: "aiChatHistory_userId_users_id_fk"
+		}),
+	foreignKey({
+			columns: [table.conversationId],
+			foreignColumns: [aiConversations.id],
+			name: "aiChatHistory_conversationId_aiConversations_id_fk"
 		}),
 ]);
 
@@ -541,6 +561,8 @@ export type InsertFlashCard = typeof flashCards.$inferInsert;
 export type InsertStudySchedule = typeof studySchedules.$inferInsert;
 export type InsertBlockedWebsite = typeof blockedWebsites.$inferInsert;
 export type InsertAIChatHistory = typeof aiChatHistory.$inferInsert;
+export type InsertAIConversation = typeof aiConversations.$inferInsert;
+export type AIConversation = typeof aiConversations.$inferSelect;
 export type InsertCommunityPost = typeof communityPosts.$inferInsert;
 export type InsertPostComment = typeof postComments.$inferInsert;
 export type InsertPostLike = typeof postLikes.$inferInsert;
