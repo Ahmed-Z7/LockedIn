@@ -65,7 +65,11 @@ const MOCK_CHALLENGES = [
   { id: 3, title: "Streak Starter", description: "3 day study streak", category: "streak", targetValue: 3, currentProgress: 0, completed: 0, difficulty: "easy", rewardXp: 150 },
 ];
 
+import { authRouter } from './authRouter';
+
 export const appRouter = router({
+  auth: authRouter,
+
   // Auth & Account
   userAccount: router({
     getProfile: protectedProcedure

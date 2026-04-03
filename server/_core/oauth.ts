@@ -109,7 +109,7 @@ export function registerOAuthRoutes(app: Express) {
       }
 
       const sessionToken = await sdk.createSessionToken(openId, {
-        name: name,
+        name: userInfo.name || userInfo.email.split('@')[0] || "User",
         expiresInMs: ONE_YEAR_MS,
       });
 
