@@ -18,7 +18,7 @@ import {
   studyGroupTasks, studyGroupMessages, studyGroupMaterials,
   notifications, userSettings, InsertUserSetting, verificationCodes,
   userAIKnowledge, InsertUserAIKnowledge,
-  aiConversations, aiChatHistory, flashCardDecks, flashCards
+  aiConversations, aiChatHistory, flashCardDecks, flashCards, friends, Friend
 } from "../drizzle/schema";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
@@ -304,11 +304,15 @@ export const appRouter = router({
       .input(z.object({
         bio: z.string().optional(),
         avatar: z.string().optional(),
+        status: z.string().optional(),
+        avatarFrame: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await dbHelpers.createOrUpdateUserProfile(ctx.user.id, {
           ...(input.bio !== undefined && { bio: input.bio }),
           ...(input.avatar !== undefined && { profilePhoto: input.avatar }),
+          ...(input.status !== undefined && { status: input.status }),
+          ...(input.avatarFrame !== undefined && { avatarFrame: input.avatarFrame }),
         });
         return { success: true };
       }),
@@ -1010,8 +1014,35 @@ export const appRouter = router({
       const profile = await dbHelpers.getUserProfile(input);
       const badges = await dbHelpers.getUserBadges(input);
       const activities = await db.select().from(userActivities).where(eq(userActivities.userId, input)).orderBy(desc(userActivities.createdAt)).limit(10);
-      return { id: user.id, name: user.name, username: user.username, bio: profile?.bio, avatar: profile?.profilePhoto, xp: profile?.xp || 0, level: profile?.level || 1, badges, activities, profilePhoto: profile?.profilePhoto, streak: profile?.streak || 0, levelTitle: getLevelTitle(profile?.level || 1) };
+      return { id: user.id, name: user.name, username: user.username, bio: profile?.bio, avatar: profile?.profilePhoto, xp: profile?.xp || 0, level: profile?.level || 1, badges, activities, profilePhoto: profile?.profilePhoto, streak: profile?.streak || 0, levelTitle: getLevelTitle(profile?.level || 1), avatarFrame: profile?.avatarFrame, status: profile?.status };
     }),
+    requestFriend: protectedProcedure.input(z.number()).mutation(async ({ ctx, input }) => {
+      const existing = await db.select().from(friends).where(and(eq(friends.userId, ctx.user.id), eq(friends.friendId, input))).limit(1);
+      if (existing.length > 0) return { success: false, message: "Request already exists" };
+      await db.insert(friends).values({ userId: ctx.user.id, friendId: input, status: 'pending' });
+      await db.insert(notifications).values({ userId: input, fromUserId: ctx.user.id, type: 'friend_request' });
+      return { success: true };
+    }),
+    acceptFriend: protectedProcedure.input(z.number()).mutation(async ({ ctx, input }) => {
+      await db.update(friends).set({ status: 'accepted' }).where(and(eq(friends.userId, input), eq(friends.friendId, ctx.user.id)));
+      await db.insert(friends).values({ userId: ctx.user.id, friendId: input, status: 'accepted' });
+      return { success: true };
+    }),
+    toggleFavorite: protectedProcedure.input(z.object({ friendId: z.number(), favorite: z.boolean() })).mutation(async ({ ctx, input }) => {
+      await db.update(friends).set({ isFavorite: input.favorite ? 1 : 0 }).where(and(eq(friends.userId, ctx.user.id), eq(friends.friendId, input.friendId)));
+      return { success: true };
+    }),
+    getFriends: protectedProcedure.query(async ({ ctx }) => {
+      const result = await db.select({
+        id: users.id, name: users.name, username: users.username, avatar: userProfiles.profilePhoto, status: userProfiles.status, isFavorite: friends.isFavorite, friendshipStatus: friends.status
+      }).from(friends).innerJoin(users, eq(friends.friendId, users.id)).leftJoin(userProfiles, eq(users.id, userProfiles.userId)).where(eq(friends.userId, ctx.user.id));
+      return result;
+    }),
+    getFriendRequests: protectedProcedure.query(async ({ ctx }) => {
+      return await db.select({ id: users.id, name: users.name, username: users.username, avatar: userProfiles.profilePhoto })
+        .from(friends).innerJoin(users, eq(friends.userId, users.id)).leftJoin(userProfiles, eq(users.id, userProfiles.userId))
+        .where(and(eq(friends.friendId, ctx.user.id), eq(friends.status, 'pending')));
+    })
   }),
 
   messaging: router({

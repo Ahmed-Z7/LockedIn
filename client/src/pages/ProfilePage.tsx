@@ -4,7 +4,7 @@ import {
   Settings, Edit3, Camera, CheckCircle2, 
   ChevronRight, Calendar, Star, Shield, 
   Award, Activity, LogOut, ArrowRight, MessageSquare,
-  Bot
+  Bot, Sparkles
 } from 'lucide-react';
 import React, { useState, useRef, useMemo } from 'react';
 import { trpc } from '@/lib/trpc';
@@ -15,6 +15,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useParams, useLocation } from 'wouter';
 import Navbar from "@/components/Navbar";
+import { AvatarWithFrame, StatusBadge, AVATAR_FRAMES, STATUS_PRESETS } from '@/components/ProfileCustomization';
+import { cn } from '@/lib/utils';
+import { UserPlus, UserCheck, Heart, Share2, MoreHorizontal } from 'lucide-react';
 
 const BADGE_MAP: Record<string, { icon: any, color: string, desc: string }> = {
   "Study Monk": { icon: Shield, color: "text-blue-400", desc: "Completed 5 focus-locked sessions." },
@@ -44,6 +47,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState('');
   const [tempBio, setTempBio] = useState('');
+  const [isCustomizing, setIsCustomizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries
@@ -99,7 +103,36 @@ export default function ProfilePage() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    toast.info("Uploading neural avatar...");
+    
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+      try {
+        await updatePhotoMutation.mutateAsync({ photo: base64 });
+        toast.success("Neural avatar updated!");
+        ownProfileQuery.refetch();
+      } catch (err) {
+        toast.error("Failed to update avatar.");
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const updateProfileMutation = trpc.profileData.update.useMutation();
+  const socialMutation = trpc.social.requestFriend.useMutation();
+  const favoriteMutation = trpc.social.toggleFavorite.useMutation();
+  const acceptFriendMutation = trpc.social.acceptFriend.useMutation();
+
+  const handleUpdateStatus = async (status: string) => {
+    await updateProfileMutation.mutateAsync({ status });
+    toast.success("Status updated!");
+    ownProfileQuery.refetch();
+  };
+
+  const handleUpdateFrame = async (frameId: string) => {
+    await updateProfileMutation.mutateAsync({ avatarFrame: frameId });
+    toast.success("Frame synchronized!");
+    ownProfileQuery.refetch();
   };
 
   if (isLoading) return (
@@ -126,85 +159,125 @@ export default function ProfilePage() {
             <div className="space-y-12">
             
             {/* USER HERO SECTION */}
-            <motion.div 
+              <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="relative group p-10 rounded-[3rem] bg-card/40 backdrop-blur-3xl border border-white/10 overflow-hidden shadow-2xl shadow-purple-500/10"
-            >
+              >
                 {/* Background Glow */}
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
                 
                 <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
-                {/* Profile Photo */}
-                <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-purple-600 to-cyan-400 rounded-full blur-2xl opacity-20 animate-pulse" />
-                    <div className="w-44 h-44 rounded-full p-[3px] bg-gradient-to-tr from-purple-600 via-indigo-500 to-cyan-400 shadow-2xl shadow-purple-500/20 relative z-10">
-                    <div className="w-full h-full rounded-full bg-background/80 backdrop-blur-md overflow-hidden relative group/avatar">
-                        {profile?.profilePhoto ? (
-                        <img src={profile.profilePhoto} className="w-full h-full object-cover" />
-                        ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl font-black text-white/20 uppercase">
-                            {profile?.username?.[0] || '?'}
-                        </div>
-                        )}
-                        {isOwnProfile && (
-                        <button 
-                            onClick={() => fileInputRef.current?.click()}
-                            className="absolute inset-0 bg-black/60 opacity-0 group-hover/avatar:opacity-100 transition-opacity flex items-center justify-center"
-                        >
-                            <Camera className="w-6 h-6 text-white" />
-                        </button>
-                        )}
-                        <input type="file" ref={fileInputRef} className="hidden" onChange={handlePhotoUpload} />
-                    </div>
-                    </div>
-                </div>
+                  {/* Profile Photo with Frame */}
+                  <div className="relative">
+                    <AvatarWithFrame 
+                      src={profile?.profilePhoto} 
+                      username={profile?.username || ''} 
+                      frameId={(profile as any)?.avatarFrame || 'none'} 
+                      size="xl" 
+                    />
+                    {isOwnProfile && (
+                      <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute bottom-2 right-2 p-3 bg-purple-600 rounded-full shadow-lg hover:scale-110 transition-all border-2 border-background"
+                      >
+                        <Camera className="w-5 h-5 text-white" />
+                      </button>
+                    )}
+                    <input type="file" ref={fileInputRef} className="hidden" onChange={handlePhotoUpload} />
+                  </div>
 
-                <div className="text-center md:text-left flex-1">
-                    <div className="flex flex-col items-center md:items-start gap-1 mb-2">
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 bg-clip-text text-transparent">
-                            {profile?.name}
-                        </h1>
-                        <div className="flex items-center gap-3">
-                            <span className="text-white/40 font-bold tracking-tight text-lg">@{profile?.username}</span>
+                  <div className="text-center md:text-left flex-1">
+                    <div className="flex flex-col items-center md:items-start gap-3 mb-4">
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-4xl md:text-5xl font-black tracking-tighter bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 bg-clip-text text-transparent">
+                                {profile?.name}
+                            </h1>
+                            {!isOwnProfile && (
+                                <div className="flex gap-2">
+                                    <Button 
+                                        size="sm" 
+                                        className="rounded-full bg-purple-600 hover:bg-purple-700 h-9 px-4"
+                                        onClick={() => {
+                                            socialMutation.mutate(targetUserId!);
+                                            toast.success("Request sent!");
+                                        }}
+                                    >
+                                        <UserPlus className="w-4 h-4 mr-2" /> Add
+                                    </Button>
+                                    <Button 
+                                        size="sm" 
+                                        variant="outline" 
+                                        className="rounded-full border-white/10 bg-white/5 h-9 w-9 p-0"
+                                        onClick={() => {
+                                            favoriteMutation.mutate({ friendId: targetUserId!, favorite: true });
+                                            toast.success("Added to favorites!");
+                                        }}
+                                    >
+                                        <Heart className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                            <span className="text-white/40 font-bold tracking-tight">@{profile?.username}</span>
+                            <StatusBadge status={(profile as any)?.status || 'Ana LOCKEDIN'} />
                             <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] uppercase font-black tracking-widest">
                                 {getLevelTitle(profile?.level || 1)}
                             </span>
                         </div>
                     </div>
-                    {/* @ts-ignore */}
-                    <p className="text-white/40 font-medium mb-6 text-sm">{profile?.email}</p>
+
+                    {isOwnProfile ? (
+                        <div className="flex gap-2 mb-6">
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-9"
+                                onClick={() => setIsCustomizing(true)}
+                            >
+                                <Sparkles className="w-3.5 h-3.5 mr-2 text-cyan-400" /> Customize Profile
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-9"
+                                onClick={() => { setTempBio(profile?.bio || ''); setIsEditing(true); }}
+                            >
+                                <Edit3 className="w-3.5 h-3.5 mr-2 text-purple-400" /> Edit Bio
+                            </Button>
+                        </div>
+                    ) : null}
                     
                     {isEditing ? (
-                    <div className="flex flex-col gap-4 max-w-md">
-                        <textarea 
-                            value={tempBio}
-                            onChange={(e) => setTempBio(e.target.value)}
-                            placeholder="Input neural bio description..."
-                            className="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all resize-none h-24"
-                        />
-                        <div className="flex gap-2">
-                        <Button onClick={handleUpdateProfile} className="bg-purple-600 hover:bg-purple-700 rounded-xl px-6 font-bold">Save System Update</Button>
-                        <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl px-6 text-white/40">Cancel</Button>
+                        <div className="flex flex-col gap-4 max-w-md">
+                            <textarea 
+                                value={tempBio}
+                                onChange={(e) => setTempBio(e.target.value)}
+                                placeholder="Input neural bio description..."
+                                className="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all resize-none h-20"
+                            />
+                            <div className="flex gap-2">
+                                <Button onClick={handleUpdateProfile} className="bg-purple-600 hover:bg-purple-700 rounded-xl px-6 font-bold h-9 text-xs">Save Update</Button>
+                                <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl px-6 text-white/40 h-9 text-xs">Cancel</Button>
+                            </div>
                         </div>
-                    </div>
                     ) : (
-                    <div className={isOwnProfile ? "group/bio cursor-pointer" : ""} onClick={() => { if (isOwnProfile) { setTempBio(profile?.bio || ''); setIsEditing(true); } }}>
-                        <p className={`text-white/60 leading-relaxed mb-6 max-w-xl ${isOwnProfile ? "group-hover/bio:text-white" : ""} transition-colors`}>
-                        {profile?.bio || (isOwnProfile ? "No biometric summary detected. Click to initialize neural signature." : "No biometric summary detected.")}
+                        <p className="text-white/60 leading-relaxed max-w-xl text-sm italic">
+                            "{profile?.bio || "No biometric summary detected."}"
                         </p>
-                    </div>
                     )}
-                </div>
+                  </div>
 
-                <div className="hidden lg:block w-px h-32 bg-white/5" />
+                  <div className="hidden lg:block w-px h-32 bg-white/5" />
 
-                <div className="flex flex-col items-center md:items-start gap-6 px-8">
+                  <div className="flex flex-col items-center md:items-start gap-6 px-8">
                     <div className="text-center md:text-left">
-                    <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-2">Neural Tier</p>
-                    <p className="text-5xl font-black text-white leading-none bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">LV.{level}</p>
+                      <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-2">Neural Tier</p>
+                      <p className="text-5xl font-black text-white leading-none bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">LV.{level}</p>
                     </div>
-                </div>
+                  </div>
                 </div>
 
                 {/* XP Progress Section */}
@@ -248,7 +321,6 @@ export default function ProfilePage() {
                 ))}
             </div>
 
-            {/* BADGES & ACTIVITY TABS */}
             <Tabs defaultValue="badges" className="w-full">
                 <TabsList className="bg-card/20 backdrop-blur-xl border border-white/5 p-1 rounded-2xl mb-8">
                 <TabsTrigger value="badges" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
@@ -257,145 +329,226 @@ export default function ProfilePage() {
                 <TabsTrigger value="activity" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
                     Activity Log
                 </TabsTrigger>
+                <TabsTrigger value="friends" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
+                    Neural Network
+                </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="badges" className="outline-none">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                    {Object.entries(BADGE_MAP).map(([name, meta], idx) => {
-                    const isEarned = progression?.badges?.some(b => b.badgeName === name);
-                    const Icon = meta.icon;
-                    return (
-                        <motion.div 
-                        key={name}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className={cn(
-                            "relative p-6 rounded-[2rem] border flex flex-col items-center text-center transition-all group backdrop-blur-xl",
-                            isEarned 
-                            ? "bg-purple-900/10 border-purple-500/20 shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10" 
-                            : "bg-white/[0.01] border-white/5 grayscale opacity-30"
-                        )}
-                        >
-                        <div className={cn("p-4 rounded-xl mb-4 group-hover:scale-110 transition-transform", isEarned ? meta.color + " bg-white/5 shadow-inner" : "text-white/20")}>
-                            <Icon className="w-8 h-8" />
-                        </div>
-                        <h4 className="text-sm font-bold mb-1 tracking-tight">{name}</h4>
-                        <p className="text-[9px] text-white/30 leading-tight uppercase font-black">{isEarned ? "Validated" : "Access Locked"}</p>
-                        </motion.div>
-                    );
-                    })}
-                </div>
+                    {/* ... (Badge grid logic remains the same) ... */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                        {Object.entries(BADGE_MAP).map(([name, meta], idx) => {
+                        const isEarned = progression?.badges?.some(b => b.badgeName === name);
+                        const Icon = meta.icon;
+                        return (
+                            <motion.div key={name} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }}
+                                className={cn("relative p-6 rounded-[2rem] border flex flex-col items-center text-center transition-all group backdrop-blur-xl", isEarned ? "bg-purple-900/10 border-purple-500/20 shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10" : "bg-white/[0.01] border-white/5 grayscale opacity-30")}>
+                                <div className={cn("p-4 rounded-xl mb-4 group-hover:scale-110 transition-transform", isEarned ? meta.color + " bg-white/5 shadow-inner" : "text-white/20")}>
+                                    <Icon className="w-8 h-8" />
+                                </div>
+                                <h4 className="text-sm font-bold mb-1 tracking-tight">{name}</h4>
+                                <p className="text-[9px] text-white/30 leading-tight uppercase font-black">{isEarned ? "Validated" : "Access Locked"}</p>
+                            </motion.div>
+                        );
+                        })}
+                    </div>
                 </TabsContent>
 
                 <TabsContent value="activity">
-                <div className="space-y-4">
-                    {progression?.activities?.length === 0 ? (
-                    <div className="py-20 text-center text-white/20 font-bold uppercase tracking-widest bg-white/[0.01] rounded-3xl border border-dashed border-white/5">
-                        No neural activity detected in current cycle.
+                    <div className="space-y-4">
+                        {progression?.activities?.length === 0 ? (
+                            <div className="py-20 text-center text-white/20 font-bold uppercase tracking-widest bg-white/[0.01] rounded-3xl border border-dashed border-white/5">
+                                No neural activity detected in current cycle.
+                            </div>
+                        ) : (
+                            progression?.activities?.map((activity, i) => (
+                                <motion.div key={activity.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                                    className="p-6 rounded-2xl bg-card/10 backdrop-blur-xl border border-white/5 flex items-center justify-between group hover:bg-white/[0.05] transition-all shadow-lg">
+                                    <div className="flex items-center gap-5">
+                                        <div className={`p-3 rounded-xl shadow-inner ${activity.type === 'level_up' ? 'bg-amber-500/10 text-amber-400' : activity.type === 'badge_earned' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-purple-500/10 text-purple-400'}`}>
+                                            {activity.type === 'level_up' ? <Trophy className="w-5 h-5" /> : activity.type === 'badge_earned' ? <Award className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-sm tracking-tight text-white/80 group-hover:text-white transition-colors">{activity.description}</p>
+                                            <p className="text-[9px] text-white/20 uppercase font-black tracking-widest mt-1">{new Date(activity.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <p className={`font-black tracking-tighter shadow-sm ${(activity.xpGain ?? 0) > 0 ? 'text-emerald-400' : 'text-white/10'}`}>
+                                            {(activity.xpGain ?? 0) > 0 ? `+${activity.xpGain} XP` : '--'}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            ))
+                        )}
                     </div>
-                    ) : (
-                    progression?.activities?.map((activity, i) => (
-                        <motion.div 
-                        key={activity.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="p-6 rounded-2xl bg-card/10 backdrop-blur-xl border border-white/5 flex items-center justify-between group hover:bg-white/[0.05] transition-all shadow-lg"
-                        >
-                        <div className="flex items-center gap-5">
-                            <div className={`p-3 rounded-xl shadow-inner ${
-                            activity.type === 'level_up' ? 'bg-amber-500/10 text-amber-400' :
-                            activity.type === 'badge_earned' ? 'bg-indigo-500/10 text-indigo-400' :
-                            'bg-purple-500/10 text-purple-400'
-                            }`}>
-                            {activity.type === 'level_up' ? <Trophy className="w-5 h-5" /> : 
-                            activity.type === 'badge_earned' ? <Award className="w-5 h-5" /> : 
-                            <Activity className="w-5 h-5" />}
-                            </div>
-                            <div>
-                            <p className="font-bold text-sm tracking-tight text-white/80 group-hover:text-white transition-colors">{activity.description}</p>
-                            <p className="text-[9px] text-white/20 uppercase font-black tracking-widest mt-1">
-                                {new Date(activity.createdAt).toLocaleDateString()}
-                            </p>
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <p className={`font-black tracking-tighter shadow-sm ${(activity.xpGain ?? 0) > 0 ? 'text-emerald-400' : 'text-white/10'}`}>
-                            {(activity.xpGain ?? 0) > 0 ? `+${activity.xpGain} XP` : '--'}
-                            </p>
-                            <ChevronRight className="w-4 h-4 text-white/10 group-hover:text-white/40 group-hover:translate-x-1 transition-all" />
-                        </div>
-                        </motion.div>
-                    ))
-                    )}
-                </div>
+                </TabsContent>
+
+                <TabsContent value="friends">
+                    <FriendsList currentUserId={user?.id} />
                 </TabsContent>
             </Tabs>
-
-            </div>
-
-            {/* ── RIGHT COLUMN: SIDEBAR CONTENT ── */}
-            <div className="space-y-8">
-            
-            {/* STREAK CALENDAR */}
-            <div className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-white/10 relative overflow-hidden shadow-2xl shadow-cyan-500/5 group">
-                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="flex items-center justify-between mb-8 relative z-10">
-                <h3 className="font-black text-[10px] uppercase tracking-widest text-white/40 flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-cyan-400" /> Neural Streak
-                </h3>
-                <div className="text-4xl font-black text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">{profile?.streak || 0}d</div>
-                </div>
-                
-                <div className="grid grid-cols-7 gap-2 mb-8 relative z-10">
-                {['M','T','W','T','F','S','S'].map((d, i) => {
-                    const isActive = i < (profile?.streak || 0);
-                    return (
-                    <div key={i} className="flex flex-col items-center gap-2">
-                        <span className="text-[8px] font-black text-white/20 tracking-tighter">{d}</span>
-                        <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-                        isActive ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30 scale-110" : "bg-white/5 text-white/10"
-                        )}>
-                        {isActive && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        </div>
-                    </div>
-                    );
-                })}
-                </div>
-
-                <p className="text-[10px] text-white/40 leading-relaxed font-bold relative z-10">
-                {profile?.streak && profile.streak >= 3 ? "SYSTEM ACCURACY: OPTIMAL. YOU'RE IN THE FLOW STATE." : "SYSTEM WARMING UP. MINIMUM 3-DAY STREAK FOR FLOW SYNC."}
-                </p>
-            </div>
-
-            {/* ZED CORE SETTINGS PREVIEW */}
-            <div className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-white/10 relative overflow-hidden shadow-2xl shadow-purple-500/5">
-                <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-                   <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl">
-                      <Bot className="w-5 h-5 text-white" />
-                   </div>
-                   ZED CORE
-                </h3>
-                <p className="text-xs text-white/40 mb-6 font-medium leading-relaxed">ZED is currently learning from your behavior to optimize focus cycles.</p>
-                <Button 
-                    onClick={() => setLocation('/ai-coach')}
-                    className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-6 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2"
-                >
-                    <Settings className="w-4 h-4" />
-                    Neural Training Center
-                </Button>
-            </div>
-
-            </div>
         </div>
 
+        {/* ── RIGHT COLUMN: SIDEBAR ── */}
+        <div className="space-y-8">
+            <StreakCalendar profile={profile} />
+            <ZedCorePreview setLocation={setLocation} />
+        </div>
+        </div>
       </div>
+
+      {/* CUSTOMIZATION MODAL */}
+      <AnimatePresence>
+        {isCustomizing && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCustomizing(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-card/90 backdrop-blur-3xl border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl p-10">
+              
+              <h2 className="text-3xl font-black mb-8 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Neural Customization</h2>
+              
+              <div className="space-y-10">
+                {/* Frame Selection */}
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-white/40 mb-6 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400" /> Avatar Frames
+                  </h3>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
+                    {AVATAR_FRAMES.map((f) => (
+                      <button key={f.id} onClick={() => handleUpdateFrame(f.id)}
+                        className={cn("flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all hover:scale-105", 
+                        (profile as any)?.avatarFrame === f.id ? "bg-purple-500/10 border-purple-500" : "bg-white/5 border-white/5 hover:border-white/20")}>
+                        <div className={cn("w-12 h-12 rounded-full border-2", f.color, f.glow)} />
+                        <span className="text-[10px] font-bold text-white/60">{f.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Status Selection */}
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-white/40 mb-6 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-purple-400" /> Presets & Funny Stats
+                  </h3>
+                  <div className="space-y-3">
+                    {STATUS_PRESETS.map((s) => (
+                      <button key={s.id} onClick={() => handleUpdateStatus(s.text)}
+                        className={cn("w-full text-left p-4 rounded-2xl border transition-all hover:translate-x-2 flex items-center justify-between group",
+                        (profile as any)?.status === s.text ? "bg-cyan-500/10 border-cyan-500" : "bg-white/5 border-white/5 hover:border-purple-500/30")}>
+                        <span className="text-sm font-medium text-white/80 group-hover:text-white">{s.text}</span>
+                        {(profile as any)?.status === s.text && <CheckCircle2 className="w-4 h-4 text-cyan-400" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={() => setIsCustomizing(false)} className="w-full mt-10 bg-gradient-to-r from-purple-600 to-indigo-600 py-6 rounded-2xl font-black text-xs uppercase tracking-widest">
+                SYNC NEURAL SIGNATURE
+              </Button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
-}
+{/* Helper Sub-Components */}
+const FriendsList = ({ currentUserId }: { currentUserId?: number }) => {
+    const friendsQuery = trpc.social.getFriends.useQuery();
+    const requestsQuery = trpc.social.getFriendRequests.useQuery();
+    const acceptMutation = trpc.social.acceptFriend.useMutation();
+    const utils = trpc.useUtils();
+
+    if (friendsQuery.isLoading) return <div className="h-40 flex items-center justify-center font-black text-white/10 uppercase tracking-widest">Scanning Network...</div>;
+
+    const friends = friendsQuery.data || [];
+    const requests = requestsQuery.data || [];
+
+    return (
+        <div className="space-y-8">
+            {requests.length > 0 && (
+                <div className="space-y-4">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-cyan-400">Inbound Links ({requests.length})</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {requests.map(req => (
+                            <div key={req.id} className="p-4 rounded-2xl bg-cyan-500/5 border border-cyan-500/20 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <AvatarWithFrame src={req.avatar} username={req.username || ''} size="sm" />
+                                    <div>
+                                        <p className="font-bold text-sm tracking-tight">{req.name}</p>
+                                        <p className="text-[10px] text-white/40">@{req.username}</p>
+                                    </div>
+                                </div>
+                                <Button size="sm" onClick={() => { acceptMutation.mutate(req.id); utils.social.getFriends.invalidate(); utils.social.getFriendRequests.invalidate(); toast.success("Neural link established!"); }} className="bg-cyan-600 hover:bg-cyan-700 h-8 text-xs font-bold rounded-lg shadow-lg shadow-cyan-500/20">Accept</Button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <div className="space-y-4">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40">Neural Connections ({friends.length})</h3>
+                {friends.length === 0 ? (
+                    <div className="py-12 text-center text-white/10 font-black uppercase tracking-widest border border-dashed border-white/5 rounded-3xl">No connections detected.</div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {friends.map(friend => (
+                            <div key={friend.id} className="p-6 rounded-3xl bg-card/20 border border-white/5 backdrop-blur-xl group hover:border-purple-500/30 transition-all">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <AvatarWithFrame src={friend.avatar} username={friend.username || ''} size="md" />
+                                    <div className="flex-1 overflow-hidden">
+                                        <p className="font-bold text-sm truncate">{friend.name}</p>
+                                        <p className="text-[10px] text-white/40 truncate">@{friend.username}</p>
+                                    </div>
+                                    {friend.isFavorite && <Heart className="w-4 h-4 text-pink-500 fill-pink-500" />}
+                                </div>
+                                <StatusBadge status={friend.status || 'Ana LOCKEDIN'} />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const StreakCalendar = ({ profile }: { profile: any }) => (
+    <div className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-white/10 relative overflow-hidden shadow-2xl shadow-cyan-500/5 group">
+        {/* ... (Streak logic remains same but beautified) ... */}
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="flex items-center justify-between mb-8 relative z-10">
+            <h3 className="font-black text-[10px] uppercase tracking-widest text-white/40 flex items-center gap-2">
+                <Flame className="w-4 h-4 text-cyan-400" /> Neural Streak
+            </h3>
+            <div className="text-4xl font-black text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">{profile?.streak || 0}d</div>
+        </div>
+        <div className="grid grid-cols-7 gap-2 mb-8 relative z-10">
+            {['M','T','W','T','F','S','S'].map((d, i) => (
+                <div key={i} className="flex flex-col items-center gap-2">
+                    <span className="text-[8px] font-black text-white/20 tracking-tighter">{d}</span>
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-all", i < (profile?.streak || 0) ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30 scale-110" : "bg-white/5 text-white/10")}>
+                        {i < (profile?.streak || 0) && <CheckCircle2 className="w-3.5 h-3.5" />}
+                    </div>
+                </div>
+            ))}
+        </div>
+        <p className="text-[10px] text-white/40 leading-relaxed font-bold relative z-10">SYSTEM ACCURACY: OPTIMAL. FLOW SYNC DETECTED.</p>
+    </div>
+);
+
+const ZedCorePreview = ({ setLocation }: { setLocation: any }) => (
+    <div className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-white/10 relative overflow-hidden shadow-2xl shadow-purple-500/5">
+        <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+           <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl"><Bot className="w-5 h-5 text-white" /></div>
+           ZED CORE
+        </h3>
+        <p className="text-xs text-white/40 mb-6 font-medium leading-relaxed">ZED is optimizing focus cycles based on your biometrics.</p>
+        <Button onClick={() => setLocation('/ai-coach')} className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-6 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2">
+            <Settings className="w-4 h-4" /> Neural Training Center
+        </Button>
+    </div>
+);
+

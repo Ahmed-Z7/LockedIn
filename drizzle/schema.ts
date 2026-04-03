@@ -6,7 +6,7 @@ export const difficulty = pgEnum("difficulty", ['easy', 'medium', 'hard'])
 export const groupRole = pgEnum("group_role", ['admin', 'member'])
 export const groupStatus = pgEnum("group_status", ['pending', 'approved'])
 export const invitationStatus = pgEnum("invitation_status", ['pending', 'accepted', 'declined'])
-export const notificationType = pgEnum("notification_type", ['like', 'comment', 'follow', 'badge', 'study_session'])
+export const notificationType = pgEnum("notification_type", ['like', 'comment', 'follow', 'badge', 'study_session', 'friend_request', 'message'])
 export const priority = pgEnum("priority", ['low', 'medium', 'high'])
 export const rarity = pgEnum("rarity", ['common', 'rare', 'epic', 'legendary'])
 export const role = pgEnum("role", ['user', 'admin'])
@@ -521,6 +521,8 @@ export const userProfiles = pgTable("userProfiles", {
 	lastStudyDate: timestamp({ mode: 'string' }),
 	bio: text(),
 	profilePhoto: text(),
+	status: text().default('Ana LOCKEDIN'),
+	avatarFrame: varchar({ length: 50 }).default('none'),
 	rank: varchar({ length: 100 }).default('Focused Beginner'),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
@@ -581,5 +583,28 @@ export const verificationCodes = pgTable("verificationCodes", {
 	expiresAt: timestamp({ mode: 'string' }).notNull(),
 	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
 });
+
+export const friends = pgTable("friends", {
+	id: serial().primaryKey().notNull(),
+	userId: integer().notNull(),
+	friendId: integer().notNull(),
+	status: varchar({ length: 20 }).default('pending'), // 'pending', 'accepted'
+	isFavorite: integer().default(0), // 0 for normal, 1 for favorite
+	createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.userId],
+		foreignColumns: [users.id],
+		name: "friends_userId_users_id_fk"
+	}),
+	foreignKey({
+		columns: [table.friendId],
+		foreignColumns: [users.id],
+		name: "friends_friendId_users_id_fk"
+	}),
+]);
+
+export type InsertFriend = typeof friends.$inferInsert;
+export type Friend = typeof friends.$inferSelect;
 export type InsertVerificationCode = typeof verificationCodes.$inferInsert;
 export type User = typeof users.$inferSelect;
