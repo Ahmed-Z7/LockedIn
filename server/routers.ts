@@ -795,10 +795,10 @@ export const appRouter = router({
           const prompt = `Generate exactly 5 high-quality MCQs from this SCIENTIFIC/ACADEMIC content: ${input.content.substring(0, 4000)}. 
           STRICT RULE: Focus ONLY on the subject matter concepts. 
           DO NOT ask about study techniques, productivity, or focus. 
-          Return JSON array.`;
+          Return JSON array: [{ "question": "string", "options": ["A","B","C","D"], "answer": "Exact String", "type": "MULTIPLE CHOICE", "weakness": "explanation" }]`;
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "Educational assessment AI. Respond with JSON MCQs." },
+              { role: "system", content: "Educational assessment AI. Respond with ONLY a JSON array, no extra text." },
               { role: "user", content: prompt },
             ],
           });
@@ -808,6 +808,96 @@ export const appRouter = router({
           return { quiz: JSON.parse(jsonMatch ? jsonMatch[0] : "[]") };
         } catch (error) {
           return { quiz: [], error: "Failed to generate quiz." };
+        }
+      }),
+
+    generateFlashCards: protectedProcedure
+      .input(z.object({ content: z.string(), subject: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const prompt = `You are an educational AI. Generate 8 flashcards from this content about "${input.subject}".
+          Content: ${input.content.substring(0, 5000)}
+          
+          STRICT RULES:
+          - Focus ONLY on the scientific/academic concepts in the content
+          - Each card must test understanding of actual subject matter
+          - Do NOT create cards about study techniques or generic advice
+          
+          Return ONLY a JSON array: [{ "front": "Question about the concept", "back": "Clear explanation/answer" }]`;
+
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: "You are a flashcard generation engine. Return ONLY valid JSON, no markdown or extra text." },
+              { role: "user", content: prompt },
+            ],
+          });
+          const raw = response.choices[0]?.message?.content || "[]";
+          const jsonMatch = raw.match(/\[[\s\S]*\]/);
+          const cards = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
+          return { cards };
+        } catch (e) {
+          return { cards: [] };
+        }
+      }),
+
+    generateMindMap: protectedProcedure
+      .input(z.object({ content: z.string(), subject: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const prompt = `You are an educational AI. Analyze this content about "${input.subject}" and extract a mind map structure.
+          Content: ${input.content.substring(0, 5000)}
+          
+          Return ONLY a JSON object:
+          {
+            "center": "Core Topic Name (max 3 words)",
+            "branches": [
+              { "title": "Branch Name", "nodes": ["sub-concept 1", "sub-concept 2"] }
+            ]
+          }
+          
+          Create 4 branches with 2-3 nodes each. Focus on the actual academic content.`;
+
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: "Mind map generation engine. Return ONLY valid JSON." },
+              { role: "user", content: prompt },
+            ],
+          });
+          const raw = response.choices[0]?.message?.content || "{}";
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          const mindmap = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
+          return { mindmap };
+        } catch (e) {
+          return { mindmap: null };
+        }
+      }),
+
+    generateSummary: protectedProcedure
+      .input(z.object({ content: z.string(), subject: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const prompt = `Summarize this study material about "${input.subject}" into a clear, structured summary.
+          Content: ${input.content.substring(0, 6000)}
+          
+          Return ONLY a JSON object:
+          {
+            "overview": "2-3 sentence overview of the topic",
+            "keyPoints": ["key point 1", "key point 2", "key point 3", "key point 4", "key point 5"],
+            "conclusion": "1 sentence takeaway"
+          }`;
+
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: "Academic summarization engine. Return ONLY valid JSON." },
+              { role: "user", content: prompt },
+            ],
+          });
+          const raw = response.choices[0]?.message?.content || "{}";
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          const summary = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
+          return { summary };
+        } catch (e) {
+          return { summary: null };
         }
       }),
   }),

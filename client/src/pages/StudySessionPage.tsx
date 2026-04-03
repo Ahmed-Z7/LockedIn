@@ -68,6 +68,15 @@ export default function StudySessionPage() {
   
   const chatMutation = trpc.aiCoach.chat.useMutation();
   const generateQuizMutation = trpc.aiCoach.generateQuiz.useMutation();
+  const generateFlashCardsMutation = trpc.aiCoach.generateFlashCards.useMutation();
+  const generateMindMapMutation = trpc.aiCoach.generateMindMap.useMutation();
+  const generateSummaryMutation = trpc.aiCoach.generateSummary.useMutation();
+  
+  const [flashCards, setFlashCards] = useState<Array<{front: string, back: string}>>([]);
+  const [currentCardIdx, setCurrentCardIdx] = useState(0);
+  const [isCardFlipped, setIsCardFlipped] = useState(false);
+  const [mindMapData, setMindMapData] = useState<any>(null);
+  const [summaryData, setSummaryData] = useState<any>(null);
   
   // Timer logic
   useEffect(() => {
@@ -249,6 +258,27 @@ export default function StudySessionPage() {
       ]);
     } finally {
       setIsGeneratingQuiz(false);
+    }
+  };
+
+  // Generate content when switching tools
+  const handleToolSwitch = async (tool: typeof activeTool) => {
+    setActiveTool(tool);
+    const content = session?.material?.content || session?.subject || "";
+    const subject = session?.subject || "Study Material";
+    if (!content) return;
+
+    if (tool === 'flashcards' && flashCards.length === 0) {
+      const res = await generateFlashCardsMutation.mutateAsync({ content, subject });
+      if (res.cards?.length) setFlashCards(res.cards);
+    }
+    if (tool === 'mindmap' && !mindMapData) {
+      const res = await generateMindMapMutation.mutateAsync({ content, subject });
+      if (res.mindmap) setMindMapData(res.mindmap);
+    }
+    if (tool === 'content' && !summaryData) {
+      const res = await generateSummaryMutation.mutateAsync({ content, subject });
+      if (res.summary) setSummaryData(res.summary);
     }
   };
 
@@ -445,20 +475,21 @@ export default function StudySessionPage() {
             <div className="flex items-center gap-3">
                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 mr-4">
                     {[
-                        { id: 'content', icon: BookOpen },
-                        { id: 'mindmap', icon: Brain },
-                        { id: 'flashcards', icon: Layout },
-                        { id: 'quiz', icon: CheckCircle },
-                        { id: 'feynman', icon: Lightbulb },
-                        { id: 'notes', icon: MessageSquare }
+                        { id: 'content', icon: BookOpen, label: 'Summary' },
+                        { id: 'mindmap', icon: Brain, label: 'Mind Map' },
+                        { id: 'flashcards', icon: Layout, label: 'Flash Cards' },
+                        { id: 'quiz', icon: CheckCircle, label: 'Quiz' },
+                        { id: 'feynman', icon: Lightbulb, label: 'Feynman' },
+                        { id: 'notes', icon: MessageSquare, label: 'Notes' }
                     ].map(tab => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTool(tab.id as any)}
+                            onClick={() => handleToolSwitch(tab.id as any)}
                             className={cn(
                                 "p-2 rounded-xl transition-all",
                                 activeTool === tab.id ? "bg-purple-600 text-white shadow-lg" : "text-foreground/30 hover:text-foreground/60"
                             )}
+                            title={tab.label}
                         >
                             <tab.icon className="w-4 h-4" />
                         </button>
@@ -561,115 +592,119 @@ export default function StudySessionPage() {
             <div className="flex-1 overflow-y-auto p-12 scrollbar-hide">
                 <AnimatePresence mode="wait">
                     {activeTool === 'content' && (
-                        <motion.div 
-                            key="content"
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="max-w-4xl mx-auto space-y-8"
-                        >
+                        <motion.div key="content" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="max-w-4xl mx-auto space-y-8">
                             <div className="space-y-4">
                                 <h1 className="text-4xl font-black tracking-tight">{session?.subject}</h1>
-                                <div className="flex items-center gap-4 text-sm text-foreground/40 pb-8 border-b border-white/5">
-                                    <span className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full font-bold">12 Topics</span>
-                                    <span>2.4k Words Analyzed</span>
+                            </div>
+                            {generateSummaryMutation.isPending ? (
+                                <div className="flex flex-col items-center gap-4 py-20">
+                                    <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                                    <p className="text-foreground/40 font-bold uppercase tracking-widest text-xs">ZED Generating Summary...</p>
                                 </div>
-                            </div>
-
-                            <div className="space-y-12">
-                                <section className="space-y-6">
-                                    <h2 className="text-2xl font-bold flex items-center gap-3">
-                                        <div className="w-1.5 h-6 bg-purple-500 rounded-full" />
-                                        Fundamentals
-                                    </h2>
-                                    <p className="text-lg leading-relaxed text-foreground/70 font-medium">
-                                        {session?.material?.content || "No material content available for this session. Use the ZED Focus AI to generate a summary."}
-                                    </p>
-                                </section>
-                            </div>
+                            ) : summaryData ? (
+                                <div className="space-y-8">
+                                    <div className="p-8 rounded-[2rem] bg-purple-500/5 border border-purple-500/20">
+                                        <h2 className="text-xs font-black uppercase tracking-widest text-purple-400 mb-4">Overview</h2>
+                                        <p className="text-lg leading-relaxed text-foreground/80">{summaryData.overview}</p>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <h2 className="text-xs font-black uppercase tracking-widest text-foreground/40">Key Concepts</h2>
+                                        {summaryData.keyPoints?.map((point: string, i: number) => (
+                                            <div key={i} className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 border border-white/5">
+                                                <div className="w-8 h-8 rounded-full bg-purple-500/10 text-purple-400 flex items-center justify-center font-black text-sm shrink-0">{i+1}</div>
+                                                <p className="text-foreground/70 leading-relaxed">{point}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {summaryData.conclusion && (
+                                        <div className="p-6 rounded-2xl bg-cyan-500/5 border border-cyan-500/20">
+                                            <p className="text-cyan-400 font-bold">💡 {summaryData.conclusion}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-12">
+                                    <section className="space-y-6">
+                                        <h2 className="text-2xl font-bold flex items-center gap-3"><div className="w-1.5 h-6 bg-purple-500 rounded-full" />Material Content</h2>
+                                        <p className="text-lg leading-relaxed text-foreground/70 font-medium">{session?.material?.content || "No material available. Click another tool tab to generate AI content."}</p>
+                                    </section>
+                                </div>
+                            )}
                         </motion.div>
                     )}
 
                     {activeTool === 'mindmap' && (
-                        <motion.div 
-                            key="mindmap"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="h-full flex flex-col items-center justify-center relative"
-                        >
-                            <div className="text-center mb-12">
-                                <h2 className="text-3xl font-black mb-2 flex items-center justify-center gap-3">
-                                    <Brain className="w-8 h-8 text-purple-400" /> Neural Concept Map
-                                </h2>
-                                <p className="text-foreground/40 font-medium">Visualizing relationships in: {session?.subject}</p>
+                        <motion.div key="mindmap" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="h-full flex flex-col items-center justify-center relative p-8">
+                            <div className="text-center mb-8">
+                                <h2 className="text-3xl font-black mb-2 flex items-center justify-center gap-3"><Brain className="w-8 h-8 text-purple-400" /> Neural Concept Map</h2>
+                                <p className="text-foreground/40 font-medium">Visualizing: {session?.subject}</p>
                             </div>
-                            
-                            <div className="relative w-full max-w-3xl aspect-[16/9] bg-card/20 backdrop-blur-md border border-white/10 rounded-[3rem] p-8 flex items-center justify-center overflow-hidden">
-                                {/* Connecting lines background */}
-                                <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
-                                    <path d="M 50% 50% L 20% 20% M 50% 50% L 80% 20% M 50% 50% L 20% 80% M 50% 50% L 80% 80%" stroke="currentColor" strokeWidth="2" fill="none" />
-                                </svg>
-                                
-                                {/* Center Node */}
-                                <div className="absolute z-10 p-6 bg-purple-600 rounded-3xl text-white font-black text-xl shadow-[0_0_30px_rgba(168,85,247,0.4)] text-center max-w-[200px] border border-white/20">
-                                    {session?.subject || "Core Topic"}
+                            {generateMindMapMutation.isPending ? (
+                                <div className="flex flex-col items-center gap-4 py-12">
+                                    <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                                    <p className="text-foreground/40 font-bold uppercase tracking-widest text-xs">ZED Mapping Concepts...</p>
                                 </div>
-                                
-                                {/* Peripheral Nodes */}
-                                {[
-                                    { top: '15%', left: '15%', title: 'Fundamentals', delay: 0.1 },
-                                    { top: '15%', right: '15%', title: 'Key Theories', delay: 0.2 },
-                                    { bottom: '15%', left: '15%', title: 'Applications', delay: 0.3 },
-                                    { bottom: '15%', right: '15%', title: 'Case Studies', delay: 0.4 }
-                                ].map((node, i) => (
-                                    <motion.button 
-                                        key={i}
-                                        initial={{ opacity: 0, scale: 0 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: node.delay, type: 'spring' }}
-                                        style={{ top: node.top, left: node.left, right: node.right, bottom: node.bottom }}
-                                        className="absolute p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/50 rounded-2xl text-sm font-bold transition-all shadow-xl group max-w-[150px] text-center"
-                                    >
-                                        <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-purple-500 flex items-center justify-center mx-auto mb-2 text-xs transition-colors">
-                                            {i + 1}
-                                        </div>
-                                        {node.title}
-                                    </motion.button>
-                                ))}
-                            </div>
+                            ) : mindMapData ? (
+                                <div className="relative w-full max-w-3xl aspect-[16/9] bg-card/20 backdrop-blur-md border border-white/10 rounded-[3rem] p-8 flex items-center justify-center overflow-hidden">
+                                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
+                                        <path d="M 50% 50% L 20% 20% M 50% 50% L 80% 20% M 50% 50% L 20% 80% M 50% 50% L 80% 80%" stroke="currentColor" strokeWidth="2" fill="none" />
+                                    </svg>
+                                    <div className="absolute z-10 p-6 bg-purple-600 rounded-3xl text-white font-black text-xl shadow-[0_0_30px_rgba(168,85,247,0.4)] text-center max-w-[200px] border border-white/20">
+                                        {mindMapData.center || session?.subject}
+                                    </div>
+                                    {mindMapData.branches?.slice(0, 4).map((branch: any, i: number) => {
+                                        const positions = [
+                                          { top: '12%', left: '12%' },
+                                          { top: '12%', right: '12%' },
+                                          { bottom: '12%', left: '12%' },
+                                          { bottom: '12%', right: '12%' }
+                                        ];
+                                        return (
+                                            <motion.div key={i} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1, type: 'spring' }}
+                                                style={positions[i]}
+                                                className="absolute p-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold max-w-[150px] text-center">
+                                                <p className="text-purple-400 font-black mb-1">{branch.title}</p>
+                                                {branch.nodes?.slice(0,2).map((n: string, j: number) => <p key={j} className="text-foreground/50 text-xs">{n}</p>)}
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="text-center text-foreground/20 font-bold uppercase tracking-widest">Failed to generate map. Try switching tabs.</div>
+                            )}
                         </motion.div>
                     )}
 
                     {activeTool === 'flashcards' && (
-                        <motion.div 
-                            key="flashcards"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="h-full flex flex-col items-center justify-center gap-8"
-                        >
-                            <div className="w-full max-w-lg aspect-[4/3] relative perspective-1000 group cursor-pointer">
-                                <div className="w-full h-full p-12 bg-card/40 backdrop-blur-xl border border-white/10 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center text-center transition-all duration-700 group-hover:[transform:rotateY(180deg)] [transform-style:preserve-3d]">
-                                    {/* Front */}
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-12 [backface-visibility:hidden]">
-                                        <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 mb-6">
-                                            <Sparkles className="w-5 h-5" />
-                                        </div>
-                                        <h3 className="text-2xl font-bold leading-tight">What is the core principle of the Feynman Technique?</h3>
-                                        <p className="mt-8 text-xs font-bold uppercase tracking-widest text-foreground/20">Hover to Reveal</p>
-                                    </div>
-                                    {/* Back */}
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-12 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                        <p className="text-xl font-medium leading-relaxed text-purple-400">
-                                            The core principle is to explain a concept in simple terms, as if you were teaching it to a child, to identify gaps in your own understanding.
-                                        </p>
-                                    </div>
+                        <motion.div key="flashcards" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="h-full flex flex-col items-center justify-center gap-8">
+                            {generateFlashCardsMutation.isPending ? (
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                                    <p className="text-foreground/40 font-bold uppercase tracking-widest text-xs">ZED Generating Flash Cards...</p>
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <Button variant="outline" className="h-14 w-14 rounded-full border-white/5 bg-white/5"><RotateCcw className="w-5 h-5" /></Button>
-                                <Button className="h-14 px-8 rounded-full bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-500/20">Next Card</Button>
-                            </div>
+                            ) : flashCards.length > 0 ? (
+                                <>
+                                    <p className="text-xs font-black uppercase tracking-widest text-foreground/20">{currentCardIdx + 1} / {flashCards.length}</p>
+                                    <div className="w-full max-w-lg aspect-[4/3] relative cursor-pointer" onClick={() => setIsCardFlipped(f => !f)}>
+                                        <div className={cn("w-full h-full p-12 bg-card/40 backdrop-blur-xl border border-white/10 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center text-center transition-all duration-700 [transform-style:preserve-3d]", isCardFlipped && "[transform:rotateY(180deg)]")}>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-12 [backface-visibility:hidden]">
+                                                <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 mb-6"><Sparkles className="w-5 h-5" /></div>
+                                                <h3 className="text-2xl font-bold leading-tight">{flashCards[currentCardIdx]?.front}</h3>
+                                                <p className="mt-8 text-xs font-bold uppercase tracking-widest text-foreground/20">Click to Reveal Answer</p>
+                                            </div>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-12 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                                <p className="text-xl font-medium leading-relaxed text-purple-400">{flashCards[currentCardIdx]?.back}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <Button variant="outline" className="h-14 w-14 rounded-full border-white/5 bg-white/5" onClick={() => { setCurrentCardIdx(i => Math.max(0, i-1)); setIsCardFlipped(false); }}><RotateCcw className="w-5 h-5" /></Button>
+                                        <Button className="h-14 px-8 rounded-full bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-500/20" onClick={() => { setCurrentCardIdx(i => Math.min(flashCards.length-1, i+1)); setIsCardFlipped(false); }}>Next Card</Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-center text-foreground/20 font-bold uppercase tracking-widest">No flash cards generated yet.</div>
+                            )}
                         </motion.div>
                     )}
 

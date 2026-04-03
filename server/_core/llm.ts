@@ -39,11 +39,11 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  // Global Stable Models for April 2026
+  // Real stable Gemini models (April 2026)
   const modelsToTry = [
-    "gemini-3.0-flash",
-    "gemini-2.5-flash-latest",
-    "gemini-3.1-pro-preview"
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro"
   ];
 
   let lastError = "";
@@ -51,7 +51,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   for (const modelId of modelsToTry) {
     try {
       console.log(`[AI ATTEMPT] invoking ${modelId}...`);
-      const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
 
       const response = await fetch(url, {
         method: "POST",
