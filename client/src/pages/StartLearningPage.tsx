@@ -13,14 +13,18 @@ export default function StartLearningPage() {
     const [hours, setHours] = useState(3);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [step, setStep] = useState(0);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const analyzeMutation = trpc.study.analyzeMaterial.useMutation();
+    const uploadMaterialMutation = trpc.study.uploadMaterial.useMutation();
     const savePlanMutation = trpc.study.savePlan.useMutation({
         onSuccess: () => {
-            toast.success("Study plan generated successfully!");
-            setLocation('/gamification-levels');
+            toast.success("ZED Neural Plan Synced!");
+            setLocation('/schedule');
         }
     });
+
+    const [materialId, setMaterialId] = useState<number | null>(null);
 
     const analyzeSteps = [
         'Segmenting content...',
@@ -30,6 +34,21 @@ export default function StartLearningPage() {
         'Building daily schedule...',
         'Finalizing your plan...'
     ];
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const text = event.target?.result as string;
+            if (text) {
+                setContent(text);
+                toast.success(`Successfully loaded ${file.name}`);
+            }
+        };
+        reader.readAsText(file);
+    };
 
     const handleStartAnalysis = async () => {
         if (!content.trim()) {
@@ -50,6 +69,12 @@ export default function StartLearningPage() {
         }, 800);
 
         try {
+            const mat = await uploadMaterialMutation.mutateAsync({
+                title: "Syllabus Analysis",
+                content,
+                type: "syllabus"
+            });
+
             const { topics } = await analyzeMutation.mutateAsync({
                 content,
                 days,
@@ -57,14 +82,7 @@ export default function StartLearningPage() {
             });
 
             // Transform topics into a full schedule
-            const sessions: {
-                subject: string;
-                scheduledTime: string;
-                duration: number;
-                priority: "low" | "medium" | "high";
-                difficulty: "easy" | "medium" | "hard";
-                sessionType: "study" | "review";
-            }[] = [];
+            const sessions: any[] = [];
             const startDate = new Date();
             let currentTopicIdx = 0;
 
@@ -72,34 +90,25 @@ export default function StartLearningPage() {
                 const scheduledDate = new Date(startDate);
                 scheduledDate.setDate(startDate.getDate() + d);
 
-                // Add 1-2 sessions per day
+                // Add 2 sessions per day for focus
                 for (let s = 0; s < 2 && currentTopicIdx < topics.length; s++) {
                     const topic = topics[currentTopicIdx];
                     sessions.push({
                         subject: topic.title,
                         scheduledTime: scheduledDate.toISOString(),
                         duration: topic.duration,
-                        priority: (topic.difficulty === 'hard' ? 'high' : 'medium') as 'low' | 'medium' | 'high',
+                        priority: (topic.difficulty === 'hard' ? 'high' : 'medium'),
                         difficulty: topic.difficulty,
-                        sessionType: 'study' as 'study' | 'review'
+                        sessionType: 'study'
                     });
                     currentTopicIdx++;
                 }
-
-                // Add review after 3 days
-                if (d > 0 && d % 3 === 0) {
-                    sessions.push({
-                        subject: "Weekly Review",
-                        scheduledTime: scheduledDate.toISOString(),
-                        duration: 30,
-                        priority: 'medium',
-                        difficulty: 'easy',
-                        sessionType: 'review' as 'study' | 'review'
-                    });
-                }
             }
 
-            await savePlanMutation.mutateAsync({ sessions });
+            await savePlanMutation.mutateAsync({ 
+                materialId: mat.id,
+                sessions 
+            });
         } catch (error) {
             toast.error("Failed to analyze material. Please try again.");
             setIsAnalyzing(false);
@@ -185,12 +194,22 @@ export default function StartLearningPage() {
                                 </Button>
                             </div>
 
-                            <div className="bg-card/30 backdrop-blur-xl border border-white/5 p-8 rounded-3xl text-center group cursor-pointer hover:border-purple-500/30 transition-all">
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept=".txt,.rtf,.md,.pdf,.docx,.pptx"
+                                onChange={handleFileUpload}
+                            />
+                            <div 
+                                onClick={() => fileInputRef.current?.click()}
+                                className="bg-card/30 backdrop-blur-xl border border-white/5 p-8 rounded-3xl text-center group cursor-pointer hover:border-purple-500/30 transition-all"
+                            >
                                 <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                                     <Upload className="w-8 h-8 text-purple-400" />
                                 </div>
                                 <h3 className="text-xl font-bold mb-2">Upload Syllabus File</h3>
-                                <p className="text-foreground/50 text-sm">PDF, TXT, or DOCX up to 10MB</p>
+                                <p className="text-foreground/50 text-sm">PDF, TXT, PPTX, or DOCX (Up to 300MB)</p>
                             </div>
                         </motion.div>
                     ) : (

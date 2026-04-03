@@ -52,9 +52,10 @@ function getZEDSystemPrompt(params: {
   historyContext?: string, 
   knowledgeContext?: string, 
   scheduleContext?: string,
+  materialContext?: string,
   userStats?: string
 }) {
-  const { userName, tone, language, historyContext, knowledgeContext, scheduleContext, userStats } = params;
+  const { userName, tone, language, historyContext, knowledgeContext, scheduleContext, materialContext, userStats } = params;
   
   return `You are ZED, the Intelligent AI Study Buddy for LOCKEDIN.
   - USER: ${userName}.
@@ -67,14 +68,17 @@ function getZEDSystemPrompt(params: {
   USER PROGRESS & ACTIVITY:
   ${userStats || "No stats available."}
   
+  CURRENT SCHEDULE & TASKS:
+  ${scheduleContext || "Empty"}
+  
+  UPLOADED STUDY MATERIALS (Syllabus/Content):
+  ${materialContext || "No materials uploaded yet. Tell the user to upload syllabus if study plan is empty."}
+  
   INTERNAL MEMORY (Last messages):
   ${historyContext || "None"}
   
   ESTABLISHED FACTS ABOUT USER:
   ${knowledgeContext || "None yet. Learn habits/goals/preferences."}
-  
-  CURRENT SCHEDULE:
-  ${scheduleContext || "Empty"}
   
   CAPABILITIES & OUTPUT RULES (JSON ONLY):
   1. "response": Your direct reply.
@@ -354,6 +358,25 @@ export const appRouter = router({
 
   // Study Router
   study: router({
+    uploadMaterial: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        content: z.string().optional(),
+        type: z.string(),
+        fileUrl: z.string().optional()
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const [material] = await db.insert(studyMaterials).values({
+          userId: ctx.user.id,
+          title: input.title,
+          content: input.content,
+          type: input.type,
+          fileUrl: input.fileUrl,
+          createdAt: new Date().toISOString()
+        }).returning();
+        return material;
+      }),
+
     analyzeMaterial: protectedProcedure
       .input(z.object({
         content: z.string(),
@@ -362,26 +385,34 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         try {
-          const prompt = `Analyze the following study material and extract exactly 5 to 10 logical study topics.
-          Output formatting (JSON array):
-          [{ "title": "...", "difficulty": "...", "duration": 60 }]
-          Material: ${input.content.substring(0, 5000)}`;
+          const prompt = `Analyze this study material: "${input.content.substring(0, 8000)}"
+          
+          The user wants to study this over ${input.days} days, for ${input.hoursPerDay} hours per day.
+          
+          As ZED AI, divide this into logical study "phases" or "tasks".
+          Each phase should be a specific study session.
+          
+          Output MUST be a JSON array of objects:
+          [{ "title": "Topic Name", "difficulty": "easy/medium/hard", "duration": minutes_as_number }]
+          
+          Focus on creating 2-3 sessions per day for the duration.`;
 
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are an expert curriculum analyzer. Extract structured study topics accurately in JSON." },
+              { role: "system", content: "You are ZED, the ultimate neural study coach. You break down complex materials into actionable, hyper-focused study phases." },
               { role: "user", content: prompt },
             ],
           });
 
-          const content = response.choices[0]?.message?.content || "[]";
-          const rawContent = typeof content === "string" ? content : String(content);
+          const resContent = response.choices[0]?.message?.content || "[]";
+          const rawContent = typeof resContent === "string" ? resContent : String(resContent);
           const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
           const topics = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
 
-          return { topics: topics.length > 0 ? topics : [{ title: 'Core Fundamentals', difficulty: 'medium', duration: 60 }] };
+          return { topics: topics.length > 0 ? topics : [{ title: 'Neural Overview', difficulty: 'medium', duration: 60 }] };
         } catch (error: any) {
-          return { topics: [{ title: 'Overview', difficulty: 'medium', duration: 60 }] };
+          console.error("ZED Analysis Error:", error);
+          return { topics: [{ title: 'Neural Overview', difficulty: 'medium', duration: 60 }] };
         }
       }),
 
@@ -571,6 +602,9 @@ export const appRouter = router({
           const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, ctx.user.id));
           const userStats = `Level: ${profile?.level || 1}, XP: ${profile?.xp || 0}, Streak: ${profile?.streak || 0}. Total Tasks in Schedule: ${schedule.length}. Completed Tasks: ${schedule.filter(s => (s as any).completed === 1).length}.`;
 
+          const materials = await db.select().from(studyMaterials).where(eq(studyMaterials.userId, ctx.user.id)).limit(5);
+          const materialContext = (materials as any[]).map((m: any) => `Type: ${m.type}, Title: ${m.title}, Content Snippet: ${m.content?.substring(0, 300)}...`).join('\n');
+
           const systemMsg = getZEDSystemPrompt({
             userName: ctx.user.name || "User",
             tone: settings?.aiTone || 'friendly',
@@ -578,6 +612,7 @@ export const appRouter = router({
             historyContext,
             knowledgeContext,
             scheduleContext,
+            materialContext,
             userStats
           });
 

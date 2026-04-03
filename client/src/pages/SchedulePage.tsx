@@ -4,7 +4,7 @@ import {
   Calendar, Clock, CheckCircle2, Circle, 
   Bot, Send, Sparkles, ChevronRight, 
   AlertTriangle, RotateCcw, Play, Plus,
-  Loader2, Map
+  Loader2, Map, BookOpen
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -227,21 +227,37 @@ export default function SchedulePage() {
 
                         <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           {!session.completed && (
-                            <Button 
-                              onClick={() => setLocation(`/study-session/${session.id}`)}
-                              className="h-10 w-10 p-0 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/20"
-                            >
-                              <Play className="w-5 h-5 fill-current" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                onClick={() => setLocation(`/study-session/${session.id}`)}
+                                className="h-10 px-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/20 text-[10px] font-black uppercase tracking-widest gap-2"
+                              >
+                                <Play className="w-4 h-4 fill-current" />
+                                Join Session
+                              </Button>
+                              <Button 
+                                onClick={() => {
+                                  toast.info("ZED is initializing your neural examination protocol...");
+                                  setTimeout(() => setLocation('/gamification-levels'), 1500);
+                                }}
+                                className="h-10 px-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest gap-2"
+                              >
+                                <BookOpen className="w-4 h-4" />
+                                Enter Exam
+                              </Button>
+                            </div>
                           )}
                           <Button 
                             onClick={() => handleToggleStatus(session.id, session.completed || 0)}
                             className={cn(
-                              "h-10 w-10 p-0 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10",
-                              session.completed ? "text-emerald-500" : "text-white/40"
+                              "h-10 w-full rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center gap-2",
+                              session.completed ? "text-emerald-500 border-emerald-500/20" : "text-white/40"
                             )}
                           >
-                            <CheckCircle2 className="w-5 h-5" />
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                {session.completed ? "Neural Locked" : "Mark as Synced"}
+                            </span>
                           </Button>
                         </div>
                       </div>
