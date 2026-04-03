@@ -41,9 +41,9 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   // Updated Stable Model IDs for 2026
   const modelsToTry = [
+    "gemini-1.5-flash-latest",
     "gemini-1.5-flash",
-    "gemini-1.5-pro",
-    "gemini-pro"
+    "gemini-1.5-pro-latest"
   ];
 
   let lastError = "";
@@ -51,7 +51,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   for (const modelId of modelsToTry) {
     try {
       console.log(`[AI ATTEMPT] invoking ${modelId}...`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
 
       const response = await fetch(url, {
         method: "POST",

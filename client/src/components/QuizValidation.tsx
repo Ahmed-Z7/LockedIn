@@ -34,6 +34,19 @@ interface QuizValidationProps {
 }
 
 export function QuizValidation({ quiz, onComplete, onRetry, subject }: QuizValidationProps) {
+  if (!quiz || quiz.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center space-y-6">
+        <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center">
+            <XCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Neural Link Failure</h2>
+        <p className="text-white/40 text-sm max-w-xs">ZED was unable to synthesize the exam matrix. Please try again later.</p>
+        <Button onClick={onRetry} className="h-12 px-8 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10">Close Telemetry</Button>
+      </div>
+    );
+  }
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [score, setScore] = useState(0);
