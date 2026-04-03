@@ -39,11 +39,12 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  // Real stable Gemini models (April 2026)
+  // Stable Gemini Models (Free tier friendly)
   const modelsToTry = [
-    "gemini-2.0-flash",
     "gemini-1.5-flash",
-    "gemini-1.5-pro"
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-pro",
+    "gemini-2.0-flash" // Try 2.0 last to avoid immediate 429 if quota is hit
   ];
 
   let lastError = "";
@@ -51,7 +52,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   for (const modelId of modelsToTry) {
     try {
       console.log(`[AI ATTEMPT] invoking ${modelId}...`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
 
       const response = await fetch(url, {
         method: "POST",

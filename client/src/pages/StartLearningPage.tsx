@@ -150,12 +150,15 @@ export default function StartLearningPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center mb-12"
                 >
-                    <h1 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                    <h1 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent italic">
                         What do you want to master? ✨
                     </h1>
-                    <p className="text-foreground/60 text-lg">
-                        Upload your study material and let AI build your perfect plan.
+                    <p className="text-foreground/60 text-lg font-medium">
+                        Paste your syllabus or study material to build your perfect plan <span className="text-purple-400 font-bold uppercase tracking-widest">in seconds.</span>
                     </p>
+                    <div className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-black uppercase tracking-widest">
+                        🚀 Tip: Direct text pasting provides 10x faster and more accurate neural mapping.
+                    </div>
                 </motion.div>
 
                 <AnimatePresence mode="wait">

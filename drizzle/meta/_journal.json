@@ -22,6 +22,13 @@
       "when": 1775171305640,
       "tag": "0002_free_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775183664191,
+      "tag": "0003_eager_tigra",
+      "breakpoints": true
     }
   ]
 }
