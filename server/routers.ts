@@ -18,7 +18,7 @@ import {
   studyGroupTasks, studyGroupMessages, studyGroupMaterials,
   notifications, userSettings, InsertUserSetting, verificationCodes,
   userAIKnowledge, InsertUserAIKnowledge,
-  aiConversations, aiChatHistory
+  aiConversations, aiChatHistory, flashCardDecks, flashCards
 } from "../drizzle/schema";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
@@ -385,34 +385,88 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         try {
-          const prompt = `Analyze this study material: "${input.content.substring(0, 8000)}"
+          // Check if content is sparse (short text), if so, invoke "Neural Expansion"
+          const isSparse = input.content.length < 50;
           
-          The user wants to study this over ${input.days} days, for ${input.hoursPerDay} hours per day.
-          
-          As ZED AI, divide this into logical study "phases" or "tasks".
-          Each phase should be a specific study session.
-          
-          Output MUST be a JSON array of objects:
-          [{ "title": "Topic Name", "difficulty": "easy/medium/hard", "duration": minutes_as_number }]
-          
-          Focus on creating 2-3 sessions per day for the duration.`;
+          const prompt = isSparse 
+            ? `RESEARCH & EXPAND: The user provided only a tiny prompt: "${input.content}". 
+               As ZED AI, use your vast internal knowledge to build a COMPREHENSIVE study syllabus for this topic. 
+               The user wants to study this over ${input.days} days, ${input.hoursPerDay} hours/day.
+               Break it down into logical "phases" (tasks) that cover everything from basics to advanced.
+               Output MUST be a JSON array of objects: [{ "title": "Topic Name", "difficulty": "easy/medium/hard", "duration": minutes }]`
+            : `Analyze this material: "${input.content.substring(0, 8000)}"
+               Divide into study tasks over ${input.days} days, ${input.hoursPerDay} hours/day.
+               Output MUST be a JSON array: [{ "title": "Topic Name", "difficulty": "easy/medium/hard", "duration": minutes }]`;
 
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are ZED, the ultimate neural study coach. You break down complex materials into actionable, hyper-focused study phases." },
+              { role: "system", content: "You are ZED, the ultimate neural study coach. You expansionize or decompose materials into actionable, hyper-focused study phases." },
               { role: "user", content: prompt },
             ],
           });
 
           const resContent = response.choices[0]?.message?.content || "[]";
-          const rawContent = typeof resContent === "string" ? resContent : String(resContent);
-          const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+          const jsonMatch = String(resContent).match(/\[[\s\S]*\]/);
           const topics = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
 
-          return { topics: topics.length > 0 ? topics : [{ title: 'Neural Overview', difficulty: 'medium', duration: 60 }] };
+          return { topics: topics.length > 0 ? topics : [{ title: 'Fundamentals of ' + input.content, difficulty: 'medium', duration: 60 }] };
         } catch (error: any) {
           console.error("ZED Analysis Error:", error);
           return { topics: [{ title: 'Neural Overview', difficulty: 'medium', duration: 60 }] };
+        }
+      }),
+
+    generateStandaloneQuiz: protectedProcedure
+      .input(z.object({
+        content: z.string().optional(),
+        count: z.number().min(8).max(30),
+        sessionId: z.number().optional()
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+           let context = input.content || "General concepts";
+           
+           if (input.sessionId) {
+              const sessions = await db
+                .select()
+                .from(studySchedules)
+                .where(eq(studySchedules.id, input.sessionId))
+                .limit(1);
+              
+              const session = sessions[0];
+              if (session) {
+                // Fetch material if exists
+                const materials = await db
+                  .select()
+                  .from(studyMaterials)
+                  .where(eq(studyMaterials.id, session.materialId || 0))
+                  .limit(1);
+                
+                if (materials[0]?.content) {
+                  context = `MATERIAL TITLE: ${materials[0].title}\nCONTENT: ${materials[0].content.substring(0, 5000)}`;
+                }
+              }
+           }
+
+           const prompt = `Generate a high-quality ZED Neural Exam. 
+           FOCUS CONTEXT: ${context}
+           COUNT: ${input.count} questions.
+           FORMAT: JSON array of objects: [{ "question": "string", "options": ["A", "B", "C", "D"], "answer": "Exact String", "type": "MULTIPLE CHOICE", "weakness": "Explanation of why wrong" }]`;
+           
+           const response = await invokeLLM({
+             messages: [
+               { role: "system", content: "You are the ZED Examination Engine. Create rigorous, helpful, and clear questions based on content." },
+               { role: "user", content: prompt },
+             ],
+           });
+
+           const resContent = response.choices[0]?.message?.content || "[]";
+           const jsonMatch = String(resContent).match(/\[[\s\S]*\]/);
+           const quiz = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
+           
+           return { quiz: quiz.slice(0, input.count) };
+        } catch (e) {
+           return { quiz: [] };
         }
       }),
 

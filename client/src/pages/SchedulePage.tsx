@@ -12,6 +12,7 @@ import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { QuizValidation } from '@/components/QuizValidation';
 
 export default function SchedulePage() {
   const { isAuthenticated } = useAuth();
@@ -25,6 +26,11 @@ export default function SchedulePage() {
   ]);
   const [editingSession, setEditingSession] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ subject: '', duration: 0 });
+  const [selectedSessionForExam, setSelectedSessionForExam] = useState<any>(null);
+  const [examConfig, setExamConfig] = useState({ open: false, count: 10 });
+  const [quizData, setQuizData] = useState<any[]>([]);
+  const [isExamActive, setIsExamActive] = useState(false);
+  const [isGeneratingExam, setIsGeneratingExam] = useState(false);
 
   const { data: schedule, isLoading } = trpc.study.getSchedule.useQuery(undefined, { 
     enabled: isAuthenticated 
@@ -40,6 +46,8 @@ export default function SchedulePage() {
       utils.study.getSchedule.invalidate();
     }
   });
+
+  const generateQuizMutation = trpc.study.generateStandaloneQuiz.useMutation();
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,6 +76,32 @@ export default function SchedulePage() {
     setMessages(prev => [...prev, { role: 'user', content: msg }]);
     
     await adjustMutation.mutateAsync({ message: msg });
+  };
+
+  const handleStartExam = async () => {
+    if (!selectedSessionForExam) return;
+    setExamConfig(prev => ({ ...prev, open: false }));
+    setIsExamActive(true);
+    setIsGeneratingExam(true);
+    
+    try {
+      const res = await generateQuizMutation.mutateAsync({
+        count: examConfig.count,
+        sessionId: selectedSessionForExam.id,
+        content: selectedSessionForExam.subject // Simple context for now
+      });
+      setQuizData(res.quiz);
+    } catch (e) {
+      toast.error("Telemetry link failed. Neural quiz not generated.");
+      setIsExamActive(false);
+    } finally {
+      setIsGeneratingExam(false);
+    }
+  };
+
+  const handleUpdateSession = async () => {
+    setEditForm({ subject: '', duration: 0 });
+    setEditingSession(null);
   };
 
   if (!isAuthenticated) return null;
@@ -237,8 +271,8 @@ export default function SchedulePage() {
                               </Button>
                               <Button 
                                 onClick={() => {
-                                  toast.info("ZED is initializing your neural examination protocol...");
-                                  setTimeout(() => setLocation('/gamification-levels'), 1500);
+                                  setSelectedSessionForExam(session);
+                                  setExamConfig({ open: true, count: 10 });
                                 }}
                                 className="h-10 px-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest gap-2"
                               >
@@ -358,6 +392,78 @@ export default function SchedulePage() {
 
         </div>
       </div>
+
+      {/* EXAM CONFIG MODAL */}
+      <AnimatePresence>
+        {examConfig.open && (
+           <motion.div 
+             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+             className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6"
+           >
+             <motion.div 
+               initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+               className="bg-zinc-900 border border-white/10 p-8 rounded-[2.5rem] max-w-sm w-full text-center space-y-6"
+             >
+                <div className="w-16 h-16 bg-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto">
+                    <BookOpen className="w-8 h-8 text-indigo-400" />
+                </div>
+                <h2 className="text-2xl font-black text-white">Neural Exam</h2>
+                <p className="text-white/40 text-sm">Select target question depth for ${selectedSessionForExam?.subject}</p>
+                
+                <div className="flex gap-2">
+                    {[10, 20, 30].map(c => (
+                        <button 
+                            key={c}
+                            onClick={() => setExamConfig(prev => ({ ...prev, count: c }))}
+                            className={cn(
+                                "flex-1 py-3 rounded-xl border text-xs font-black transition-all",
+                                examConfig.count === c ? "bg-indigo-600 border-indigo-600 text-white" : "border-white/5 bg-white/5 text-white/40"
+                            )}
+                        >
+                            {c} Qs
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex gap-2">
+                    <Button 
+                        variant="ghost" className="flex-1 rounded-xl h-12"
+                        onClick={() => setExamConfig({ open: false, count: 10 })}
+                    >Cancel</Button>
+                    <Button 
+                        className="flex-1 rounded-xl h-12 bg-indigo-600"
+                        onClick={handleStartExam}
+                    >Initialize</Button>
+                </div>
+             </motion.div>
+           </motion.div>
+        )}
+
+        {isExamActive && (
+            <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-3xl pt-24 overflow-y-auto"
+            >
+                {isGeneratingExam ? (
+                    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+                        <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mb-6" />
+                        <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">ZED is synthesizing exam...</h2>
+                    </div>
+                ) : (
+                    <QuizValidation 
+                        quiz={quizData}
+                        subject={selectedSessionForExam?.subject || "Core Mastery"}
+                        onComplete={() => {
+                            setIsExamActive(false);
+                            toast.success("Examination Complete. Neural metrics updated.");
+                            utils.study.getSchedule.invalidate();
+                        }}
+                        onRetry={() => setIsExamActive(false)}
+                    />
+                )}
+            </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

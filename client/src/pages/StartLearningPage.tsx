@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Wand2, FileText, CheckCircle2, ChevronRight, Clock, Calendar } from 'lucide-react';
+import { Upload, Wand2, FileText, CheckCircle2, ChevronRight, Clock, Calendar, XCircle } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ export default function StartLearningPage() {
     const [hours, setHours] = useState(3);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [step, setStep] = useState(0);
+    const [uploadedFiles, setUploadedFiles] = useState<{ name: string; size: string; id: string; content?: string }[]>([]);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const analyzeMutation = trpc.study.analyzeMaterial.useMutation();
@@ -38,23 +39,44 @@ export default function StartLearningPage() {
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        if (uploadedFiles.length >= 3) {
+            toast.error("ZED Queue limited to 3 neural materials.");
+            return;
+        }
 
+        const id = Math.random().toString(36).substring(7);
         const reader = new FileReader();
+        
         reader.onload = (event) => {
             const text = event.target?.result as string;
-            if (text) {
-                setContent(text);
-                toast.success(`Successfully loaded ${file.name}`);
-            }
+            // Only take a sample for large files to avoid hanging
+            const sample = text.substring(0, 50000); 
+            setUploadedFiles(prev => [...prev, { 
+                id, 
+                name: file.name, 
+                size: (file.size / 1024 / 1024).toFixed(1) + "MB",
+                content: sample
+            }]);
+            toast.success(`${file.name} synced to queue.`);
         };
-        reader.readAsText(file);
+        
+        // For very large files, read only a slice to avoid browser hang
+        const blob = file.slice(0, 100000); 
+        reader.readAsText(blob);
+    };
+
+    const removeFile = (id: string) => {
+        setUploadedFiles(prev => prev.filter(f => f.id !== id));
     };
 
     const handleStartAnalysis = async () => {
-        if (!content.trim()) {
-            toast.error("Please provide some study material first!");
+        if (!content.trim() && uploadedFiles.length === 0) {
+            toast.error("Please provide some study material or upload files!");
             return;
         }
+
+        // Combine content from textarea and files
+        const combinedContent = content + "\n\n" + uploadedFiles.map(f => `FILE: ${f.name}\nCONTENT SAMPLE: ${f.content}`).join("\n\n");
 
         setIsAnalyzing(true);
         setStep(0);
@@ -70,13 +92,13 @@ export default function StartLearningPage() {
 
         try {
             const mat = await uploadMaterialMutation.mutateAsync({
-                title: "Syllabus Analysis",
-                content,
+                title: uploadedFiles.length > 0 ? uploadedFiles[0].name : "Syllabus Analysis",
+                content: combinedContent,
                 type: "syllabus"
             });
 
             const { topics } = await analyzeMutation.mutateAsync({
-                content,
+                content: combinedContent,
                 days,
                 hoursPerDay: hours
             });
@@ -183,13 +205,39 @@ export default function StartLearningPage() {
                                     </div>
                                 </div>
 
+                                {/* FILE QUEUE */}
+                                {uploadedFiles.length > 0 && (
+                                    <div className="mt-8 space-y-3">
+                                        <label className="block text-xs font-semibold text-foreground/50 uppercase tracking-wider">Neural Material Queue</label>
+                                        {uploadedFiles.map(file => (
+                                            <div key={file.id} className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl group/item">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center">
+                                                        <FileText className="w-5 h-5 text-purple-400" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-white max-w-[200px] truncate">{file.name}</p>
+                                                        <p className="text-[10px] text-white/30 font-medium">{file.size}</p>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    onClick={() => removeFile(file.id)}
+                                                    className="p-2 hover:bg-red-500/20 text-white/20 hover:text-red-400 rounded-lg transition-all"
+                                                >
+                                                    <XCircle className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
                                 <Button
                                     onClick={handleStartAnalysis}
                                     className="w-full mt-8 py-6 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg shadow-purple-500/20 group"
                                 >
                                     <span className="text-lg font-bold flex items-center gap-2">
                                         <Wand2 className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                                        Generate Study Plan
+                                        Initialize Path
                                     </span>
                                 </Button>
                             </div>
@@ -201,16 +249,20 @@ export default function StartLearningPage() {
                                 accept=".txt,.rtf,.md,.pdf,.docx,.pptx"
                                 onChange={handleFileUpload}
                             />
-                            <div 
-                                onClick={() => fileInputRef.current?.click()}
-                                className="bg-card/30 backdrop-blur-xl border border-white/5 p-8 rounded-3xl text-center group cursor-pointer hover:border-purple-500/30 transition-all"
-                            >
-                                <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                    <Upload className="w-8 h-8 text-purple-400" />
+                            {uploadedFiles.length < 3 && (
+                                <div 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="bg-card/30 backdrop-blur-xl border border-white/5 p-6 rounded-3xl text-center group cursor-pointer hover:border-purple-500/30 transition-all flex items-center justify-center gap-4"
+                                >
+                                    <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <Upload className="w-6 h-6 text-purple-400" />
+                                    </div>
+                                    <div className="text-left">
+                                        <h3 className="text-sm font-bold">Sync New Material</h3>
+                                        <p className="text-foreground/40 text-[10px]">PDF, TXT, PPTX (300MB LIMIT)</p>
+                                    </div>
                                 </div>
-                                <h3 className="text-xl font-bold mb-2">Upload Syllabus File</h3>
-                                <p className="text-foreground/50 text-sm">PDF, TXT, PPTX, or DOCX (Up to 300MB)</p>
-                            </div>
+                            )}
                         </motion.div>
                     ) : (
                         <motion.div
