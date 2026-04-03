@@ -449,9 +449,11 @@ export const appRouter = router({
            }
 
            const prompt = `Generate a high-quality ZED Neural Exam. 
+           STRICT RULE: Focus 100% on the SCIENTIFIC/ACADEMIC CONTENT of the provided material. 
+           DO NOT ask about study techniques, pomodoro, focus, or productivity. ONLY ask about the subject matter.
            FOCUS CONTEXT: ${context}
            COUNT: ${input.count} questions.
-           FORMAT: JSON array of objects: [{ "question": "string", "options": ["A", "B", "C", "D"], "answer": "Exact String", "type": "MULTIPLE CHOICE", "weakness": "Explanation of why wrong" }]`;
+           FORMAT: JSON array of objects: [{ "question": "string", "options": ["A", "B", "C", "D"], "answer": "Exact String", "type": "MULTIPLE CHOICE", "weakness": "Scientific explanation of why wrong" }]`;
            
            const response = await invokeLLM({
              messages: [
@@ -786,7 +788,10 @@ export const appRouter = router({
       .input(z.object({ sessionId: z.number(), content: z.string() }))
       .mutation(async ({ input }) => {
         try {
-          const prompt = `Generate exactly 5 high-quality MCQs from this content: ${input.content.substring(0, 4000)}. Return JSON array.`;
+          const prompt = `Generate exactly 5 high-quality MCQs from this SCIENTIFIC/ACADEMIC content: ${input.content.substring(0, 4000)}. 
+          STRICT RULE: Focus ONLY on the subject matter concepts. 
+          DO NOT ask about study techniques, productivity, or focus. 
+          Return JSON array.`;
           const response = await invokeLLM({
             messages: [
               { role: "system", content: "Educational assessment AI. Respond with JSON MCQs." },

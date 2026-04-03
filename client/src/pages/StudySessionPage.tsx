@@ -200,7 +200,7 @@ export default function StudySessionPage() {
     try {
       const res = await generateQuizMutation.mutateAsync({
         sessionId,
-        content: session?.material?.content || "General study productivity and focus techniques."
+        content: session?.material?.content || "Subject Core Material Analysis and Key Scientific Concepts."
       });
       if (res.quiz && res.quiz.length > 0) {
         setQuizData(res.quiz);
@@ -209,42 +209,42 @@ export default function StudySessionPage() {
       }
     } catch (err) {
       console.error("Neural link error during quiz synthesis, using fallback protocols.", err);
-      // High-quality Fallback Quiz (General Study Science)
+      // High-quality Fallback Quiz (General Knowledge)
       setQuizData([
         { 
-            question: "What is the most effective way to retain information during a high-intensity study session?", 
-            options: ["Active Recall", "Passive Reading", "Highlighting everything", "Multi-tasking"], 
-            answer: "Active Recall", 
+            question: "What is the primary objective of this study session?", 
+            options: ["Mastering the core topic", "Passive reading", "Memorization only", "Multi-tasking"], 
+            answer: "Mastering the core topic", 
             type: "MULTIPLE CHOICE", 
-            weakness: "Passive reading is less effective than actively testing yourself." 
+            weakness: "The session aims at deep understanding and neural synthesis of the subject." 
         },
         { 
-            question: "How long should a standard Pomodoro break typically last for optimal neural recovery?", 
-            options: ["5 minutes", "30 minutes", "1 hour", "No break needed"], 
-            answer: "5 minutes", 
+            question: "How do you verify the logic behind a complex scientific concept?", 
+            options: ["Simplification and testing", "Repeating the words", "Ignoring details", "Asking a friend"], 
+            answer: "Simplification and testing", 
             type: "MULTIPLE CHOICE", 
-            weakness: "Longer breaks can break the flow state, while no breaks lead to fatigue." 
+            weakness: "Deep mastery requires testing the underlying logic and simplifying the core idea." 
         },
         { 
-            question: "Which of these is a major sign of 'Flow State' during deep work?", 
-            options: ["Time distortion", "Checking phone", "Feeling bored", "Listening to TV"], 
-            answer: "Time distortion", 
+            question: "Which of these represents a successful 'Neural Link' during study?", 
+            options: ["Total absorption", "Constant distraction", "Feeling sleepy", "Watching videos"], 
+            answer: "Total absorption", 
             type: "MULTIPLE CHOICE", 
-            weakness: "Flow state is characterized by total absorption and loss of time sense." 
+            weakness: "Success is characterized by a state of deep focus and intellectual absorption." 
         },
         { 
-            question: "What should you do if you encounter a distraction while your 'Neural Lock' is active?", 
-            options: ["Ignore and refocus", "Check it briefly", "Stop the session", "Call a friend"], 
-            answer: "Ignore and refocus", 
+            question: "Why is it important to review the topic content immediately after a session?", 
+            options: ["To solidify neural paths", "To waste time", "To feel good", "To finish fast"], 
+            answer: "To solidify neural paths", 
             type: "MULTIPLE CHOICE", 
-            weakness: "Every distraction costs time and focus; refocusing is the key to mastery." 
+            weakness: "Immediate review helps transition information from short-term to long-term memory." 
         },
         { 
-            question: "According to the Feynman Technique, how do you verify you truly understand a topic?", 
-            options: ["Explain it simply", "Read the book again", "Memorize the terms", "Copy notes"], 
-            answer: "Explain it simply", 
+            question: "What is the key to mastering a new academic discipline?", 
+            options: ["Consistent deep focus", "Random reading", "Guessing answers", "Skipping fundamentals"], 
+            answer: "Consistent deep focus", 
             type: "MULTIPLE CHOICE", 
-            weakness: "If you can't explain it simply, you don't understand it well enough." 
+            weakness: "Consistency and deep neural application are the keys to true academic mastery." 
         }
       ]);
     } finally {

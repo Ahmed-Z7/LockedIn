@@ -39,11 +39,11 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  // Updated Stable Model IDs for 2026
+  // Global Stable Models for April 2026
   const modelsToTry = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro-latest"
+    "gemini-3.0-flash",
+    "gemini-2.5-flash-latest",
+    "gemini-3.1-pro-preview"
   ];
 
   let lastError = "";
