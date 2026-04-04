@@ -555,6 +555,16 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
     const removeMutation = trpc.social.removeFriend.useMutation();
     const utils = trpc.useUtils();
     const [, setLocation] = useLocation();
+    const utils = trpc.useUtils();
+
+    const friends = useMemo(() => {
+        if (!friendsQuery.data) return [];
+        return [...friendsQuery.data].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }, [friendsQuery.data]);
+
+    const requests = requestsQuery.data || [];
+    const favorites = friends.filter(f => f.isFavorite);
+    const regularFriends = friends.filter(f => !f.isFavorite);
 
     if (!isOwnProfile) {
         return (
@@ -571,15 +581,6 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
             <div className="font-black text-white/20 uppercase tracking-[0.3em] text-xs">Scanning Neural Network...</div>
         </div>
     );
-
-    const friends = useMemo(() => {
-        if (!friendsQuery.data) return [];
-        return [...friendsQuery.data].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    }, [friendsQuery.data]);
-
-    const requests = requestsQuery.data || [];
-    const favorites = friends.filter(f => f.isFavorite);
-    const regularFriends = friends.filter(f => !f.isFavorite);
 
     const handleAction = async (friendId: number, action: 'view' | 'dm' | 'fav' | 'unfav' | 'delete') => {
         try {
