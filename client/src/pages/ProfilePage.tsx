@@ -146,16 +146,6 @@ export default function ProfilePage() {
     setShowOctopus(true);
   };
 
-  if (isLoading) return (
-    <div className="min-h-screen bg-background text-white pt-24 pb-20 relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[70vw] h-[70vw] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="max-w-7xl mx-auto px-6 pt-20">
-         <div className="h-64 w-full bg-white/5 animate-pulse rounded-[3rem]" />
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-background text-white pt-24 pb-20 relative overflow-hidden selection:bg-purple-500/30">
         <Navbar />
@@ -163,31 +153,37 @@ export default function ProfilePage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 pt-12 relative z-10">
-        <div className="absolute inset-0 pointer-events-none">
-            {[...Array(15)].map((_, i) => (
-                <motion.div
-                    key={i}
-                    className="absolute w-1 h-1 bg-purple-500/20 rounded-full"
-                    animate={{
-                        y: [-100, 1000],
-                        opacity: [0, 1, 0],
-                        scale: [0, 1.5, 0]
-                    }}
-                    transition={{
-                        duration: Math.random() * 10 + 10,
-                        repeat: Infinity,
-                        delay: Math.random() * 20
-                    }}
-                    style={{
-                        left: `${Math.random() * 100}%`,
-                        top: `-10%`
-                    }}
-                />
-            ))}
-        </div>
+        {isLoading ? (
+             <div className="pt-20">
+                <div className="h-64 w-full bg-white/5 animate-pulse rounded-[3rem]" />
+             </div>
+        ) : (
+            <>
+                <div className="absolute inset-0 pointer-events-none">
+                    {[...Array(15)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            className="absolute w-1 h-1 bg-purple-500/20 rounded-full"
+                            animate={{
+                                y: [-100, 1000],
+                                opacity: [0, 1, 0],
+                                scale: [0, 1.5, 0]
+                            }}
+                            transition={{
+                                duration: Math.random() * 10 + 10,
+                                repeat: Infinity,
+                                delay: Math.random() * 20
+                            }}
+                            style={{
+                                left: `${Math.random() * 100}%`,
+                                top: `-10%`
+                            }}
+                        />
+                    ))}
+                </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-12">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-12">
                 <div className="space-y-12">
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
@@ -462,8 +458,10 @@ export default function ProfilePage() {
                     <StreakCalendar profile={profile} />
                     <ZedCorePreview setLocation={setLocation} />
                 </div>
-            </div>
-        </Tabs>
+                    </div>
+                </Tabs>
+            </>
+        )}
       </div>
 
 
@@ -555,7 +553,6 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
     const removeMutation = trpc.social.removeFriend.useMutation();
     const utils = trpc.useUtils();
     const [, setLocation] = useLocation();
-    const utils = trpc.useUtils();
 
     const friends = useMemo(() => {
         if (!friendsQuery.data) return [];
@@ -565,23 +562,6 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
     const requests = requestsQuery.data || [];
     const favorites = friends.filter(f => f.isFavorite);
     const regularFriends = friends.filter(f => !f.isFavorite);
-
-    if (!isOwnProfile) {
-        return (
-            <div className="py-20 text-center flex flex-col items-center gap-4 bg-white/[0.02] border border-dashed border-white/10 rounded-[3rem]">
-                 <Shield className="w-8 h-8 text-white/10" />
-                 <p className="text-xs font-black text-white/20 uppercase tracking-[0.2em]">Neural Network data is private.</p>
-            </div>
-        );
-    }
-
-    if (friendsQuery.isLoading) return (
-        <div className="h-64 flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
-            <div className="font-black text-white/20 uppercase tracking-[0.3em] text-xs">Scanning Neural Network...</div>
-        </div>
-    );
-
     const handleAction = async (friendId: number, action: 'view' | 'dm' | 'fav' | 'unfav' | 'delete') => {
         try {
             switch (action) {
@@ -607,6 +587,22 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
             toast.error("Process interrupted.");
         }
     };
+
+    if (!isOwnProfile) {
+        return (
+            <div className="py-20 text-center flex flex-col items-center gap-4 bg-white/[0.02] border border-dashed border-white/10 rounded-[3rem]">
+                 <Shield className="w-8 h-8 text-white/10" />
+                 <p className="text-xs font-black text-white/20 uppercase tracking-[0.2em]">Neural Network data is private.</p>
+            </div>
+        );
+    }
+
+    if (friendsQuery.isLoading) return (
+        <div className="h-64 flex flex-col items-center justify-center gap-4">
+            <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+            <div className="font-black text-white/20 uppercase tracking-[0.3em] text-xs">Scanning Neural Network...</div>
+        </div>
+    );
 
     return (
         <div className="space-y-12">
