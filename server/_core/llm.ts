@@ -41,15 +41,19 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
   // Stable Gemini Models (Free tier friendly)
   const modelsToTry = [
+    "gemini-1.5-flash-latest",
     "gemini-1.5-flash",
     "gemini-1.5-flash-8b",
     "gemini-1.5-pro",
-    "gemini-2.0-flash" // Try 2.0 last to avoid immediate 429 if quota is hit
+    "gemini-2.0-flash" 
   ];
 
   let lastError = "";
 
   for (const modelId of modelsToTry) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15s absolute timeout per attempt
+
     try {
       console.log(`[AI ATTEMPT] invoking ${modelId}...`);
       const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
@@ -57,6 +61,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({ 
           contents,
           generationConfig: {
@@ -67,6 +72,8 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
           }
         }),
       });
+
+      clearTimeout(timeout);
 
       if (response.ok) {
         const data = await response.json();
@@ -88,8 +95,9 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
         console.error(`[AI ERROR] ${modelId} failed:`, lastError);
       }
     } catch (err: any) {
-      lastError = err.message;
-      console.error(`[AI FETCH FAILURE] ${modelId}:`, err.message);
+      clearTimeout(timeout);
+      lastError = err.name === 'AbortError' ? "Timeout after 15s" : err.message;
+      console.error(`[AI FETCH FAILURE] ${modelId}:`, lastError);
     }
   }
 
