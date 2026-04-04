@@ -290,7 +290,7 @@ export default function CommunityPage() {
                 
                 <div className="space-y-8">
                   {generalPosts.data?.map((post: any) => (
-                    <PostItem key={post.id} post={post} />
+                    <PostItem key={post.id} post={post} type="community" />
                   ))}
                 </div>
               </motion.div>
@@ -534,6 +534,9 @@ const CreateGroupModal = ({ onClose, onCreated }: { onClose: () => void, onCreat
         onSuccess: () => {
             toast.success("Study Group initialized!");
             onCreated();
+        },
+        onError: (err) => {
+            toast.error(err.message || "Failed to initialize collective. Check encryption links.");
         }
     });
 
@@ -800,7 +803,7 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                                     Primary Feed Empty. Initialize a transmission.
                                 </div>
                             ) : (
-                                groupData.data?.map(post => <PostItem key={post.id} post={post} />)
+                                groupData.data?.map(post => <PostItem key={post.id} post={post} type="group" />)
                             )}
                         </div>
                     )}
@@ -986,28 +989,53 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
 
 // --- POST HELPERS ---
 
-const PostItem = ({ post }: any) => {
-    const [isLiked, setIsLiked] = useState(false); // Simple local toggle for now
+ const PostItem = ({ post, type = 'community' }: { post: any, type?: 'community' | 'group' }) => {
+    const [isLiked, setIsLiked] = useState(false); 
     const [showComments, setShowComments] = useState(false);
     const [commentText, setCommentText] = useState('');
     const utils = trpc.useUtils();
     
-    // Check if we already liked the post if needed, but for now we'll just mutate
-    const likePost = trpc.groupContent.likePost.useMutation({
-        onSuccess: () => {
-            utils.groupContent.getFeed.invalidate();
-        }
+    // ── MUTATIONS ──
+    const likeGroup = trpc.groupContent.likePost.useMutation({
+        onSuccess: () => { utils.groupContent.getFeed.invalidate(); }
+    });
+    
+    const likeCommunity = trpc.community.likePost.useMutation({
+        onSuccess: () => { utils.community.getPosts.invalidate(); }
     });
 
-    const addComment = trpc.groupContent.addComment.useMutation({
+    const addCommentGroup = trpc.groupContent.addComment.useMutation({
         onSuccess: () => {
             setCommentText('');
             utils.groupContent.getComments.invalidate(post.id);
-            toast.success("Comment transmitted.");
+            toast.success("Intelligence shared with group.");
         }
     });
 
-    const comments = trpc.groupContent.getComments.useQuery(post.id, { enabled: showComments });
+    const addCommentCommunity = trpc.community.addComment.useMutation({
+        onSuccess: () => {
+            setCommentText('');
+            utils.community.getComments.invalidate(post.id);
+            toast.success("Transmission broadcasted globally.");
+        }
+    });
+
+    // ── QUERIES ──
+    const comments = type === 'community' 
+        ? trpc.community.getComments.useQuery(post.id, { enabled: showComments })
+        : trpc.groupContent.getComments.useQuery(post.id, { enabled: showComments });
+
+    const handleLike = () => {
+        setIsLiked(!isLiked);
+        if (type === 'community') likeCommunity.mutate({ postId: post.id });
+        else likeGroup.mutate({ postId: post.id });
+    };
+
+    const handleAddComment = () => {
+        if (!commentText.trim()) return;
+        if (type === 'community') addCommentCommunity.mutate({ postId: post.id, content: commentText });
+        else addCommentGroup.mutate({ postId: post.id, content: commentText });
+    };
 
     return (
         <motion.div 
@@ -1034,10 +1062,7 @@ const PostItem = ({ post }: any) => {
             
             <div className="flex gap-6 pt-8 border-t border-white/5 items-center">
                 <button 
-                    onClick={() => {
-                        setIsLiked(!isLiked);
-                        likePost.mutate({ postId: post.id });
-                    }}
+                    onClick={handleLike}
                     className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all font-black text-sm ${
                         isLiked ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-white/5 text-white/30 hover:bg-white/10 hover:text-red-400'
                     }`}
@@ -1074,11 +1099,11 @@ const PostItem = ({ post }: any) => {
                                     className="h-12 bg-white/5 border-white/5 rounded-2xl px-6 focus:ring-purple-500/50"
                                     value={commentText}
                                     onChange={(e) => setCommentText(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && commentText.trim() && addComment.mutate({ postId: post.id, content: commentText })}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
                                 />
                                 <Button 
-                                    onClick={() => addComment.mutate({ postId: post.id, content: commentText })}
-                                    disabled={!commentText.trim() || addComment.isPending}
+                                    onClick={handleAddComment}
+                                    disabled={!commentText.trim() || addCommentGroup.isPending || addCommentCommunity.isPending}
                                     className="h-12 w-12 rounded-2xl bg-purple-600 p-0"
                                 >
                                     <Send size={18} />

@@ -936,9 +936,38 @@ export const appRouter = router({
     }),
     getMyPosts: protectedProcedure.query(async ({ ctx }) => await dbHelpers.getUserCommunityPosts(ctx.user.id)),
     likePost: protectedProcedure.input(z.object({ postId: z.number() })).mutation(async ({ ctx, input }) => {
-      await dbHelpers.likePost(input.postId, ctx.user.id);
+      const alreadyLiked = await dbHelpers.hasUserLikedPost(input.postId, ctx.user.id);
+      if (alreadyLiked) {
+        await dbHelpers.unlikePost(input.postId, ctx.user.id);
+      } else {
+        await dbHelpers.likePost(input.postId, ctx.user.id);
+        // Notify author
+        const post = await dbHelpers.getCommunityPost(input.postId);
+        if (post && post.userId !== ctx.user.id) {
+          await db.insert(notifications).values({
+            userId: post.userId,
+            fromUserId: ctx.user.id,
+            postId: input.postId,
+            type: 'group_post_like' as any
+          });
+        }
+      }
       return { success: true };
     }),
+    addComment: protectedProcedure.input(z.object({ postId: z.number(), content: z.string() })).mutation(async ({ ctx, input }) => {
+      await dbHelpers.addPostComment({ postId: input.postId, userId: ctx.user.id, content: input.content });
+      const post = await dbHelpers.getCommunityPost(input.postId);
+      if (post && post.userId !== ctx.user.id) {
+        await db.insert(notifications).values({
+          userId: post.userId,
+          fromUserId: ctx.user.id,
+          postId: input.postId,
+          type: 'group_post_comment' as any
+        });
+      }
+      return { success: true };
+    }),
+    getComments: publicProcedure.input(z.number()).query(async ({ input }) => await dbHelpers.getPostComments(input)),
   }),
 
   social: router({

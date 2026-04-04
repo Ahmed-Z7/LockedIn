@@ -300,7 +300,20 @@ export async function addPostComment(data: InsertPostComment) {
 export async function getPostComments(postId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(postComments).where(eq(postComments.postId, postId)).orderBy(desc(postComments.createdAt));
+  return await db.select({
+    id: postComments.id,
+    postId: postComments.postId,
+    userId: postComments.userId,
+    content: postComments.content,
+    createdAt: postComments.createdAt,
+    authorName: users.name,
+    authorAvatar: userProfiles.profilePhoto
+  })
+    .from(postComments)
+    .innerJoin(users, eq(postComments.userId, users.id))
+    .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+    .where(eq(postComments.postId, postId))
+    .orderBy(desc(postComments.createdAt));
 }
 
 // Post Likes Functions
