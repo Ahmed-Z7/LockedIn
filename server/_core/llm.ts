@@ -39,16 +39,17 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  // Stable/Beta Gemini Models (v1beta supports more experimental/latest models)
+  // Production-stable Gemini Models (v1)
   const modelsToTry = [
+    "gemini-2.0-flash",
     "gemini-1.5-flash",
-    "gemini-1.5-pro",
     "gemini-1.5-flash-8b",
-    "gemini-2.0-flash-exp",
-    "gemini-pro"
+    "gemini-1.5-pro",
+    "gemini-1.0-pro"
   ];
 
   let lastError = "";
+  let isQuotaExceeded = false;
 
   for (const modelId of modelsToTry) {
     const controller = new AbortController();
@@ -56,7 +57,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
     try {
       console.log(`[AI ATTEMPT] invoking ${modelId}...`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
 
       const response = await fetch(url, {
         method: "POST",
@@ -91,7 +92,15 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
         };
       } else {
         const errorData = await response.json().catch(() => ({ error: { message: "Internal API Error" } }));
-        lastError = `Status ${response.status}: ${errorData.error?.message || "Unknown error"}`;
+        const status = response.status;
+        const msg = errorData.error?.message || "Unknown error";
+        
+        if (status === 429) {
+          isQuotaExceeded = true;
+          console.warn(`[AI QUOTA] ${modelId} rate limited.`);
+        }
+        
+        lastError = `Status ${status}: ${msg}`;
         console.error(`[AI ERROR] ${modelId} failed:`, lastError);
       }
     } catch (err: any) {
@@ -99,6 +108,10 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       lastError = err.name === 'AbortError' ? "Timeout after 15s" : err.message;
       console.error(`[AI FETCH FAILURE] ${modelId}:`, lastError);
     }
+  }
+
+  if (isQuotaExceeded) {
+    throw new Error("Neural Overload: Energy quota exceeded (429). Please wait a moment for the cognitive cells to recharge.");
   }
 
   throw new Error(`Neural Pulse Erratic: All models failed. Last error: ${lastError}`);
