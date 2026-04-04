@@ -18,7 +18,7 @@ import {
   studyGroupTasks, studyGroupMessages, studyGroupMaterials,
   notifications, userSettings, InsertUserSetting, verificationCodes,
   userAIKnowledge, InsertUserAIKnowledge,
-  aiConversations, aiChatHistory
+  aiConversations, aiChatHistory, friends
 } from "../drizzle/schema";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
@@ -306,6 +306,20 @@ export const appRouter = router({
           ...(input.bio !== undefined && { bio: input.bio }),
           ...(input.avatar !== undefined && { profilePhoto: input.avatar }),
         });
+        return { success: true };
+      }),
+
+    updateStatus: protectedProcedure
+      .input(z.object({ status: z.string().max(100) }))
+      .mutation(async ({ ctx, input }) => {
+        await db.update(userProfiles).set({ status: input.status }).where(eq(userProfiles.userId, ctx.user.id));
+        return { success: true };
+      }),
+
+    updateAvatarFrame: protectedProcedure
+      .input(z.object({ avatarFrame: z.string().max(50) }))
+      .mutation(async ({ ctx, input }) => {
+        await db.update(userProfiles).set({ avatarFrame: input.avatarFrame }).where(eq(userProfiles.userId, ctx.user.id));
         return { success: true };
       }),
   }),
@@ -885,7 +899,21 @@ export const appRouter = router({
 
   community: router({
     createPost: protectedProcedure.input(z.object({ title: z.string(), content: z.string(), category: z.string().optional() })).mutation(async ({ ctx, input }) => {
-      await dbHelpers.createCommunityPost({ userId: ctx.user.id, title: input.title, content: input.content, category: input.category || "general" });
+      const result = await db.insert(communityPosts).values({ userId: ctx.user.id, title: input.title, content: input.content, category: input.category || "general" }).returning({ id: communityPosts.id });
+      const postId = result[0]?.id;
+      
+      // Notify users who have this author as a favorite friend
+      const followers = await db.select({ userId: friends.userId }).from(friends).where(and(eq(friends.friendId, ctx.user.id), eq(friends.isFavorite, 1)));
+      
+      for (const follower of followers) {
+        await db.insert(notifications).values({
+          userId: follower.userId,
+          fromUserId: ctx.user.id,
+          postId: postId,
+          type: 'friend_post' as any
+        });
+      }
+      
       return { success: true };
     }),
     getPosts: publicProcedure.query(async () => {
@@ -916,7 +944,82 @@ export const appRouter = router({
       const profile = await dbHelpers.getUserProfile(input);
       const badges = await dbHelpers.getUserBadges(input);
       const activities = await db.select().from(userActivities).where(eq(userActivities.userId, input)).orderBy(desc(userActivities.createdAt)).limit(10);
-      return { id: user.id, name: user.name, username: user.username, bio: profile?.bio, avatar: profile?.profilePhoto, xp: profile?.xp || 0, level: profile?.level || 1, badges, activities, profilePhoto: profile?.profilePhoto, streak: profile?.streak || 0, levelTitle: getLevelTitle(profile?.level || 1) };
+      return { id: user.id, name: user.name, username: user.username, bio: profile?.bio, avatar: profile?.profilePhoto, xp: profile?.xp || 0, level: profile?.level || 1, badges, activities, profilePhoto: profile?.profilePhoto, streak: profile?.streak || 0, levelTitle: getLevelTitle(profile?.level || 1), status: profile?.status, avatarFrame: profile?.avatarFrame };
+    }),
+
+    getFriends: protectedProcedure.query(async ({ ctx }) => {
+      const userFriends = await db.select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        avatar: userProfiles.profilePhoto,
+        status: userProfiles.status,
+        isFavorite: friends.isFavorite
+      })
+      .from(friends)
+      .innerJoin(users, eq(friends.friendId, users.id))
+      .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+      .where(and(eq(friends.userId, ctx.user.id), eq(friends.status, 'accepted')))
+      .orderBy(asc(users.name));
+      return userFriends;
+    }),
+
+    getFriendRequests: protectedProcedure.query(async ({ ctx }) => {
+      return await db.select({
+        id: users.id,
+        name: users.name,
+        username: users.username,
+        avatar: userProfiles.profilePhoto
+      })
+      .from(friends)
+      .innerJoin(users, eq(friends.userId, users.id))
+      .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+      .where(and(eq(friends.friendId, ctx.user.id), eq(friends.status, 'pending')));
+    }),
+
+    requestFriend: protectedProcedure.input(z.number()).mutation(async ({ ctx, input }) => {
+      const existing = await db.select().from(friends).where(and(eq(friends.userId, ctx.user.id), eq(friends.friendId, input))).limit(1);
+      if (existing.length > 0) return { success: true };
+      await db.insert(friends).values({ userId: ctx.user.id, friendId: input, status: 'pending' });
+      
+      // Notify target user
+      await db.insert(notifications).values({
+        userId: input,
+        fromUserId: ctx.user.id,
+        type: 'friend_request' as any
+      });
+      
+      return { success: true };
+    }),
+
+    acceptFriend: protectedProcedure.input(z.number()).mutation(async ({ ctx, input }) => {
+      await db.update(friends).set({ status: 'accepted' }).where(and(eq(friends.userId, input), eq(friends.friendId, ctx.user.id)));
+      // reciprocate friendship
+      const reciprocated = await db.select().from(friends).where(and(eq(friends.userId, ctx.user.id), eq(friends.friendId, input))).limit(1);
+      if (reciprocated.length === 0) {
+        await db.insert(friends).values({ userId: ctx.user.id, friendId: input, status: 'accepted' });
+      } else {
+        await db.update(friends).set({ status: 'accepted' }).where(and(eq(friends.userId, ctx.user.id), eq(friends.friendId, input)));
+      }
+      
+      // Notify requester (that their request was accepted)
+      await db.insert(notifications).values({
+        userId: input,
+        fromUserId: ctx.user.id,
+        type: 'friend_request' as any // We use friend_request type for acceptance too, or follow if suitable, but friend_request is fine
+      });
+      
+      return { success: true };
+    }),
+
+    toggleFavorite: protectedProcedure.input(z.object({ friendId: z.number(), favorite: z.boolean() })).mutation(async ({ ctx, input }) => {
+      await db.update(friends).set({ isFavorite: input.favorite ? 1 : 0 }).where(and(eq(friends.userId, ctx.user.id), eq(friends.friendId, input.friendId)));
+      return { success: true };
+    }),
+
+    removeFriend: protectedProcedure.input(z.number()).mutation(async ({ ctx, input }) => {
+      await db.delete(friends).where(or(and(eq(friends.userId, ctx.user.id), eq(friends.friendId, input)), and(eq(friends.userId, input), eq(friends.friendId, ctx.user.id))));
+      return { success: true };
     }),
   }),
 
