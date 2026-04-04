@@ -39,13 +39,13 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  // Stable Gemini Models (Free tier friendly)
+  // Stable/Beta Gemini Models (v1beta supports more experimental/latest models)
   const modelsToTry = [
-    "gemini-1.5-flash-latest",
     "gemini-1.5-flash",
-    "gemini-1.5-flash-8b",
     "gemini-1.5-pro",
-    "gemini-2.0-flash" 
+    "gemini-1.5-flash-8b",
+    "gemini-2.0-flash-exp",
+    "gemini-pro"
   ];
 
   let lastError = "";
@@ -56,7 +56,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
     try {
       console.log(`[AI ATTEMPT] invoking ${modelId}...`);
-      const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
 
       const response = await fetch(url, {
         method: "POST",
