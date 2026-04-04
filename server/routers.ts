@@ -1006,7 +1006,21 @@ export const appRouter = router({
       await db.insert(notifications).values({
         userId: input,
         fromUserId: ctx.user.id,
-        type: 'friend_request' as any // We use friend_request type for acceptance too, or follow if suitable, but friend_request is fine
+        type: 'friend_accept'
+      });
+      
+      return { success: true };
+    }),
+
+    rejectFriend: protectedProcedure.input(z.number()).mutation(async ({ ctx, input }) => {
+      // Delete the pending request
+      await db.delete(friends).where(and(eq(friends.userId, input), eq(friends.friendId, ctx.user.id), eq(friends.status, 'pending')));
+      
+      // Notify requester (that their request was rejected)
+      await db.insert(notifications).values({
+        userId: input,
+        fromUserId: ctx.user.id,
+        type: 'friend_reject'
       });
       
       return { success: true };

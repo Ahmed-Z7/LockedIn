@@ -29,6 +29,13 @@
       "when": 1775183664191,
       "tag": "0003_eager_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775305758984,
+      "tag": "0004_exotic_scourge",
+      "breakpoints": true
     }
   ]
 }

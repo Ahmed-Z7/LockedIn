@@ -61,12 +61,13 @@ export default function NotificationsPage() {
   const visibleNotifications = sortedNotifications.slice(0, limit);
 
   const getTypeStyles = (type: string, read: boolean) => {
-    if (read) return "from-slate-800 to-slate-900 border-slate-700 text-slate-500 shadow-none grayscale";
-    
     switch (type) {
       case 'like': return "from-pink-600/20 to-rose-600/10 border-pink-500/50 text-pink-400 shadow-[0_0_15px_rgba(236,72,153,0.3)]";
       case 'comment': return "from-blue-600/20 to-cyan-600/10 border-blue-500/50 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.3)]";
       case 'achievement': return "from-amber-600/20 to-orange-600/10 border-amber-500/50 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]";
+      case 'friend_request': return "from-cyan-600/20 to-blue-600/10 border-cyan-500/50 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)]";
+      case 'friend_accept': return "from-emerald-600/20 to-teal-600/10 border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]";
+      case 'friend_reject': return "from-red-600/20 to-rose-600/10 border-red-500/50 text-red-500/60 shadow-none grayscale opacity-60";
       default: return "from-purple-600/20 to-indigo-600/10 border-purple-500/50 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.3)]";
     }
   };
@@ -76,9 +77,29 @@ export default function NotificationsPage() {
       case 'like': return Heart;
       case 'comment': return MessageCircle;
       case 'achievement': return Award;
+      case 'friend_request': return Users;
+      case 'friend_accept': return Sparkles;
+      case 'friend_reject': return X;
       default: return Bell;
     }
   };
+
+  const acceptMutation = trpc.social.acceptFriend.useMutation({
+    onSuccess: () => {
+        utils.social.getFriends.invalidate();
+        utils.social.getFriendRequests.invalidate();
+        utils.notifications.list.invalidate();
+        toast.success("Neural link established!");
+    }
+  });
+
+  const rejectMutation = trpc.social.rejectFriend.useMutation({
+    onSuccess: () => {
+        utils.social.getFriendRequests.invalidate();
+        utils.notifications.list.invalidate();
+        toast.success("Neural link declined.");
+    }
+  });
 
   if (!isAuthenticated) return null;
 
@@ -158,7 +179,14 @@ export default function NotificationsPage() {
                             notif.read ? "text-foreground/40" : "text-foreground"
                         )}>
                           <span className="font-bold text-purple-400 mr-1">{notif.fromUserName || "Someone"}</span>
-                          {notif.type === 'like' ? 'vibrated your vibe' : notif.type === 'comment' ? 'coded a thought' : 'pinged you'}
+                          {
+                            notif.type === 'like' ? 'vibrated your vibe' : 
+                            notif.type === 'comment' ? 'coded a thought' : 
+                            notif.type === 'friend_request' ? 'sent you a neural link request' :
+                            notif.type === 'friend_accept' ? 'bridged the neural gap (accepted your request)' :
+                            notif.type === 'friend_reject' ? 'declined the neural link (declined your request)' :
+                            'pinged you'
+                          }
                         </p>
                         <p className="text-[10px] uppercase tracking-widest text-foreground/30 mt-1">
                           {formatDistanceToNow(new Date(notif.createdAt))} ago
@@ -166,6 +194,31 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {notif.type === 'friend_request' && !notif.read && (
+                            <div className="flex gap-1 mr-2 scale-110">
+                                <Button 
+                                    size="sm" 
+                                    className="bg-cyan-600 hover:bg-cyan-500 text-white h-7 px-3 text-[10px] uppercase font-black tracking-widest rounded-lg"
+                                    onClick={() => {
+                                        acceptMutation.mutate(notif.fromUserId);
+                                        markAsReadMutation.mutate({ notificationId: notif.id });
+                                    }}
+                                >
+                                    Accept
+                                </Button>
+                                <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    className="bg-white/5 hover:bg-red-500/20 text-red-400 h-7 px-3 text-[10px] uppercase font-black tracking-widest rounded-lg border border-white/5"
+                                    onClick={() => {
+                                        rejectMutation.mutate(notif.fromUserId);
+                                        markAsReadMutation.mutate({ notificationId: notif.id });
+                                    }}
+                                >
+                                    Decline
+                                </Button>
+                            </div>
+                        )}
                         {!notif.read && (
                             <Button 
                                 size="icon" variant="ghost" 

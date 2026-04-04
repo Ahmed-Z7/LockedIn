@@ -18,7 +18,7 @@ import Navbar from "@/components/Navbar";
 import { AvatarWithFrame, StatusBadge, AVATAR_FRAMES, STATUS_PRESETS } from '@/components/ProfileCustomization';
 import { OctopusCelebration } from '@/components/OctopusCelebration';
 import { cn } from '@/lib/utils';
-import { UserPlus, UserCheck, Heart, Share2, MoreHorizontal } from 'lucide-react';
+import { UserPlus, UserCheck, Heart, Share2, MoreHorizontal, Users } from 'lucide-react';
 
 const BADGE_MAP: Record<string, { icon: any, color: string, desc: string }> = {
   "Study Monk": { icon: Shield, color: "text-blue-400", desc: "Completed 5 focus-locked sessions." },
@@ -162,7 +162,6 @@ export default function ProfilePage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-cyan-600/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 pt-12 relative z-10">
-        {/* Floating Particles Effect */}
         <div className="absolute inset-0 pointer-events-none">
             {[...Array(15)].map((_, i) => (
                 <motion.div
@@ -185,283 +184,280 @@ export default function ProfilePage() {
                 />
             ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-12">
-            <div className="space-y-12">
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="relative group p-10 rounded-[3rem] bg-card/40 backdrop-blur-3xl border border-white/10 overflow-hidden shadow-2xl shadow-purple-500/10"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                
-                <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
-                  <div className="relative">
-                    <AvatarWithFrame 
-                      src={profile?.profilePhoto} 
-                      username={profile?.username || ''} 
-                      frameId={(profile as any)?.avatarFrame || 'none'} 
-                      size="xl" 
-                    />
-                    {isOwnProfile && (
-                      <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="absolute bottom-2 right-2 p-3 bg-purple-600 rounded-full shadow-lg hover:scale-110 transition-all border-2 border-background"
-                      >
-                        <Camera className="w-5 h-5 text-white" />
-                      </button>
-                    )}
-                    <input type="file" ref={fileInputRef} className="hidden" onChange={handlePhotoUpload} />
-                  </div>
 
-                  <div className="text-center md:text-left flex-1">
-                    <div className="flex flex-col items-center md:items-start gap-3 mb-4">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-4xl md:text-5xl font-black tracking-tighter bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 bg-clip-text text-transparent">
-                                {profile?.name}
-                            </h1>
-                            {!isOwnProfile && (
+        <Tabs defaultValue="badges" className="w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-12">
+                <div className="space-y-12">
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="relative group p-10 rounded-[3rem] bg-card/40 backdrop-blur-3xl border border-white/10 overflow-hidden shadow-2xl shadow-purple-500/10"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                    
+                    <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
+                      <div className="relative">
+                        <AvatarWithFrame 
+                          src={profile?.profilePhoto} 
+                          username={profile?.username || ''} 
+                          frameId={(profile as any)?.avatarFrame || 'none'} 
+                          size="xl" 
+                        />
+                        {isOwnProfile && (
+                          <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute bottom-2 right-2 p-3 bg-purple-600 rounded-full shadow-lg hover:scale-110 transition-all border-2 border-background"
+                          >
+                            <Camera className="w-5 h-5 text-white" />
+                          </button>
+                        )}
+                        <input type="file" ref={fileInputRef} className="hidden" onChange={handlePhotoUpload} />
+                      </div>
+
+                      <div className="text-center md:text-left flex-1">
+                        <div className="flex flex-col items-center md:items-start gap-3 mb-4">
+                            <div className="flex items-center gap-4">
+                                <h1 className="text-4xl md:text-5xl font-black tracking-tighter bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 bg-clip-text text-transparent">
+                                    {profile?.name}
+                                </h1>
+                                {!isOwnProfile && (
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            size="sm" 
+                                            className={cn(
+                                                "rounded-full bg-purple-600 hover:bg-purple-700 h-9 px-4 transition-all",
+                                                socialMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
+                                            )}
+                                            disabled={socialMutation.isPending}
+                                            onClick={async () => {
+                                                await socialMutation.mutateAsync(targetUserId!);
+                                                toast.success("Connection request broadcasted!");
+                                                utils.social.getFriendRequests.invalidate();
+                                            }}
+                                        >
+                                            <UserPlus className="w-4 h-4 mr-2" /> {socialMutation.isPending ? "Syncing..." : "Add"}
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                                <span className="text-white/40 font-bold tracking-tight">@{profile?.username}</span>
+                                < StatusBadge status={(profile as any)?.status || 'Ana LOCKEDIN'} />
+                                <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] uppercase font-black tracking-widest">
+                                    {getLevelTitle(profile?.level || 1)}
+                                </span>
+                            </div>
+                        </div>
+
+                        {isOwnProfile ? (
+                            <div className="flex items-center gap-3 mb-6">
                                 <div className="flex gap-2">
                                     <Button 
+                                        variant="outline" 
                                         size="sm" 
-                                        className={cn(
-                                            "rounded-full bg-purple-600 hover:bg-purple-700 h-9 px-4 transition-all",
-                                            socialMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
-                                        )}
-                                        disabled={socialMutation.isPending}
-                                        onClick={async () => {
-                                            await socialMutation.mutateAsync(targetUserId!);
-                                            toast.success("Connection request broadcasted!");
-                                            utils.social.getFriendRequests.invalidate();
-                                        }}
+                                        className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-9"
+                                        onClick={() => setIsCustomizing(true)}
                                     >
-                                        <UserPlus className="w-4 h-4 mr-2" /> {socialMutation.isPending ? "Syncing..." : "Add"}
+                                        <Sparkles className="w-3.5 h-3.5 mr-2 text-cyan-400" /> Customize
                                     </Button>
                                     <Button 
-                                        size="sm" 
                                         variant="outline" 
-                                        className={cn(
-                                            "rounded-full border-white/10 h-9 w-9 p-0 transition-all",
-                                            favoriteMutation.isPending ? "animate-pulse" : ""
-                                        )}
-                                        onClick={async () => {
-                                            await favoriteMutation.mutateAsync({ friendId: targetUserId!, favorite: true });
-                                            toast.success("Added to favorites!");
-                                            utils.social.getFriends.invalidate();
-                                            utils.social.getPublicProfile.invalidate(targetUserId);
-                                        }}
+                                        size="sm" 
+                                        className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-9"
+                                        onClick={() => { setTempName(profile?.name || ''); setTempBio(profile?.bio || ''); setIsEditing(true); }}
                                     >
-                                        <Heart className="w-4 h-4" />
+                                        <Edit3 className="w-3.5 h-3.5 mr-2 text-purple-400" /> Edit Profile
                                     </Button>
+                                    <TabsTrigger value="friends" asChild>
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="rounded-xl border-cyan-500/20 bg-cyan-500/10 text-cyan-400 text-xs font-bold h-9 hover:bg-cyan-500/20"
+                                        >
+                                            <Users className="w-3.5 h-3.5 mr-2" /> Neural Network
+                                        </Button>
+                                    </TabsTrigger>
                                 </div>
-                            )}
-                        </div>
+                                {level > 5 && (
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="text-[10px] text-cyan-400/20 hover:text-cyan-400 font-black uppercase tracking-widest p-0 h-auto"
+                                        onClick={handleManualLevelUp}
+                                    >
+                                        Evolution
+                                    </Button>
+                                )}
+                            </div>
+                        ) : null}
                         
-                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                            <span className="text-white/40 font-bold tracking-tight">@{profile?.username}</span>
-                            <StatusBadge status={(profile as any)?.status || 'Ana LOCKEDIN'} />
-                            <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] uppercase font-black tracking-widest">
-                                {getLevelTitle(profile?.level || 1)}
-                            </span>
-                        </div>
-                    </div>
-
-                    {isOwnProfile ? (
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="flex gap-2">
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-9"
-                                    onClick={() => setIsCustomizing(true)}
-                                >
-                                    <Sparkles className="w-3.5 h-3.5 mr-2 text-cyan-400" /> Customize
-                                </Button>
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-9"
-                                    onClick={() => { setTempName(profile?.name || ''); setTempBio(profile?.bio || ''); setIsEditing(true); }}
-                                >
-                                    <Edit3 className="w-3.5 h-3.5 mr-2 text-purple-400" /> Edit Profile
-                                </Button>
+                        {isEditing ? (
+                            <div className="flex flex-col gap-4 max-w-md">
+                                <input 
+                                    value={tempName}
+                                    onChange={(e) => setTempName(e.target.value)}
+                                    placeholder="Neural Designation (Nickname)"
+                                    className="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white"
+                                />
+                                <textarea 
+                                    value={tempBio}
+                                    onChange={(e) => setTempBio(e.target.value)}
+                                    placeholder="Input neural bio description..."
+                                    className="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all resize-none h-20 text-white"
+                                />
+                                <div className="flex gap-2">
+                                    <Button onClick={handleUpdateProfile} className="bg-purple-600 hover:bg-purple-700 rounded-xl px-6 font-bold h-9 text-xs">Save Update</Button>
+                                    <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl px-6 text-white/40 h-9 text-xs">Cancel</Button>
+                                </div>
                             </div>
-                            {level > 5 && (
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="text-[10px] text-cyan-400/20 hover:text-cyan-400 font-black uppercase tracking-widest p-0 h-auto"
-                                    onClick={handleManualLevelUp}
-                                >
-                                    Evolution
-                                </Button>
-                            )}
-                        </div>
-                    ) : null}
-                    
-                    {isEditing ? (
-                        <div className="flex flex-col gap-4 max-w-md">
-                            <input 
-                                value={tempName}
-                                onChange={(e) => setTempName(e.target.value)}
-                                placeholder="Neural Designation (Nickname)"
-                                className="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white"
-                            />
-                            <textarea 
-                                value={tempBio}
-                                onChange={(e) => setTempBio(e.target.value)}
-                                placeholder="Input neural bio description..."
-                                className="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all resize-none h-20 text-white"
-                            />
-                            <div className="flex gap-2">
-                                <Button onClick={handleUpdateProfile} className="bg-purple-600 hover:bg-purple-700 rounded-xl px-6 font-bold h-9 text-xs">Save Update</Button>
-                                <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl px-6 text-white/40 h-9 text-xs">Cancel</Button>
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="text-white/60 leading-relaxed max-w-xl text-sm italic">
-                            "{profile?.bio || "No biometric summary detected."}"
-                        </p>
-                    )}
-                  </div>
-
-                  <div className="hidden lg:block w-px h-32 bg-white/5" />
-
-                  <div className="flex flex-col items-center md:items-start gap-6 px-8">
-                    <div className="text-center md:text-left">
-                      <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-2">Neural Tier</p>
-                      <p className="text-5xl font-black text-white leading-none bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">LV.{level}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="w-full mt-10 p-8 rounded-[2rem] bg-white/[0.03] border border-white/10 backdrop-blur-md relative overflow-hidden">
-                  <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                      <Zap className="w-5 h-5 text-cyan-400 fill-cyan-400/20" />
-                      <span className="text-xs font-black uppercase tracking-widest text-white/60">Neural XP Status</span>
+                        ) : (
+                            <p className="text-white/60 leading-relaxed max-w-xl text-sm italic">
+                                "{profile?.bio || "No biometric summary detected."}"
+                            </p>
+                        )}
                       </div>
-                      <span className="text-xs font-black text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">Mastery: {progressPercent.toFixed(0)}%</span>
-                  </div>
-                  
-                  <div className="h-4 bg-white/5 rounded-full overflow-hidden p-[2px] border border-white/10 shadow-inner relative">
-                      <motion.div 
-                          className="h-full rounded-full bg-gradient-to-r from-purple-600 via-cyan-500 to-blue-500 relative overflow-hidden"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${progressPercent}%` }}
-                          transition={{ duration: 2, ease: "circOut" }}
-                      >
+
+                      <div className="hidden lg:block w-px h-32 bg-white/5" />
+
+                      <div className="flex flex-col items-center md:items-start gap-6 px-8">
+                        <div className="text-center md:text-left">
+                          <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-2">Neural Tier</p>
+                          <p className="text-5xl font-black text-white leading-none bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">LV.{level}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-full mt-10 p-8 rounded-[2rem] bg-white/[0.03] border border-white/10 backdrop-blur-md relative overflow-hidden">
+                      <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                          <Zap className="w-5 h-5 text-cyan-400 fill-cyan-400/20" />
+                          <span className="text-xs font-black uppercase tracking-widest text-white/60">Neural XP Status</span>
+                          </div>
+                          <span className="text-xs font-black text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">Mastery: {progressPercent.toFixed(0)}%</span>
+                      </div>
+                      
+                      <div className="h-4 bg-white/5 rounded-full overflow-hidden p-[2px] border border-white/10 shadow-inner relative">
                           <motion.div 
-                              className="absolute inset-0 bg-white/20"
-                              animate={{ x: ['-100%', '100%'] }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                          />
+                              className="h-full rounded-full bg-gradient-to-r from-purple-600 via-cyan-500 to-blue-500 relative overflow-hidden"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progressPercent}%` }}
+                              transition={{ duration: 2, ease: "circOut" }}
+                          >
+                              <motion.div 
+                                  className="absolute inset-0 bg-white/20"
+                                  animate={{ x: ['-100%', '100%'] }}
+                                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                              />
+                          </motion.div>
+                      </div>
+                      
+                      <div className="flex justify-between mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+                          <span>Level {level}</span>
+                          <span className="text-white/40">{xpNeededForNext - xpThisLevel} XP TO ASCEND</span>
+                          <span>Level {level + 1}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                      {stats.map((stat, i) => (
+                      <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + (i * 0.1) }}
+                          className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-white/10 flex flex-col items-center justify-center group hover:bg-white/[0.05] transition-all hover:scale-105 shadow-xl shadow-purple-500/5">
+                          <div className={cn("p-4 rounded-2xl bg-white/5 mb-4 group-hover:scale-110 transition-transform", stat.color)}>
+                              <stat.icon className="w-8 h-8" />
+                          </div>
+                          <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+                          <p className="text-3xl font-black tracking-tighter text-white">{stat.value}</p>
                       </motion.div>
+                      ))}
                   </div>
-                  
-                  <div className="flex justify-between mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-                      <span>Level {level}</span>
-                      <span className="text-white/40">{xpNeededForNext - xpThisLevel} XP TO ASCEND</span>
-                      <span>Level {level + 1}</span>
+
+                  <div className="w-full">
+                      <TabsList className="bg-card/20 backdrop-blur-xl border border-white/5 p-1 rounded-2xl mb-8">
+                      <TabsTrigger value="badges" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
+                          Neural Awards
+                      </TabsTrigger>
+                      <TabsTrigger value="activity" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
+                          Activity Log
+                      </TabsTrigger>
+                      <TabsTrigger value="friends" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
+                          Neural Network
+                      </TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="badges" className="outline-none">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                              {Object.entries(BADGE_MAP).map(([name, meta], idx) => {
+                              const isEarned = progression?.badges?.some(b => b.badgeName === name);
+                              const Icon = meta.icon;
+                              return (
+                                  <motion.div key={name} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }}
+                                      className={cn("relative p-6 rounded-[2rem] border flex flex-col items-center text-center transition-all group backdrop-blur-xl", isEarned ? "bg-purple-900/10 border-purple-500/20 shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10" : "bg-white/[0.01] border-white/5 grayscale opacity-30")}>
+                                      <div className={cn("p-4 rounded-xl mb-4 group-hover:scale-110 transition-transform", isEarned ? meta.color + " bg-white/5 shadow-inner" : "text-white/20")}>
+                                          <Icon className="w-8 h-8" />
+                                      </div>
+                                      <h4 className="text-sm font-bold mb-1 tracking-tight text-white">{name}</h4>
+                                      <p className="text-[9px] text-white/30 leading-tight uppercase font-black">{isEarned ? "Validated" : "Access Locked"}</p>
+                                  </motion.div>
+                              );
+                              })}
+                          </div>
+                      </TabsContent>
+
+                      <TabsContent value="activity">
+                          <div className="space-y-4">
+                              {progression?.activities?.length === 0 ? (
+                                  <div className="py-20 text-center text-white/20 font-bold uppercase tracking-widest bg-white/[0.01] rounded-3xl border border-dashed border-white/5">
+                                      No neural activity detected in current cycle.
+                                  </div>
+                              ) : (
+                                  progression?.activities?.map((activity, i) => (
+                                      <motion.div key={activity.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                                          className="p-6 rounded-2xl bg-card/10 backdrop-blur-xl border border-white/5 flex items-center justify-between group hover:bg-white/[0.05] transition-all shadow-lg">
+                                          <div className="flex items-center gap-5">
+                                              <div className={`p-3 rounded-xl shadow-inner ${activity.type === 'level_up' ? 'bg-amber-500/10 text-amber-400' : activity.type === 'badge_earned' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-purple-500/10 text-purple-400'}`}>
+                                                  {activity.type === 'level_up' ? <Trophy className="w-5 h-5" /> : activity.type === 'badge_earned' ? <Award className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
+                                              </div>
+                                              <div>
+                                                  <p className="font-bold text-sm tracking-tight text-white/80 group-hover:text-white transition-colors">{activity.description}</p>
+                                                  <p className="text-[9px] text-white/20 uppercase font-black tracking-widest mt-1">{new Date(activity.createdAt).toLocaleDateString()}</p>
+                                              </div>
+                                          </div>
+                                          <div className="flex flex-col items-end">
+                                              <p className={`font-black tracking-tighter shadow-sm ${(activity.xpGain ?? 0) > 0 ? 'text-emerald-400' : 'text-white/10'}`}>
+                                                  {(activity.xpGain ?? 0) > 0 ? `+${activity.xpGain} XP` : '--'}
+                                              </p>
+                                          </div>
+                                      </motion.div>
+                                  ))
+                              )}
+                          </div>
+                      </TabsContent>
+
+                      <TabsContent value="friends">
+                          <AnimatePresence mode="wait">
+                              <motion.div
+                                  key="friends-tab"
+                                  initial={{ opacity: 0, x: 20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: -20 }}
+                              >
+                                  <FriendsList isOwnProfile={isOwnProfile} targetUserId={targetUserId} />
+                              </motion.div>
+                          </AnimatePresence>
+                      </TabsContent>
                   </div>
                 </div>
-              </motion.div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                  {stats.map((stat, i) => (
-                  <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + (i * 0.1) }}
-                      className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-white/10 flex flex-col items-center justify-center group hover:bg-white/[0.05] transition-all hover:scale-105 shadow-xl shadow-purple-500/5">
-                      <div className={cn("p-4 rounded-2xl bg-white/5 mb-4 group-hover:scale-110 transition-transform", stat.color)}>
-                          <stat.icon className="w-8 h-8" />
-                      </div>
-                      <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-                      <p className="text-3xl font-black tracking-tighter text-white">{stat.value}</p>
-                  </motion.div>
-                  ))}
-              </div>
-
-              <Tabs defaultValue="badges" className="w-full">
-                  <TabsList className="bg-card/20 backdrop-blur-xl border border-white/5 p-1 rounded-2xl mb-8">
-                  <TabsTrigger value="badges" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
-                      Neural Awards
-                  </TabsTrigger>
-                  <TabsTrigger value="activity" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
-                      Activity Log
-                  </TabsTrigger>
-                  <TabsTrigger value="friends" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
-                      Neural Network
-                  </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="badges" className="outline-none">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                          {Object.entries(BADGE_MAP).map(([name, meta], idx) => {
-                          const isEarned = progression?.badges?.some(b => b.badgeName === name);
-                          const Icon = meta.icon;
-                          return (
-                              <motion.div key={name} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }}
-                                  className={cn("relative p-6 rounded-[2rem] border flex flex-col items-center text-center transition-all group backdrop-blur-xl", isEarned ? "bg-purple-900/10 border-purple-500/20 shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10" : "bg-white/[0.01] border-white/5 grayscale opacity-30")}>
-                                  <div className={cn("p-4 rounded-xl mb-4 group-hover:scale-110 transition-transform", isEarned ? meta.color + " bg-white/5 shadow-inner" : "text-white/20")}>
-                                      <Icon className="w-8 h-8" />
-                                  </div>
-                                  <h4 className="text-sm font-bold mb-1 tracking-tight text-white">{name}</h4>
-                                  <p className="text-[9px] text-white/30 leading-tight uppercase font-black">{isEarned ? "Validated" : "Access Locked"}</p>
-                              </motion.div>
-                          );
-                          })}
-                      </div>
-                  </TabsContent>
-
-                  <TabsContent value="activity">
-                      <div className="space-y-4">
-                          {progression?.activities?.length === 0 ? (
-                              <div className="py-20 text-center text-white/20 font-bold uppercase tracking-widest bg-white/[0.01] rounded-3xl border border-dashed border-white/5">
-                                  No neural activity detected in current cycle.
-                              </div>
-                          ) : (
-                              progression?.activities?.map((activity, i) => (
-                                  <motion.div key={activity.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                                      className="p-6 rounded-2xl bg-card/10 backdrop-blur-xl border border-white/5 flex items-center justify-between group hover:bg-white/[0.05] transition-all shadow-lg">
-                                      <div className="flex items-center gap-5">
-                                          <div className={`p-3 rounded-xl shadow-inner ${activity.type === 'level_up' ? 'bg-amber-500/10 text-amber-400' : activity.type === 'badge_earned' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-purple-500/10 text-purple-400'}`}>
-                                              {activity.type === 'level_up' ? <Trophy className="w-5 h-5" /> : activity.type === 'badge_earned' ? <Award className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
-                                          </div>
-                                          <div>
-                                              <p className="font-bold text-sm tracking-tight text-white/80 group-hover:text-white transition-colors">{activity.description}</p>
-                                              <p className="text-[9px] text-white/20 uppercase font-black tracking-widest mt-1">{new Date(activity.createdAt).toLocaleDateString()}</p>
-                                          </div>
-                                      </div>
-                                      <div className="flex flex-col items-end">
-                                          <p className={`font-black tracking-tighter shadow-sm ${(activity.xpGain ?? 0) > 0 ? 'text-emerald-400' : 'text-white/10'}`}>
-                                              {(activity.xpGain ?? 0) > 0 ? `+${activity.xpGain} XP` : '--'}
-                                          </p>
-                                      </div>
-                                  </motion.div>
-                              ))
-                          )}
-                      </div>
-                  </TabsContent>
-
-                  <TabsContent value="friends">
-                      <AnimatePresence mode="wait">
-                          <motion.div
-                              key="friends-tab"
-                              initial={{ opacity: 0, x: 20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              exit={{ opacity: 0, x: -20 }}
-                          >
-                              <FriendsList isOwnProfile={isOwnProfile} targetUserId={targetUserId} />
-                          </motion.div>
-                      </AnimatePresence>
-                  </TabsContent>
-              </Tabs>
-          </div>
-
-          <div className="space-y-8">
-              <StreakCalendar profile={profile} />
-              <ZedCorePreview setLocation={setLocation} />
-          </div>
-        </div>
+                <div className="space-y-8">
+                    <StreakCalendar profile={profile} />
+                    <ZedCorePreview setLocation={setLocation} />
+                </div>
+            </div>
+        </Tabs>
       </div>
+
 
       <AnimatePresence>
         {isCustomizing && (
@@ -530,7 +526,7 @@ export default function ProfilePage() {
   );
 }
 
-const ActivityMonitor = ({ level, activities, onLevelUp }: { level: number, activities: any[], onLevelUp: () => void }) => {
+const ActivityMonitor = ({ level, activities, onLevelUp }: { level: number, activities?: any[], onLevelUp: () => void }) => {
     const lastLevelRef = React.useRef(level);
     
     React.useEffect(() => {
