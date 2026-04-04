@@ -50,6 +50,7 @@ export default function ProfilePage() {
   const [tempBio, setTempBio] = useState('');
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [showOctopus, setShowOctopus] = useState(false);
+  const [activeTab, setActiveTab] = useState('badges');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
 
@@ -185,7 +186,7 @@ export default function ProfilePage() {
             ))}
         </div>
 
-        <Tabs defaultValue="badges" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-12">
                 <div className="space-y-12">
                   <motion.div 
@@ -277,15 +278,14 @@ export default function ProfilePage() {
                                     >
                                         <Edit3 className="w-3.5 h-3.5 mr-2 text-purple-400" /> Edit Profile
                                     </Button>
-                                    <TabsTrigger value="friends" asChild>
-                                        <Button 
-                                            variant="outline" 
-                                            size="sm" 
-                                            className="rounded-xl border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs font-black uppercase tracking-widest h-10 px-5 hover:bg-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]"
-                                        >
-                                            <Users className="w-3.5 h-3.5 mr-2" /> Friend List
-                                        </Button>
-                                    </TabsTrigger>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="rounded-xl border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs font-black uppercase tracking-widest h-10 px-5 hover:bg-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]"
+                                        onClick={() => setActiveTab('friends')}
+                                    >
+                                        <Users className="w-3.5 h-3.5 mr-2" /> Friend List
+                                    </Button>
                                 </div>
                                 {level > 5 && (
                                     <Button 
