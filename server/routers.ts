@@ -8,7 +8,7 @@ import { z } from "zod";
 import * as dbHelpers from "./db";
 import { db } from "./db";
 import { TRPCError } from "@trpc/server";
-import { and, eq, desc, asc, or, like, not, inArray, sql } from "drizzle-orm";
+import { and, eq, desc, asc, or, like, ilike, not, inArray, sql, count } from "drizzle-orm";
 import { sdk } from "./_core/sdk";
 import { randomBytes, scryptSync, timingSafeEqual, randomUUID } from "crypto";
 import {
@@ -16,9 +16,10 @@ import {
   userBadges, InsertUserBadge, studySessions, InsertStudySession, studyMaterials, InsertStudyMaterial,
   directMessages, studyGroups, studyGroupMembers, studyGroupInvitations, studyGroupPosts,
   studyGroupTasks, studyGroupMessages, studyGroupMaterials,
-  notifications, userSettings, InsertUserSetting, verificationCodes,
+  communityPosts, notifications, userSettings, InsertUserSetting, verificationCodes,
   userAIKnowledge, InsertUserAIKnowledge,
-  aiConversations, aiChatHistory, friends
+  aiConversations, aiChatHistory, friends,
+  studyGroupPostLikes, studyGroupPostComments
 } from "../drizzle/schema";
 import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
 import { MOCK_CHALLENGES, MOCK_GROUPS, MOCK_USERS } from "./mockDb";
@@ -899,22 +900,31 @@ export const appRouter = router({
 
   community: router({
     createPost: protectedProcedure.input(z.object({ title: z.string(), content: z.string(), category: z.string().optional() })).mutation(async ({ ctx, input }) => {
-      const result = await db.insert(communityPosts).values({ userId: ctx.user.id, title: input.title, content: input.content, category: input.category || "general" }).returning({ id: communityPosts.id });
-      const postId = result[0]?.id;
+      const result = await db.insert(communityPosts).values({ 
+        userId: ctx.user.id, 
+        title: input.title, 
+        content: input.content, 
+        category: input.category || "general" 
+      }).returning();
+      const post = result[0];
+      const postId = post?.id;
       
       // Notify users who have this author as a favorite friend
-      const followers = await db.select({ userId: friends.userId }).from(friends).where(and(eq(friends.friendId, ctx.user.id), eq(friends.isFavorite, 1)));
-      
-      for (const follower of followers) {
-        await db.insert(notifications).values({
-          userId: follower.userId,
-          fromUserId: ctx.user.id,
-          postId: postId,
-          type: 'friend_post' as any
-        });
+      try {
+        const followers = await db.select({ userId: friends.userId }).from(friends).where(and(eq(friends.friendId, ctx.user.id), eq(friends.isFavorite, 1)));
+        for (const follower of followers) {
+          await db.insert(notifications).values({
+            userId: follower.userId,
+            fromUserId: ctx.user.id,
+            postId: postId,
+            type: 'friend_post' as any
+          });
+        }
+      } catch (err) {
+        console.error("Signal broadcast failed:", err);
       }
       
-      return { success: true };
+      return post || { success: true };
     }),
     getPosts: publicProcedure.query(async () => {
       const posts = await dbHelpers.getAllCommunityPosts();
@@ -1064,30 +1074,106 @@ export const appRouter = router({
       return await db.select({ id: studyGroups.id, name: studyGroups.name, description: studyGroups.description, role: studyGroupMembers.role }).from(studyGroups).innerJoin(studyGroupMembers, eq(studyGroups.id, studyGroupMembers.groupId)).where(and(eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.status, "approved")));
     }),
     search: protectedProcedure.input(z.string()).query(async ({ input }) => {
-      const results = await db.select().from(studyGroups).where(and(like(studyGroups.name, `%${input}%`), eq(studyGroups.isPrivate, 0)));
+      const results = await db.select().from(studyGroups).where(and(ilike(studyGroups.name, `%${input}%`), eq(studyGroups.isPrivate, 0)));
       return await Promise.all(results.map(async (g) => {
-        const members = await db.select({ count: sql<number>`count(*)` }).from(studyGroupMembers).where(eq(studyGroupMembers.groupId, g.id));
-        return { ...g, memberCount: Number(members[0]?.count || 0) };
+        const [members] = await db.select({ count: count() }).from(studyGroupMembers).where(eq(studyGroupMembers.groupId, g.id));
+        return { ...g, memberCount: Number(members?.count || 0) };
       }));
     }),
     discover: protectedProcedure.query(async () => {
-      const results = await db.select().from(studyGroups).where(eq(studyGroups.isPrivate, 0)).limit(10);
+      const results = await db.select().from(studyGroups).where(eq(studyGroups.isPrivate, 0)).limit(20);
       return await Promise.all(results.map(async (g) => {
-        const members = await db.select({ count: sql<number>`count(*)` }).from(studyGroupMembers).where(eq(studyGroupMembers.groupId, g.id));
-        return { ...g, memberCount: Number(members[0]?.count || 0) };
+        const [members] = await db.select({ count: count() }).from(studyGroupMembers).where(eq(studyGroupMembers.groupId, g.id));
+        return { ...g, memberCount: Number(members?.count || 0) };
       }));
     }),
     getGroup: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
       const [group] = await db.select().from(studyGroups).where(eq(studyGroups.id, input));
       if (!group) return null;
       const members = await db.select({ count: sql<number>`count(*)` }).from(studyGroupMembers).where(eq(studyGroupMembers.groupId, input));
-      const [userMember] = await db.select({ role: studyGroupMembers.role }).from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id)));
-      return { ...group, memberCount: Number(members[0]?.count || 0), role: userMember?.role || null };
+      const [userMember] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id)));
+      
+      return { 
+        ...group, 
+        memberCount: Number(members[0]?.count || 0), 
+        role: userMember?.role || null, 
+        status: userMember?.status || null,
+        isMember: userMember?.status === 'approved'
+      };
+    }),
+    requestJoin: protectedProcedure.input(z.number()).mutation(async ({ ctx, input }) => {
+      const existing = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id)));
+      if (existing.length > 0) throw new TRPCError({ code: "BAD_REQUEST", message: "Already a member or request pending" });
+      await db.insert(studyGroupMembers).values({ groupId: input, userId: ctx.user.id, role: "member", status: "pending" });
+      
+      // Notify group admin(s)
+      try {
+        const admins = await db.select({ userId: studyGroupMembers.userId }).from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.role, "admin")));
+        for (const admin of admins) {
+          await db.insert(notifications).values({
+            userId: admin.userId,
+            fromUserId: ctx.user.id,
+            groupId: input,
+            type: 'group_join_request' as any
+          });
+        }
+      } catch (err) {
+        console.error("Admin notification failed:", err);
+      }
+      
+      return { success: true };
+    }),
+    getJoinRequests: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
+      const [admin] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.role, "admin")));
+      if (!admin) throw new TRPCError({ code: "FORBIDDEN" });
+      return await db.select({ id: users.id, name: users.name, username: users.username, avatar: userProfiles.profilePhoto }).from(users).innerJoin(studyGroupMembers, eq(users.id, studyGroupMembers.userId)).innerJoin(userProfiles, eq(users.id, userProfiles.userId)).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.status, "pending")));
+    }),
+    handleJoinRequest: protectedProcedure.input(z.object({ groupId: z.number(), userId: z.number(), action: z.enum(["approve", "reject"]) })).mutation(async ({ ctx, input }) => {
+      const [admin] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.role, "admin")));
+      if (!admin) throw new TRPCError({ code: "FORBIDDEN" });
+
+      if (input.action === "approve") {
+        await db.update(studyGroupMembers).set({ status: "approved" }).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, input.userId)));
+        
+        // Notify user of acceptance
+        await db.insert(notifications).values({
+          userId: input.userId,
+          fromUserId: ctx.user.id,
+          groupId: input.groupId,
+          type: 'group_join_accept' as any
+        });
+      } else {
+        await db.delete(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, input.userId)));
+        
+        // Notify user of rejection
+        await db.insert(notifications).values({
+          userId: input.userId,
+          fromUserId: ctx.user.id,
+          groupId: input.groupId,
+          type: 'group_join_reject' as any
+        });
+      }
+      return { success: true };
+    }),
+    joinViaInvite: protectedProcedure.input(z.object({ groupId: z.number() })).mutation(async ({ ctx, input }) => {
+      // Instant join logic for invitees
+      const existing = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, ctx.user.id)));
+      if (existing.length > 0) {
+        if (existing[0].status === "approved") return { success: true, alreadyMember: true };
+        await db.update(studyGroupMembers).set({ status: "approved" }).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, ctx.user.id)));
+      } else {
+        await db.insert(studyGroupMembers).values({ groupId: input.groupId, userId: ctx.user.id, role: "member", status: "approved" });
+      }
+      return { success: true };
     }),
   }),
 
   groupContent: router({
     getFeed: protectedProcedure.input(z.number()).query(async ({ input }) => {
+      const [member] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.status, "approved")));
+      if (!member) {
+        return []; // Restricted view: no feed content for non-members
+      }
       return await db.select({ id: studyGroupPosts.id, title: studyGroupPosts.title, content: studyGroupPosts.content, createdAt: studyGroupPosts.createdAt, authorName: users.name }).from(studyGroupPosts).innerJoin(users, eq(studyGroupPosts.userId, users.id)).where(eq(studyGroupPosts.groupId, input)).orderBy(desc(studyGroupPosts.createdAt));
     }),
     getTasks: protectedProcedure.input(z.number()).query(async ({ input }) => {
@@ -1110,12 +1196,71 @@ export const appRouter = router({
         .orderBy(studyGroupMessages.createdAt);
     }),
     createPost: protectedProcedure.input(z.object({ groupId: z.number(), title: z.string(), content: z.string() })).mutation(async ({ ctx, input }) => {
-        await db.insert(studyGroupPosts).values({ groupId: input.groupId, userId: ctx.user.id, title: input.title, content: input.content });
+        const [post] = await db.insert(studyGroupPosts).values({ groupId: input.groupId, userId: ctx.user.id, title: input.title, content: input.content }).returning();
+        
+        // Notify all members of the group
+        const members = await db.select({ userId: studyGroupMembers.userId }).from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.status, "approved"), not(eq(studyGroupMembers.userId, ctx.user.id))));
+        for (const member of members) {
+            await db.insert(notifications).values({
+                userId: member.userId,
+                fromUserId: ctx.user.id,
+                groupPostId: post.id,
+                type: 'friend_post' as any // Reusing friend_post for now or can use group_post if added
+            });
+        }
         return { success: true };
     }),
     sendChatMessage: protectedProcedure.input(z.object({ groupId: z.number(), content: z.string() })).mutation(async ({ ctx, input }) => {
         await db.insert(studyGroupMessages).values({ groupId: input.groupId, userId: ctx.user.id, content: input.content });
         return { success: true };
+    }),
+    likePost: protectedProcedure.input(z.object({ postId: z.number() })).mutation(async ({ ctx, input }) => {
+        const existing = await db.select().from(studyGroupPostLikes).where(and(eq(studyGroupPostLikes.postId, input.postId), eq(studyGroupPostLikes.userId, ctx.user.id)));
+        if (existing.length > 0) {
+            await db.delete(studyGroupPostLikes).where(and(eq(studyGroupPostLikes.postId, input.postId), eq(studyGroupPostLikes.userId, ctx.user.id)));
+            await db.update(studyGroupPosts).set({ likes: sql`${studyGroupPosts.likes} - 1` }).where(eq(studyGroupPosts.id, input.postId));
+        } else {
+            await db.insert(studyGroupPostLikes).values({ postId: input.postId, userId: ctx.user.id });
+            await db.update(studyGroupPosts).set({ likes: sql`${studyGroupPosts.likes} + 1` }).where(eq(studyGroupPosts.id, input.postId));
+            
+            const [post] = await db.select().from(studyGroupPosts).where(eq(studyGroupPosts.id, input.postId));
+            if (post && post.userId !== ctx.user.id) {
+                await db.insert(notifications).values({
+                    userId: post.userId,
+                    fromUserId: ctx.user.id,
+                    groupPostId: post.id,
+                    type: 'group_post_like' as any
+                });
+            }
+        }
+        return { success: true };
+    }),
+    addComment: protectedProcedure.input(z.object({ postId: z.number(), content: z.string() })).mutation(async ({ ctx, input }) => {
+        await db.insert(studyGroupPostComments).values({ postId: input.postId, userId: ctx.user.id, content: input.content });
+        const [post] = await db.select().from(studyGroupPosts).where(eq(studyGroupPosts.id, input.postId));
+        if (post && post.userId !== ctx.user.id) {
+            await db.insert(notifications).values({
+                userId: post.userId,
+                fromUserId: ctx.user.id,
+                groupPostId: post.id,
+                type: 'group_post_comment' as any
+            });
+        }
+        return { success: true };
+    }),
+    getComments: protectedProcedure.input(z.number()).query(async ({ input }) => {
+        return await db.select({ 
+            id: studyGroupPostComments.id, 
+            content: studyGroupPostComments.content, 
+            createdAt: studyGroupPostComments.createdAt, 
+            authorName: users.name, 
+            authorAvatar: userProfiles.profilePhoto 
+        })
+        .from(studyGroupPostComments)
+        .innerJoin(users, eq(studyGroupPostComments.userId, users.id))
+        .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+        .where(eq(studyGroupPostComments.postId, input))
+        .orderBy(asc(studyGroupPostComments.createdAt));
     }),
   }),
 });

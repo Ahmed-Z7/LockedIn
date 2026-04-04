@@ -178,15 +178,18 @@ export default function NotificationsPage() {
                             "text-sm font-medium leading-relaxed",
                             notif.read ? "text-foreground/40" : "text-foreground"
                         )}>
-                          <span className="font-bold text-purple-400 mr-1">{notif.fromUserName || "Someone"}</span>
-                          {
-                            notif.type === 'like' ? 'vibrated your vibe' : 
-                            notif.type === 'comment' ? 'coded a thought' : 
-                            notif.type === 'friend_request' ? 'sent you a neural link request' :
-                            notif.type === 'friend_accept' ? 'bridged the neural gap (accepted your request)' :
-                            notif.type === 'friend_reject' ? 'declined the neural link (declined your request)' :
-                            'pinged you'
-                          }
+                           <span className="font-bold text-purple-400 mr-1">{notif.fromUserName || "Someone"}</span>
+                           {
+                             notif.type === 'like' ? 'vibrated your vibe' : 
+                             notif.type === 'comment' ? 'coded a thought' : 
+                             notif.type === 'friend_request' ? 'sent you a neural link request (طلب صداقة)' :
+                             notif.type === 'friend_accept' ? 'bridged the neural gap (قبل طلب الصداقة)' :
+                             notif.type === 'friend_reject' ? 'declined the neural link (رفض طلب الصداقة)' :
+                             (notif.type as string) === 'group_join_request' ? `wants to join ${notif.groupName || 'your group'} (طلب انضمام للمجموعة)` :
+                             (notif.type as string) === 'group_join_accept' ? `accepted your join request for ${notif.groupName || 'the group'} (تم قبول انضمامك للمجموعة)` :
+                             (notif.type as string) === 'group_join_reject' ? `declined your join request for ${notif.groupName || 'the group'} (تم رفض انضمامك للمجموعة)` :
+                             'pinged you'
+                           }
                         </p>
                         <p className="text-[10px] uppercase tracking-widest text-foreground/30 mt-1">
                           {formatDistanceToNow(new Date(notif.createdAt))} ago
@@ -194,13 +197,15 @@ export default function NotificationsPage() {
                       </div>
 
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {notif.type === 'friend_request' && !notif.read && (
-                            <div className="flex gap-1 mr-2 scale-110">
+                        {(notif.type === 'friend_request' || (notif.type as string) === 'group_join_request') && (
+                            <div className="flex gap-2 mr-2">
                                 <Button 
                                     size="sm" 
-                                    className="bg-cyan-600 hover:bg-cyan-500 text-white h-7 px-3 text-[10px] uppercase font-black tracking-widest rounded-lg"
+                                    className="bg-purple-600 hover:bg-purple-500 text-white h-8 px-4 text-[10px] uppercase font-black tracking-widest rounded-xl shadow-lg shadow-purple-500/20"
                                     onClick={() => {
-                                        acceptMutation.mutate(notif.fromUserId);
+                                        if (notif.type === 'friend_request') {
+                                          acceptMutation.mutate(notif.fromUserId);
+                                        }
                                         markAsReadMutation.mutate({ notificationId: notif.id });
                                     }}
                                 >
@@ -208,10 +213,12 @@ export default function NotificationsPage() {
                                 </Button>
                                 <Button 
                                     size="sm" 
-                                    variant="ghost"
-                                    className="bg-white/5 hover:bg-red-500/20 text-red-400 h-7 px-3 text-[10px] uppercase font-black tracking-widest rounded-lg border border-white/5"
+                                    variant="outline"
+                                    className="bg-white/5 hover:bg-red-500/20 text-red-400 border-white/10 h-8 px-4 text-[10px] uppercase font-black tracking-widest rounded-xl"
                                     onClick={() => {
-                                        rejectMutation.mutate(notif.fromUserId);
+                                        if (notif.type === 'friend_request') {
+                                          rejectMutation.mutate(notif.fromUserId);
+                                        }
                                         markAsReadMutation.mutate({ notificationId: notif.id });
                                     }}
                                 >

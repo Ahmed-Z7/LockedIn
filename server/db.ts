@@ -22,7 +22,8 @@ import {
   notifications, InsertNotification,
   userSettings, InsertUserSetting,
   studyMaterials, InsertStudyMaterial,
-  userAIKnowledge, InsertUserAIKnowledge
+  userAIKnowledge, InsertUserAIKnowledge,
+  studyGroups
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -341,15 +342,18 @@ export async function getUserNotifications(userId: number) {
     fromUserId: notifications.fromUserId,
     postId: notifications.postId,
     commentId: notifications.commentId,
+    groupId: notifications.groupId,
     type: notifications.type,
     read: notifications.read,
     createdAt: notifications.createdAt,
     fromUserName: users.name,
-    fromUserAvatar: userProfiles.profilePhoto
+    fromUserAvatar: userProfiles.profilePhoto,
+    groupName: studyGroups.name
   })
     .from(notifications)
     .leftJoin(users, eq(notifications.fromUserId, users.id))
     .leftJoin(userProfiles, eq(notifications.fromUserId, userProfiles.userId))
+    .leftJoin(studyGroups, eq(notifications.groupId, studyGroups.id))
     .where(eq(notifications.userId, userId))
     .orderBy(desc(notifications.createdAt));
 

@@ -86,8 +86,8 @@ export default function ProfilePage() {
 
   const stats = useMemo(() => [
     { label: 'Longest Streak', value: `${profile?.streak || 0}d`, icon: Flame, color: 'text-orange-400' },
-    { label: 'Study Sessions', value: progression?.activities?.filter((a: any) => a.type === 'xp_gain').length || 0, icon: Target, color: 'text-purple-400' },
-    { label: 'Total XP', value: currentXP.toLocaleString(), icon: Zap, color: 'text-yellow-400' },
+    { label: 'Study Sessions', value: progression?.activities?.filter((a: any) => a?.type === 'xp_gain')?.length || 0, icon: Target, color: 'text-purple-400' },
+    { label: 'Total XP', value: (currentXP || 0).toLocaleString(), icon: Zap, color: 'text-yellow-400' },
     { label: 'Badges', value: progression?.badges?.length || 0, icon: Award, color: 'text-blue-400' },
   ], [profile, progression, currentXP]);
 
@@ -235,7 +235,15 @@ export default function ProfilePage() {
                                                 utils.social.getFriendRequests.invalidate();
                                             }}
                                         >
-                                            <UserPlus className="w-4 h-4 mr-2" /> {socialMutation.isPending ? "Syncing..." : "Add"}
+                                            <UserPlus className="w-4 h-4 mr-2" /> {socialMutation.isPending ? "Syncing..." : "Add Friend"}
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            variant="outline"
+                                            className="rounded-full border-white/10 bg-white/5 h-9 px-4 transition-all"
+                                            onClick={() => setLocation(`/messages?user=${targetUserId}`)}
+                                        >
+                                            <MessageSquare className="w-4 h-4 mr-2" /> Message
                                         </Button>
                                     </div>
                                 )}
@@ -243,7 +251,7 @@ export default function ProfilePage() {
                             
                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                                 <span className="text-white/40 font-bold tracking-tight">@{profile?.username}</span>
-                                < StatusBadge status={(profile as any)?.status || 'Ana LOCKEDIN'} />
+                                <StatusBadge status={(profile as any)?.status || 'Ana LOCKEDIN'} />
                                 <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] uppercase font-black tracking-widest">
                                     {getLevelTitle(profile?.level || 1)}
                                 </span>
@@ -264,7 +272,7 @@ export default function ProfilePage() {
                                     <Button 
                                         variant="outline" 
                                         size="sm" 
-                                        className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-9"
+                                        className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-10 px-5"
                                         onClick={() => { setTempName(profile?.name || ''); setTempBio(profile?.bio || ''); setIsEditing(true); }}
                                     >
                                         <Edit3 className="w-3.5 h-3.5 mr-2 text-purple-400" /> Edit Profile
@@ -273,9 +281,9 @@ export default function ProfilePage() {
                                         <Button 
                                             variant="outline" 
                                             size="sm" 
-                                            className="rounded-xl border-cyan-500/20 bg-cyan-500/10 text-cyan-400 text-xs font-bold h-9 hover:bg-cyan-500/20"
+                                            className="rounded-xl border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs font-black uppercase tracking-widest h-10 px-5 hover:bg-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]"
                                         >
-                                            <Users className="w-3.5 h-3.5 mr-2" /> Neural Network
+                                            <Users className="w-3.5 h-3.5 mr-2" /> Friend List
                                         </Button>
                                     </TabsTrigger>
                                 </div>
@@ -521,7 +529,7 @@ export default function ProfilePage() {
       />
       
       {/* Activity Monitor for Auto-Celebration */}
-      <ActivityMonitor level={level} activities={progression?.activities} onLevelUp={handleManualLevelUp} />
+      <ActivityMonitor level={level} activities={progression?.activities as any[]} onLevelUp={handleManualLevelUp} />
     </div>
   );
 }
@@ -577,7 +585,7 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
         try {
             switch (action) {
                 case 'view': setLocation(`/profile/${friendId}`); break;
-                case 'dm': setLocation(`/chat/${friendId}`); break;
+                case 'dm': setLocation(`/messages?user=${friendId}`); break;
                 case 'fav':
                     await favoriteMutation.mutateAsync({ friendId, favorite: true });
                     toast.success("Added to favorites");

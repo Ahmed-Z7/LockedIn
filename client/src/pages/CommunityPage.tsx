@@ -327,8 +327,17 @@ export default function CommunityPage() {
 
 const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
     const [viewMode, setViewMode] = useState<'my-groups' | 'discover'>('my-groups');
-    const { data: discoverGroups } = trpc.groups.discover.useQuery();
+    const { data: discoverGroups, refetch: refetchDiscover } = trpc.groups.discover.useQuery();
+    const utils = trpc.useUtils();
     
+    const requestJoin = trpc.groups.requestJoin.useMutation({
+        onSuccess: () => {
+            toast.success("Sync request transmitted to overseers.");
+            utils.groups.getGroup.invalidate();
+            refetchDiscover();
+        }
+    });
+
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-6xl mx-auto py-12">
             <div className="flex justify-between items-end mb-12">
@@ -361,7 +370,7 @@ const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
                     <motion.div
                         key={g.id}
                         whileHover={{ y: -4, scale: 1.02 }}
-                        onClick={() => viewMode === 'my-groups' && onSelectGroup(g.id)}
+                        onClick={() => (viewMode === 'my-groups' || g.isPrivate === 0) && onSelectGroup(g.id)}
                         className="p-8 rounded-[2.5rem] bg-card/30 border border-white/5 backdrop-blur-xl hover:border-purple-500/30 transition-all cursor-pointer relative overflow-hidden group"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -376,7 +385,13 @@ const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
                                     {g.role === 'admin' ? 'Overseer' : 'Peer'}
                                 </span>
                             ) : (
-                                <Button size="sm" className="bg-white/5 hover:bg-white/10 text-white/60 rounded-xl px-4 h-9">Request Access</Button>
+                                <Button 
+                                    size="sm" 
+                                    onClick={(e) => { e.stopPropagation(); requestJoin.mutate(g.id); }}
+                                    className="bg-white text-black hover:bg-white/90 rounded-xl px-4 h-9 font-bold"
+                                >
+                                    Join Hub
+                                </Button>
                             )}
                         </div>
                         <h3 className="text-xl font-bold mb-3 group-hover:text-purple-400 transition-colors">{g.name}</h3>
@@ -386,7 +401,9 @@ const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
                             <Users size={12} />
                             <span>{g.memberCount || 1} SYNCED PEERS</span>
                             <span>•</span>
-                            <span>PRIVATE</span>
+                            <span className={g.isPrivate ? 'text-orange-400/40' : 'text-emerald-400/40'}>
+                                {g.isPrivate ? 'ENCRYPTED' : 'OPEN LINK'}
+                            </span>
                         </div>
                     </motion.div>
                 ))}
@@ -651,12 +668,101 @@ const GroupChat = ({ groupId }: { groupId: number }) => {
 
 const GroupEnvironment = ({ groupId }: { groupId: number }) => {
     const [, setLocation] = useLocation();
+    const utils = trpc.useUtils();
     const { data: thisGroup } = trpc.groups.getGroup.useQuery(groupId); 
     
-    const groupData = trpc.groupContent.getFeed.useQuery(groupId);
-    const groupTasks = trpc.groupContent.getTasks.useQuery(groupId);
-    const leaderboardQuery = trpc.leaderboards.getGroupMembers.useQuery(groupId);
+    const groupData = trpc.groupContent.getFeed.useQuery(groupId, { enabled: thisGroup?.status === 'approved' });
+    const groupTasks = trpc.groupContent.getTasks.useQuery(groupId, { enabled: thisGroup?.status === 'approved' });
+    const leaderboardQuery = trpc.leaderboards.getGroupMembers.useQuery(groupId, { enabled: thisGroup?.status === 'approved' });
+    const pendingRequests = trpc.groups.getJoinRequests.useQuery(groupId, { enabled: thisGroup?.role === 'admin' });
+    
     const [subTab, setSubTab] = useState<'feed' | 'tasks' | 'chat' | 'sessions' | 'leaderboard'>('feed');
+
+    const handleJoinRequest = trpc.groups.handleJoinRequest.useMutation({
+        onSuccess: () => {
+            toast.success("Neural sync permission updated.");
+            utils.groups.getJoinRequests.invalidate(groupId);
+            utils.leaderboards.getGroupMembers.invalidate(groupId);
+        }
+    });
+
+    const requestJoin = trpc.groups.requestJoin.useMutation({
+        onSuccess: () => {
+            toast.success("Sync request transmitted.");
+            utils.groups.getGroup.invalidate(groupId);
+        }
+    });
+
+    const joinViaInvite = trpc.groups.joinViaInvite.useMutation({
+        onSuccess: (data) => {
+            if (data.alreadyMember) return;
+            toast.success("Neural link established via uplink invitation.");
+            utils.groups.getGroup.invalidate(groupId);
+            utils.groups.listMyGroups.invalidate();
+        }
+    });
+
+    React.useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('invite') === 'true' && thisGroup && thisGroup.status !== 'approved') {
+            joinViaInvite.mutate({ groupId });
+        }
+    }, [thisGroup?.id, thisGroup?.status]);
+
+    // Restricted View for non-members
+    if (thisGroup && thisGroup.status !== 'approved') {
+        return (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 max-w-4xl mx-auto">
+                <div className="p-12 rounded-[3.5rem] bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-white/10 backdrop-blur-3xl text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:40px_40px]" />
+                    <div className="relative z-10">
+                        <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-4xl font-black italic mx-auto mb-8 shadow-2xl shadow-purple-500/20">
+                            {thisGroup.name[0]}
+                        </div>
+                        <h1 className="text-5xl font-black tracking-tighter mb-4">{thisGroup.name}</h1>
+                        <p className="text-xl text-white/40 mb-12 max-w-xl mx-auto leading-relaxed">{thisGroup.description || 'This collective is currently encrypted. Request a neural link to participate.'}</p>
+                        
+                        <div className="flex flex-col items-center gap-6">
+                            {thisGroup.status === 'pending' ? (
+                                <div className="p-6 rounded-3xl bg-orange-500/10 border border-orange-500/20 text-orange-400 font-bold flex items-center gap-3">
+                                    <Clock size={20} /> SYNC REQUEST PENDING OVERSEER APPROVAL
+                                </div>
+                            ) : (
+                                <Button 
+                                    onClick={() => requestJoin.mutate(groupId)}
+                                    disabled={requestJoin.isPending || joinViaInvite.isPending}
+                                    className="bg-white text-black hover:bg-white/90 rounded-[2rem] h-20 px-12 font-black text-xl shadow-2xl shadow-white/10 group overflow-hidden"
+                                >
+                                    <span className="relative z-10 flex items-center gap-3">
+                                        INITIATE NEURAL SYNC <ChevronRight size={24} />
+                                    </span>
+                                </Button>
+                            )}
+                            
+                            <div className="flex items-center gap-12 text-white/20 font-black uppercase tracking-[0.3em] text-[10px]">
+                                <div className="flex items-center gap-2">
+                                    <Users size={14} /> {thisGroup.memberCount} PEERS
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Shield size={14} /> {thisGroup.isPrivate ? 'ENCRYPTED' : 'PUBLIC'}
+                                </div>
+                                {leaderboardQuery.data && leaderboardQuery.data.length > 0 && (
+                                    <div className="flex items-center -space-x-2">
+                                        {leaderboardQuery.data.slice(0, 3).map((m: any) => (
+                                            <div key={m.id} className="w-6 h-6 rounded-full border-2 border-black overflow-hidden bg-white/10">
+                                                {m.avatar ? <img src={m.avatar} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[8px]">{m.name[0]}</div>}
+                                            </div>
+                                        ))}
+                                        <span className="ml-4">Top Overseers</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="py-12">
@@ -837,9 +943,38 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                     {thisGroup?.role === 'admin' && (
                         <div className="p-8 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/10">
                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-6">Pending Requests</h4>
-                            <div className="space-y-4 text-center">
-                                <p className="text-xs text-white/20">No pending neural sync requests.</p>
-                                {/* In a real implementation, we'd map over trpc.groups.getRequests.useQuery(groupId) */}
+                            <div className="space-y-4">
+                                {pendingRequests.data?.map(req => (
+                                    <div key={req.id} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="w-8 h-8">
+                                                <AvatarImage src={req.avatar || undefined} />
+                                                <AvatarFallback>{req.username?.[0]}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="overflow-hidden">
+                                                <p className="text-xs font-bold truncate">{req.name}</p>
+                                                <p className="text-[9px] text-white/30 tracking-tight">@{req.username}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <button 
+                                                onClick={() => handleJoinRequest.mutate({ groupId, userId: req.id, action: 'approve' })}
+                                                className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500/30 transition-colors"
+                                            >
+                                                <CheckCircle2 size={14} />
+                                            </button>
+                                            <button 
+                                                onClick={() => handleJoinRequest.mutate({ groupId, userId: req.id, action: 'reject' })}
+                                                className="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center hover:bg-red-500/30 transition-colors"
+                                            >
+                                                <Plus className="rotate-45" size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {pendingRequests.data?.length === 0 && (
+                                    <p className="text-xs text-white/20 text-center py-4">No pending neural sync requests.</p>
+                                )}
                             </div>
                         </div>
                     )}
@@ -851,33 +986,128 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
 
 // --- POST HELPERS ---
 
-const PostItem = ({ post }: any) => (
-  <motion.div 
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    className="p-8 rounded-[2.5rem] bg-card/30 border border-white/5 backdrop-blur-3xl hover:border-purple-500/20 transition-all group"
-  >
-    <div className="flex items-center gap-4 mb-6">
-       <Avatar className="w-12 h-12 border-2 border-white/5">
-          <AvatarFallback>{post.authorName?.[0] || 'U'}</AvatarFallback>
-       </Avatar>
-       <div>
-          <h4 className="font-bold text-lg">{post.authorName || 'Student'}</h4>
-          <p className="text-xs text-white/30 font-black uppercase tracking-widest">{new Date(post.createdAt || new Date()).toLocaleDateString()}</p>
-       </div>
-    </div>
-    <h3 className="text-2xl font-black tracking-tight mb-4 group-hover:text-purple-400 transition-colors">{post.title}</h3>
-    <p className="text-white/60 leading-relaxed mb-6">{post.content}</p>
-    <div className="flex gap-4 pt-6 border-t border-white/5">
-       <button className="flex items-center gap-2 text-white/30 hover:text-red-500 transition-colors">
-          <Heart size={18} /> <span className="text-xs font-bold">{post.likes || 0}</span>
-       </button>
-       <button className="flex items-center gap-2 text-white/30 hover:text-blue-500 transition-colors">
-          <MessageSquare size={18} /> <span className="text-xs font-bold">{post.commentsCount || 0}</span>
-       </button>
-    </div>
-  </motion.div>
-);
+const PostItem = ({ post }: any) => {
+    const [isLiked, setIsLiked] = useState(false); // Simple local toggle for now
+    const [showComments, setShowComments] = useState(false);
+    const [commentText, setCommentText] = useState('');
+    const utils = trpc.useUtils();
+    
+    // Check if we already liked the post if needed, but for now we'll just mutate
+    const likePost = trpc.groupContent.likePost.useMutation({
+        onSuccess: () => {
+            utils.groupContent.getFeed.invalidate();
+        }
+    });
+
+    const addComment = trpc.groupContent.addComment.useMutation({
+        onSuccess: () => {
+            setCommentText('');
+            utils.groupContent.getComments.invalidate(post.id);
+            toast.success("Comment transmitted.");
+        }
+    });
+
+    const comments = trpc.groupContent.getComments.useQuery(post.id, { enabled: showComments });
+
+    return (
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="p-10 rounded-[3rem] bg-card/30 border border-white/5 backdrop-blur-3xl hover:border-purple-500/20 transition-all group relative overflow-hidden"
+        >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-[60px] pointer-events-none" />
+            
+            <div className="flex items-center gap-4 mb-8">
+                <Avatar className="w-14 h-14 border-2 border-white/5 ring-4 ring-purple-500/5">
+                    <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-lg font-black">{post.authorName?.[0] || 'U'}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <h4 className="font-black text-xl tracking-tight text-white/90">{post.authorName || 'Student Alpha'}</h4>
+                    <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Clock size={10} /> {new Date(post.createdAt || new Date()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </p>
+                </div>
+            </div>
+
+            <h3 className="text-3xl font-black tracking-tighter mb-4 group-hover:text-purple-400 transition-colors leading-tight">{post.title}</h3>
+            <p className="text-white/60 leading-relaxed text-lg mb-8 font-medium">{post.content}</p>
+            
+            <div className="flex gap-6 pt-8 border-t border-white/5 items-center">
+                <button 
+                    onClick={() => {
+                        setIsLiked(!isLiked);
+                        likePost.mutate({ postId: post.id });
+                    }}
+                    className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all font-black text-sm ${
+                        isLiked ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-white/5 text-white/30 hover:bg-white/10 hover:text-red-400'
+                    }`}
+                >
+                    <Heart size={20} fill={isLiked ? "currentColor" : "none"} /> 
+                    <span>{post.likes || 0}</span>
+                </button>
+                
+                <button 
+                    onClick={() => setShowComments(!showComments)}
+                    className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 text-white/30 hover:bg-white/10 hover:text-blue-400 transition-all font-black text-sm"
+                >
+                    <MessageCircle size={20} /> 
+                    <span>{post.commentsCount || 0}</span>
+                </button>
+
+                <div className="ml-auto flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/10">
+                    <Hash size={12} /> SECURE TRANSMISSION
+                </div>
+            </div>
+
+            <AnimatePresence>
+                {showComments && (
+                    <motion.div 
+                        initial={{ height: 0, opacity: 0 }} 
+                        animate={{ height: 'auto', opacity: 1 }} 
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="mt-8 space-y-4 pt-8 border-t border-white/5">
+                            <div className="flex gap-4">
+                                <Input 
+                                    placeholder="Add a neural comment..." 
+                                    className="h-12 bg-white/5 border-white/5 rounded-2xl px-6 focus:ring-purple-500/50"
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && commentText.trim() && addComment.mutate({ postId: post.id, content: commentText })}
+                                />
+                                <Button 
+                                    onClick={() => addComment.mutate({ postId: post.id, content: commentText })}
+                                    disabled={!commentText.trim() || addComment.isPending}
+                                    className="h-12 w-12 rounded-2xl bg-purple-600 p-0"
+                                >
+                                    <Send size={18} />
+                                </Button>
+                            </div>
+
+                            <div className="space-y-4 mt-6">
+                                {comments.data?.map((comment: any) => (
+                                    <div key={comment.id} className="flex gap-4 p-4 rounded-3xl bg-white/[0.02] border border-white/5">
+                                        <Avatar className="w-8 h-8">
+                                            <AvatarFallback className="text-[10px]">{comment.authorName?.[0]}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs font-black text-white/80">{comment.authorName}</span>
+                                                <span className="text-[9px] text-white/20 uppercase font-black">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                            <p className="text-sm text-white/60 font-medium">{comment.content}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+};
 
 const PostCreator = ({ groupId }: { groupId?: number }) => {
     const [title, setTitle] = useState('');
@@ -889,30 +1119,40 @@ const PostCreator = ({ groupId }: { groupId?: number }) => {
             setTitle('');
             setContent('');
             utils.groupContent.getFeed.invalidate(groupId);
+            toast.success("Intelligence transmission broadcasting.");
         }
     });
 
     return (
-        <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10">
+        <div className="p-10 rounded-[3rem] bg-gradient-to-br from-white/10 to-white/5 border border-white/10 backdrop-blur-3xl shadow-2xl shadow-purple-500/5 group focus-within:border-purple-500/40 transition-all">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="w-2 h-8 bg-purple-500 rounded-full animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-white/40">Broadcasting to Collective</span>
+            </div>
             <Input 
-                placeholder="Post Title..." 
-                className="bg-transparent border-none text-xl font-bold p-0 mb-4 focus-visible:ring-0 placeholder:text-white/20"
+                placeholder="Post Designation (Title)" 
+                className="bg-transparent border-none text-2xl font-black p-0 mb-6 focus-visible:ring-0 placeholder:text-white/10 h-auto"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
             />
             <textarea 
-                placeholder="Share your thoughts or study progress..."
-                className="w-full bg-transparent border-none resize-none min-h-[100px] text-white/60 focus:outline-none placeholder:text-white/20"
+                placeholder="Synchronize your study insights or results with the group..."
+                className="w-full bg-transparent border-none resize-none min-h-[120px] text-lg text-white/60 focus:outline-none placeholder:text-white/10 font-medium leading-relaxed"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
             />
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-between items-center pt-8 mt-4 border-t border-white/5">
+                <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" className="rounded-xl text-white/20 hover:text-purple-400 hover:bg-purple-400/10">
+                        <Plus size={18} className="mr-2" /> Add Intel
+                    </Button>
+                </div>
                 <Button 
                     onClick={() => createPost.mutate({ groupId: groupId!, title, content })}
                     disabled={!title || !content || createPost.isPending}
-                    className="bg-purple-600 rounded-xl"
+                    className="bg-purple-600 hover:bg-purple-700 text-white rounded-2xl h-14 px-10 font-black shadow-xl shadow-purple-500/20 active:scale-95 transition-all flex items-center gap-3"
                 >
-                    Post Update
+                    INITIATE BROADCAST <Send size={20} />
                 </Button>
             </div>
         </div>
