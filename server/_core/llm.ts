@@ -57,7 +57,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
 
     try {
       console.log(`[AI ATTEMPT] invoking ${modelId}...`);
-      const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
 
       const response = await fetch(url, {
         method: "POST",
