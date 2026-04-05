@@ -23,7 +23,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick, badge }: { icon: any,
     whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.05)' }}
     onClick={onClick}
     className={`w-full flex items-center justify-between px-4 py-2 rounded-xl transition-all duration-200 ${
-      active ? 'bg-white/10 text-white shadow-lg shadow-purple-500/10' : 'text-white/40 hover:text-white/70'
+      active ? 'bg-white/10 text-white shadow-lg shadow-purple-500/10' : 'text-foreground/40 hover:text-white/70'
     }`}
   >
     <div className="flex items-center gap-3">
@@ -38,7 +38,7 @@ const GroupCard = ({ name, description, role, memberCount, onClick }: { name: st
   <motion.div
     whileHover={{ y: -4, scale: 1.02 }}
     onClick={onClick}
-    className="p-5 rounded-3xl bg-card/30 border border-white/5 backdrop-blur-xl hover:border-purple-500/30 transition-all cursor-pointer relative overflow-hidden group"
+    className="p-5 rounded-3xl bg-card/30 border border-border/50 backdrop-blur-xl hover:border-purple-500/30 transition-all cursor-pointer relative overflow-hidden group"
   >
     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
     <div className="flex justify-between items-start relative z-10 mb-4">
@@ -51,13 +51,13 @@ const GroupCard = ({ name, description, role, memberCount, onClick }: { name: st
             Admin
           </span>
         )}
-        <span className="text-[10px] font-bold text-white/40 flex items-center gap-1">
+        <span className="text-[10px] font-bold text-foreground/40 flex items-center gap-1">
           <Users size={10} /> {memberCount || 0}
         </span>
       </div>
     </div>
     <h3 className="text-lg font-bold mb-2 group-hover:text-purple-400 transition-colors">{name}</h3>
-    <p className="text-sm text-white/40 line-clamp-2">{description || 'No description provided.'}</p>
+    <p className="text-sm text-foreground/40 line-clamp-2">{description || 'No description provided.'}</p>
   </motion.div>
 );
 
@@ -109,17 +109,17 @@ export default function CommunityPage() {
         )}
       </AnimatePresence>
       {/* ── LEFT SIDEBAR ── */}
-      <aside className="w-[300px] border-r border-white/5 bg-[#0D0D14]/50 backdrop-blur-3xl flex flex-col p-6 fixed h-full z-20">
+      <aside className="w-[300px] border-r border-border/50 bg-[#0D0D14]/50 backdrop-blur-3xl flex flex-col p-6 fixed h-full z-20">
         <div className="mb-10">
           <h2 className="text-2xl font-black italic tracking-tighter bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-6">
             LOCKEDIN SOCIAL
           </h2>
           
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-purple-400 transition-colors" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/20 group-focus-within:text-purple-400 transition-colors" size={16} />
             <Input 
               placeholder="Search people..." 
-              className="pl-10 bg-white/5 border-white/5 rounded-xl focus:ring-purple-500/50"
+              className="pl-10 bg-white/5 border-border/50 rounded-xl focus:ring-purple-500/50"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -156,7 +156,7 @@ export default function CommunityPage() {
             {/* My Groups List */}
             <div>
               <div className="flex items-center justify-between px-4 mb-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">My Groups</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">My Groups</span>
                 <button onClick={() => setLocation('/groups/create')} className="text-purple-400 hover:text-purple-300 transition-colors">
                   <Plus size={14} />
                 </button>
@@ -176,14 +176,14 @@ export default function CommunityPage() {
 
             {/* Recent DMs */}
             <div>
-              <div className="px-4 mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Recent Chats</div>
+              <div className="px-4 mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">Recent Chats</div>
               <div className="space-y-1">
                 {conversations.data?.map(c => (
                   <button 
                     key={c.id} 
                     onClick={() => { setActiveTab('messages'); setLocation(`/messages?user=${c.id}`); }}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-sm rounded-xl transition-all ${
-                        new URLSearchParams(window.location.search).get('user') === String(c.id) ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white hover:bg-white/5'
+                        new URLSearchParams(window.location.search).get('user') === String(c.id) ? 'bg-white/10 text-white' : 'text-foreground/40 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     <Avatar className="w-6 h-6">
@@ -197,8 +197,8 @@ export default function CommunityPage() {
           </div>
         </ScrollArea>
 
-        <div className="mt-auto pt-6 border-t border-white/5">
-          <button className="flex items-center gap-3 px-4 py-2 w-full text-white/40 hover:text-white transition-colors">
+        <div className="mt-auto pt-6 border-t border-border/50">
+          <button className="flex items-center gap-3 px-4 py-2 w-full text-foreground/40 hover:text-white transition-colors">
             <Settings size={18} />
             <span className="text-sm font-medium">Workspace Settings</span>
           </button>
@@ -216,9 +216,9 @@ export default function CommunityPage() {
                  <div className="space-y-6">
                     <h2 className="text-3xl font-black tracking-tighter italic">PEOPLE SEARCH <span className="text-purple-500">_</span> "{searchQuery}"</h2>
                     {userSearch.data?.map(u => (
-                        <div key={u.id} className="p-6 rounded-3xl bg-card/30 border border-white/5 flex items-center justify-between hover:border-purple-500/30 transition-all group">
+                        <div key={u.id} className="p-6 rounded-3xl bg-card/30 border border-border/50 flex items-center justify-between hover:border-purple-500/30 transition-all group">
                            <div className="flex items-center gap-4">
-                              <Avatar className="w-14 h-14 border-2 border-white/5 group-hover:border-purple-500/50 transition-colors">
+                              <Avatar className="w-14 h-14 border-2 border-border/50 group-hover:border-purple-500/50 transition-colors">
                                  <AvatarImage src={u.avatar || undefined} />
                                  <AvatarFallback>{u.username?.[0] || '?'}</AvatarFallback>
                               </Avatar>
@@ -227,7 +227,7 @@ export default function CommunityPage() {
                                    {u.name || 'Anonymous'}
                                    <span className="px-3 py-1 rounded-full bg-purple-500/10 text-[10px] text-purple-400 border border-purple-500/20 font-black uppercase">Lv. {u.level || 1}</span>
                                  </h4>
-                                 <p className="text-sm text-white/40">@{u.username || 'unknown'} • {u.xp?.toLocaleString() || 0} XP earned</p>
+                                 <p className="text-sm text-foreground/40">@{u.username || 'unknown'} • {u.xp?.toLocaleString() || 0} XP earned</p>
                               </div>
                            </div>
                            <div className="flex gap-2">
@@ -237,12 +237,12 @@ export default function CommunityPage() {
                              >
                                <MessageSquare className="mr-2" size={18} /> Message
                              </Button>
-                             <Button onClick={() => setLocation(`/profile/${u.id}`)} variant="outline" className="rounded-2xl h-12 px-6 border-white/10 hover:bg-white/5">View Profile</Button>
+                             <Button onClick={() => setLocation(`/profile/${u.id}`)} variant="outline" className="rounded-2xl h-12 px-6 border-border hover:bg-white/5">View Profile</Button>
                            </div>
                         </div>
                     ))}
                     {userSearch.data?.length === 0 && searchQuery.length > 2 && !userSearch.isLoading && (
-                        <div className="text-white/20 font-bold uppercase tracking-widest text-center py-6 border border-dashed border-white/5 rounded-3xl">No users match your criteria.</div>
+                        <div className="text-foreground/20 font-bold uppercase tracking-widest text-center py-6 border border-dashed border-border/50 rounded-3xl">No users match your criteria.</div>
                     )}
                  </div>
 
@@ -260,7 +260,7 @@ export default function CommunityPage() {
                         ))}
                     </div>
                     {groupSearch.data?.length === 0 && searchQuery.length > 2 && !groupSearch.isLoading && (
-                        <div className="text-white/20 font-bold uppercase tracking-widest text-center py-12 border border-dashed border-white/5 rounded-3xl">No collectives found in this sector.</div>
+                        <div className="text-foreground/20 font-bold uppercase tracking-widest text-center py-12 border border-dashed border-border/50 rounded-3xl">No collectives found in this sector.</div>
                     )}
                  </div>
               </motion.div>
@@ -272,7 +272,7 @@ export default function CommunityPage() {
                 <div className="flex justify-between items-center mb-12">
                    <div>
                       <h1 className="text-5xl font-black tracking-tighter mb-2">LOCKEDIN<span className="text-purple-500">·</span>COMMUNITY</h1>
-                      <p className="text-white/40 font-medium tracking-wide">Connecting students world-wide.</p>
+                      <p className="text-foreground/40 font-medium tracking-wide">Connecting students world-wide.</p>
                    </div>
                    <div className="flex gap-4">
                       <Button 
@@ -345,7 +345,7 @@ const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
                     <h1 className="text-5xl font-black tracking-tighter mb-4 italic">
                         {viewMode === 'my-groups' ? 'STUDY·COLLECTIVES' : 'DISCOVER·NEURAL·HUBS'}
                     </h1>
-                    <p className="text-white/40 font-medium tracking-wide">
+                    <p className="text-foreground/40 font-medium tracking-wide">
                         {viewMode === 'my-groups' 
                             ? 'Your private network of high-performance study cells.' 
                             : 'Global collectives searching for peak performance peers.'}
@@ -355,7 +355,7 @@ const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
                     <Button 
                         onClick={() => setViewMode(viewMode === 'my-groups' ? 'discover' : 'my-groups')}
                         variant="outline" 
-                        className={`h-14 px-8 rounded-2xl border-white/10 ${viewMode === 'discover' ? 'bg-white text-black border-white' : ''}`}
+                        className={`h-14 px-8 rounded-2xl border-border ${viewMode === 'discover' ? 'bg-white text-black border-white' : ''}`}
                     >
                         {viewMode === 'my-groups' ? 'Discovery Mode' : 'My Hubs'}
                     </Button>
@@ -371,7 +371,7 @@ const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
                         key={g.id}
                         whileHover={{ y: -4, scale: 1.02 }}
                         onClick={() => (viewMode === 'my-groups' || g.isPrivate === 0) && onSelectGroup(g.id)}
-                        className="p-8 rounded-[2.5rem] bg-card/30 border border-white/5 backdrop-blur-xl hover:border-purple-500/30 transition-all cursor-pointer relative overflow-hidden group"
+                        className="p-8 rounded-[2.5rem] bg-card/30 border border-border/50 backdrop-blur-xl hover:border-purple-500/30 transition-all cursor-pointer relative overflow-hidden group"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="flex justify-between items-start mb-6">
@@ -380,7 +380,7 @@ const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
                             </div>
                             {viewMode === 'my-groups' ? (
                                 <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${
-                                    g.role === 'admin' ? 'text-purple-400 border-purple-400/20 bg-purple-400/10' : 'text-white/20 border-white/5'
+                                    g.role === 'admin' ? 'text-purple-400 border-purple-400/20 bg-purple-400/10' : 'text-foreground/20 border-border/50'
                                 }`}>
                                     {g.role === 'admin' ? 'Overseer' : 'Peer'}
                                 </span>
@@ -395,9 +395,9 @@ const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
                             )}
                         </div>
                         <h3 className="text-xl font-bold mb-3 group-hover:text-purple-400 transition-colors">{g.name}</h3>
-                        <p className="text-sm text-white/40 line-clamp-2 leading-relaxed mb-6">{g.description || 'Secure encrypted transmission hub.'}</p>
+                        <p className="text-sm text-foreground/40 line-clamp-2 leading-relaxed mb-6">{g.description || 'Secure encrypted transmission hub.'}</p>
                         
-                        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-white/20">
+                        <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-foreground/20">
                             <Users size={12} />
                             <span>{g.memberCount || 1} SYNCED PEERS</span>
                             <span>•</span>
@@ -411,10 +411,10 @@ const GroupsHub = ({ myGroups, onSelectGroup, onCreateGroup }: any) => {
             
             {(viewMode === 'my-groups' ? myGroups : discoverGroups)?.length === 0 && (
                 <div className="py-40 text-center">
-                    <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-8 border border-dashed border-white/10">
-                        <Search size={32} className="text-white/20" />
+                    <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-8 border border-dashed border-border">
+                        <Search size={32} className="text-foreground/20" />
                     </div>
-                    <h3 className="text-2xl font-bold text-white/20 uppercase tracking-[0.2em]">No Neural Hubs Found</h3>
+                    <h3 className="text-2xl font-bold text-foreground/20 uppercase tracking-[0.2em]">No Neural Hubs Found</h3>
                 </div>
             )}
         </motion.div>
@@ -447,18 +447,18 @@ const DirectMessagesView = ({ selectedUserId }: { selectedUserId: number | null 
     if (!selectedUserId) {
         return (
             <div className="h-full flex flex-col items-center justify-center text-center py-20">
-                <div className="w-24 h-24 rounded-[2.5rem] bg-card/30 border border-white/5 flex items-center justify-center mb-8">
-                    <MessageSquare size={40} className="text-white/20" />
+                <div className="w-24 h-24 rounded-[2.5rem] bg-card/30 border border-border/50 flex items-center justify-center mb-8">
+                    <MessageSquare size={40} className="text-foreground/20" />
                 </div>
                 <h2 className="text-3xl font-black mb-4">Select a conversation</h2>
-                <p className="text-white/40">Choose a peer from the sidebar to start studying together.</p>
+                <p className="text-foreground/40">Choose a peer from the sidebar to start studying together.</p>
             </div>
         );
     }
 
     return (
         <div className="h-full flex flex-col max-w-4xl mx-auto py-6">
-            <header className="flex items-center justify-between mb-8 p-6 rounded-[2.5rem] bg-card/30 border border-white/5 backdrop-blur-3xl">
+            <header className="flex items-center justify-between mb-8 p-6 rounded-[2.5rem] bg-card/30 border border-border/50 backdrop-blur-3xl">
                 <div className="flex items-center gap-4">
                     <Avatar className="w-12 h-12 border-2 border-purple-500/20">
                         <AvatarFallback>{activeConv?.username?.[0] || '?'}</AvatarFallback>
@@ -467,11 +467,11 @@ const DirectMessagesView = ({ selectedUserId }: { selectedUserId: number | null 
                         <h4 className="font-bold text-lg">{activeConv?.name || activeConv?.username || 'Syncing...'}</h4>
                         <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] uppercase font-black tracking-widest text-white/30">Secure Neural Link Established</span>
+                            <span className="text-[10px] uppercase font-black tracking-widest text-foreground/30">Secure Neural Link Established</span>
                         </div>
                     </div>
                 </div>
-                <Button variant="outline" className="rounded-xl border-white/10 hover:bg-white/5">View Profile</Button>
+                <Button variant="outline" className="rounded-xl border-border hover:bg-white/5">View Profile</Button>
             </header>
 
             <ScrollArea className="flex-1 px-4 mb-6">
@@ -488,10 +488,10 @@ const DirectMessagesView = ({ selectedUserId }: { selectedUserId: number | null 
                                 <div className={`max-w-[70%] p-5 rounded-[2rem] ${
                                     isOwn 
                                         ? 'bg-purple-600 text-white rounded-tr-none shadow-lg shadow-purple-500/20' 
-                                        : 'bg-card/40 border border-white/5 text-white/80 rounded-tl-none backdrop-blur-xl'
+                                        : 'bg-card/40 border border-border/50 text-foreground/80 rounded-tl-none backdrop-blur-xl'
                                 }`}>
                                     <p className="text-sm leading-relaxed">{msg.content}</p>
-                                    <p className={`text-[9px] font-black uppercase tracking-widest mt-2 ${isOwn ? 'text-white/40' : 'text-white/20'}`}>
+                                    <p className={`text-[9px] font-black uppercase tracking-widest mt-2 ${isOwn ? 'text-foreground/40' : 'text-foreground/20'}`}>
                                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
@@ -501,11 +501,11 @@ const DirectMessagesView = ({ selectedUserId }: { selectedUserId: number | null 
                 </div>
             </ScrollArea>
 
-            <div className="p-4 rounded-[2.5rem] bg-card/30 border border-white/5 backdrop-blur-3xl group focus-within:border-purple-500/30 transition-all">
+            <div className="p-4 rounded-[2.5rem] bg-card/30 border border-border/50 backdrop-blur-3xl group focus-within:border-purple-500/30 transition-all">
                 <div className="flex items-center gap-4">
                     <Input 
                         placeholder="Type a neural message..." 
-                        className="bg-transparent border-none focus-visible:ring-0 text-white placeholder:text-white/20"
+                        className="bg-transparent border-none focus-visible:ring-0 text-white placeholder:text-foreground/20"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && message.trim() && sendMessage.mutate({ receiverId: selectedUserId, content: message })}
@@ -545,12 +545,12 @@ const CreateGroupModal = ({ onClose, onCreated }: { onClose: () => void, onCreat
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-background/80 backdrop-blur-md"
         >
             <motion.div 
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
-                className="w-full max-w-xl bg-[#0D0D14] border border-white/10 p-10 rounded-[3rem] shadow-2xl shadow-purple-500/10"
+                className="w-full max-w-xl bg-[#0D0D14] border border-border p-10 rounded-[3rem] shadow-2xl shadow-purple-500/10"
             >
                 <h2 className="text-4xl font-black italic tracking-tighter mb-8 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                     INITIALIZE GROUP
@@ -558,29 +558,29 @@ const CreateGroupModal = ({ onClose, onCreated }: { onClose: () => void, onCreat
                 
                 <div className="space-y-6">
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Group Designation</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-foreground/30 mb-3">Group Designation</p>
                         <Input 
                             placeholder="e.g. Quantum Physics Deep Dive" 
-                            className="h-14 bg-white/5 border-white/5 rounded-2xl px-6 focus:ring-purple-500/50"
+                            className="h-14 bg-white/5 border-border/50 rounded-2xl px-6 focus:ring-purple-500/50"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                         />
                     </div>
                     
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-3">Mission Statement</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-foreground/30 mb-3">Mission Statement</p>
                         <textarea 
                             placeholder="What are the core goals of this collective?"
-                            className="w-full h-32 bg-white/5 border border-white/5 rounded-3xl p-6 text-sm focus:outline-none focus:border-purple-500/30 transition-all resize-none"
+                            className="w-full h-32 bg-white/5 border border-border/50 rounded-3xl p-6 text-sm focus:outline-none focus:border-purple-500/30 transition-all resize-none"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
                     </div>
 
-                    <div className="flex items-center justify-between p-6 rounded-[2rem] bg-white/[0.02] border border-white/5">
+                    <div className="flex items-center justify-between p-6 rounded-[2rem] bg-white/[0.02] border border-border/50">
                         <div>
                             <p className="font-bold">Public Discovery</p>
-                            <p className="text-xs text-white/30">Allow others to find and request to join.</p>
+                            <p className="text-xs text-foreground/30">Allow others to find and request to join.</p>
                         </div>
                         <button 
                             onClick={() => setIsPublic(!isPublic)}
@@ -625,18 +625,18 @@ const GroupChat = ({ groupId }: { groupId: number }) => {
     });
 
     return (
-        <div className="h-[600px] flex flex-col bg-card/10 border border-white/5 rounded-[2.5rem] overflow-hidden backdrop-blur-3xl">
+        <div className="h-[600px] flex flex-col bg-card/10 border border-border/50 rounded-[2.5rem] overflow-hidden backdrop-blur-3xl">
             <ScrollArea className="flex-1 p-8">
                 <div className="space-y-6">
                     {chatQuery.data?.map((msg) => (
                         <div key={msg.id} className="flex gap-4 group">
-                            <Avatar className="w-10 h-10 border border-white/10">
+                            <Avatar className="w-10 h-10 border border-border">
                                 <AvatarFallback>{msg.authorUsername?.[0] || '?'}</AvatarFallback>
                             </Avatar>
                             <div>
                                 <div className="flex items-center gap-3 mb-1">
-                                    <span className="font-bold text-white/80 group-hover:text-purple-400 transition-colors">{msg.authorName || msg.authorUsername}</span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-white/20">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <span className="font-bold text-foreground/80 group-hover:text-purple-400 transition-colors">{msg.authorName || msg.authorUsername}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-foreground/20">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 </div>
                                 <p className="text-sm text-white/50 leading-relaxed">{msg.content}</p>
                             </div>
@@ -645,7 +645,7 @@ const GroupChat = ({ groupId }: { groupId: number }) => {
                 </div>
             </ScrollArea>
             
-            <div className="p-6 border-t border-white/5">
+            <div className="p-6 border-t border-border/50">
                 <div className="flex items-center gap-4 bg-white/5 rounded-2xl px-6 py-2 focus-within:ring-2 focus-within:ring-purple-500/50 transition-all">
                     <Input 
                         placeholder="Neural sync..." 
@@ -716,14 +716,14 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
     if (thisGroup && thisGroup.status !== 'approved') {
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 max-w-4xl mx-auto">
-                <div className="p-12 rounded-[3.5rem] bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-white/10 backdrop-blur-3xl text-center relative overflow-hidden">
+                <div className="p-12 rounded-[3.5rem] bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-border backdrop-blur-3xl text-center relative overflow-hidden">
                     <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:40px_40px]" />
                     <div className="relative z-10">
                         <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-4xl font-black italic mx-auto mb-8 shadow-2xl shadow-purple-500/20">
                             {thisGroup.name[0]}
                         </div>
                         <h1 className="text-5xl font-black tracking-tighter mb-4">{thisGroup.name}</h1>
-                        <p className="text-xl text-white/40 mb-12 max-w-xl mx-auto leading-relaxed">{thisGroup.description || 'This collective is currently encrypted. Request a neural link to participate.'}</p>
+                        <p className="text-xl text-foreground/40 mb-12 max-w-xl mx-auto leading-relaxed">{thisGroup.description || 'This collective is currently encrypted. Request a neural link to participate.'}</p>
                         
                         <div className="flex flex-col items-center gap-6">
                             {thisGroup.status === 'pending' ? (
@@ -742,7 +742,7 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                                 </Button>
                             )}
                             
-                            <div className="flex items-center gap-12 text-white/20 font-black uppercase tracking-[0.3em] text-[10px]">
+                            <div className="flex items-center gap-12 text-foreground/20 font-black uppercase tracking-[0.3em] text-[10px]">
                                 <div className="flex items-center gap-2">
                                     <Users size={14} /> {thisGroup.memberCount} PEERS
                                 </div>
@@ -772,11 +772,11 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
             <header className="mb-12">
                 <div className="flex items-center gap-4 mb-6">
                     <span className="px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-black uppercase tracking-[0.2em] border border-purple-500/20">Active Group</span>
-                    <span className="text-white/20">•</span>
-                    <span className="text-white/40 text-sm font-medium">{thisGroup?.memberCount || 1} Members Syncing</span>
+                    <span className="text-foreground/20">•</span>
+                    <span className="text-foreground/40 text-sm font-medium">{thisGroup?.memberCount || 1} Members Syncing</span>
                 </div>
                 <h1 className="text-6xl font-black tracking-tighter mb-4">{thisGroup?.name || 'Loading Neural Hub...'}</h1>
-                <p className="text-xl text-white/40 max-w-3xl leading-relaxed">{thisGroup?.description}</p>
+                <p className="text-xl text-foreground/40 max-w-3xl leading-relaxed">{thisGroup?.description}</p>
                 
                 <div className="flex gap-2 mt-8 overflow-x-auto pb-2">
                     {['feed', 'tasks', 'chat', 'sessions', 'leaderboard'].map((tab) => (
@@ -784,7 +784,7 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                             key={tab}
                             onClick={() => setSubTab(tab as any)}
                             className={`px-6 py-3 rounded-2xl text-sm font-bold capitalize transition-all whitespace-nowrap ${
-                                subTab === tab ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-white/40 hover:text-white hover:bg-white/5'
+                                subTab === tab ? 'bg-white text-black shadow-lg shadow-white/10' : 'text-foreground/40 hover:text-white hover:bg-white/5'
                             }`}
                         >
                             {tab}
@@ -799,7 +799,7 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                         <div className="space-y-8">
                             <PostCreator groupId={groupId} />
                             {groupData.data?.length === 0 ? (
-                                <div className="py-20 text-center text-white/20 font-bold uppercase tracking-widest bg-white/[0.01] rounded-[2.5rem] border border-dashed border-white/5">
+                                <div className="py-20 text-center text-foreground/20 font-bold uppercase tracking-widest bg-white/[0.01] rounded-[2.5rem] border border-dashed border-border/50">
                                     Primary Feed Empty. Initialize a transmission.
                                 </div>
                             ) : (
@@ -809,30 +809,30 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                     )}
                     {subTab === 'tasks' && (
                         <div className="space-y-6">
-                            <div className="flex justify-between items-center p-8 rounded-[2rem] bg-card/30 border border-white/5">
+                            <div className="flex justify-between items-center p-8 rounded-[2rem] bg-card/30 border border-border/50">
                                 <div>
                                     <h3 className="text-xl font-bold mb-2">Group Tasks</h3>
-                                    <p className="text-sm text-white/40">Collaborative goals for this week.</p>
+                                    <p className="text-sm text-foreground/40">Collaborative goals for this week.</p>
                                 </div>
                                 <Button className="bg-blue-600 rounded-xl">Add Task</Button>
                             </div>
                             <div className="grid gap-4">
                                 {groupTasks.data?.map(t => (
-                                    <div key={t.id} className="p-6 rounded-[2rem] bg-white/5 border border-white/5 flex items-center justify-between group">
+                                    <div key={t.id} className="p-6 rounded-[2rem] bg-white/5 border border-border/50 flex items-center justify-between group">
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-xl border-2 border-white/10 flex items-center justify-center transition-colors group-hover:border-blue-500/50`}>
+                                            <div className={`w-10 h-10 rounded-xl border-2 border-border flex items-center justify-center transition-colors group-hover:border-blue-500/50`}>
                                                 {t.status === 'completed' ? <CheckCircle2 className="text-emerald-400" size={18} /> : <div className="w-2 h-2 rounded-full bg-white/20" />}
                                             </div>
                                             <div>
-                                                <span className={`font-bold ${t.status === 'completed' ? 'line-through text-white/20' : ''}`}>{t.title}</span>
-                                                <p className="text-[10px] text-white/20 uppercase font-black tracking-widest mt-1">Assigned: Collective</p>
+                                                <span className={`font-bold ${t.status === 'completed' ? 'line-through text-foreground/20' : ''}`}>{t.title}</span>
+                                                <p className="text-[10px] text-foreground/20 uppercase font-black tracking-widest mt-1">Assigned: Collective</p>
                                             </div>
                                         </div>
-                                        <span className="text-white/20 text-xs font-bold">{t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'NO DEADLINE'}</span>
+                                        <span className="text-foreground/20 text-xs font-bold">{t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'NO DEADLINE'}</span>
                                     </div>
                                 ))}
                                 {groupTasks.data?.length === 0 && (
-                                    <div className="py-10 text-center text-white/20 text-sm font-bold uppercase tracking-widest">No active objectives.</div>
+                                    <div className="py-10 text-center text-foreground/20 text-sm font-bold uppercase tracking-widest">No active objectives.</div>
                                 )}
                             </div>
                         </div>
@@ -841,12 +841,12 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                         <GroupChat groupId={groupId} />
                     )}
                     {subTab === 'sessions' && (
-                        <div className="p-20 text-center bg-card/30 rounded-[3rem] border border-dashed border-white/10">
+                        <div className="p-20 text-center bg-card/30 rounded-[3rem] border border-dashed border-border">
                             <div className="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-purple-500/20">
                                 <Clock size={32} className="text-purple-400 animate-pulse" />
                             </div>
                             <h3 className="text-3xl font-black italic tracking-tighter mb-4">Neural Study Session</h3>
-                            <p className="text-white/40 mb-10 max-w-sm mx-auto">Sync your biometrics with the collective. All time spent studying together adds to group XP.</p>
+                            <p className="text-foreground/40 mb-10 max-w-sm mx-auto">Sync your biometrics with the collective. All time spent studying together adds to group XP.</p>
                             <Button 
                                 onClick={() => {
                                     // Trigger global study session
@@ -867,7 +867,7 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                                        <Award className="w-8 h-8 text-yellow-400" /> 
                                        In-Group Rankings
                                     </h3>
-                                    <p className="text-white/60 font-medium">Rankings refresh in real-time. Lead your squad.</p>
+                                    <p className="text-foreground/60 font-medium">Rankings refresh in real-time. Lead your squad.</p>
                                 </div>
                             </div>
                             
@@ -876,14 +876,14 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                                     <div className="w-10 h-10 rounded-full border-4 border-purple-500/30 border-t-purple-500 animate-spin" />
                                 </div>
                             ) : (
-                                <div className="space-y-4 bg-card/20 p-8 rounded-[2.5rem] border border-white/5">
+                                <div className="space-y-4 bg-card/20 p-8 rounded-[2.5rem] border border-border/50">
                                     {leaderboardQuery.data?.map((member, idx) => (
-                                        <div key={member.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                                            <div className="w-8 text-center font-black text-2xl text-white/40">
+                                        <div key={member.id} className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-border/50 hover:bg-white/10 transition-colors">
+                                            <div className="w-8 text-center font-black text-2xl text-foreground/40">
                                                 #{idx + 1}
                                             </div>
                                             
-                                            <Avatar className="w-12 h-12 border-2 border-white/10 shadow-lg">
+                                            <Avatar className="w-12 h-12 border-2 border-border shadow-lg">
                                                 <AvatarImage src={member.avatar || undefined} />
                                                 <AvatarFallback>{member.name?.[0] || 'U'}</AvatarFallback>
                                             </Avatar>
@@ -895,19 +895,19 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                                                         <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-[9px] font-black uppercase">Admin</span>
                                                     )}
                                                 </div>
-                                                <div className="text-sm text-white/40">@{member.username} • Level {member.level}</div>
+                                                <div className="text-sm text-foreground/40">@{member.username} • Level {member.level}</div>
                                             </div>
 
                                             <div className="text-right">
                                                 <div className="font-black text-2xl text-purple-400 flex items-center gap-2">
                                                     {member.xp?.toLocaleString()} <Zap className="w-5 h-5 text-purple-500" />
                                                 </div>
-                                                <div className="text-[10px] uppercase tracking-widest text-white/20 font-bold">Total XP</div>
+                                                <div className="text-[10px] uppercase tracking-widest text-foreground/20 font-bold">Total XP</div>
                                             </div>
                                         </div>
                                     ))}
                                     {leaderboardQuery.data?.length === 0 && (
-                                        <div className="text-center py-10 text-white/40 font-bold uppercase tracking-widest">No members found.</div>
+                                        <div className="text-center py-10 text-foreground/40 font-bold uppercase tracking-widest">No members found.</div>
                                     )}
                                 </div>
                             )}
@@ -916,10 +916,10 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                 </main>
 
                 <aside className="space-y-8">
-                    <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-white/10 relative overflow-hidden group">
+                    <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-border relative overflow-hidden group">
                         <UserPlus className="absolute -right-4 -bottom-4 text-white/5 group-hover:scale-110 transition-transform" size={120} />
                         <h4 className="text-lg font-black italic mb-4">Invite Peers</h4>
-                        <p className="text-sm text-white/60 mb-6">Level up together. Share this group link with your study mates.</p>
+                        <p className="text-sm text-foreground/60 mb-6">Level up together. Share this group link with your study mates.</p>
                         <Button 
                             onClick={() => {
                                 navigator.clipboard.writeText(window.location.href);
@@ -931,8 +931,8 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                         </Button>
                     </div>
 
-                    <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/5">
-                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-6">Group Admins</h4>
+                    <div className="p-8 rounded-[2.5rem] bg-white/5 border border-border/50">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 mb-6">Group Admins</h4>
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
                                 <Avatar className="w-8 h-8">
@@ -948,7 +948,7 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-6">Pending Requests</h4>
                             <div className="space-y-4">
                                 {pendingRequests.data?.map(req => (
-                                    <div key={req.id} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
+                                    <div key={req.id} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-border/50">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="w-8 h-8">
                                                 <AvatarImage src={req.avatar || undefined} />
@@ -956,7 +956,7 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                                             </Avatar>
                                             <div className="overflow-hidden">
                                                 <p className="text-xs font-bold truncate">{req.name}</p>
-                                                <p className="text-[9px] text-white/30 tracking-tight">@{req.username}</p>
+                                                <p className="text-[9px] text-foreground/30 tracking-tight">@{req.username}</p>
                                             </div>
                                         </div>
                                         <div className="flex gap-1">
@@ -976,7 +976,7 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                                     </div>
                                 ))}
                                 {pendingRequests.data?.length === 0 && (
-                                    <p className="text-xs text-white/20 text-center py-4">No pending neural sync requests.</p>
+                                    <p className="text-xs text-foreground/20 text-center py-4">No pending neural sync requests.</p>
                                 )}
                             </div>
                         </div>
@@ -990,7 +990,8 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
 // --- POST HELPERS ---
 
  const PostItem = ({ post, type = 'community' }: { post: any, type?: 'community' | 'group' }) => {
-    const [isLiked, setIsLiked] = useState(false); 
+    const { user } = useAuth();
+    const [isLiked, setIsLiked] = useState(post.hasLiked || false); 
     const [showComments, setShowComments] = useState(false);
     const [commentText, setCommentText] = useState('');
     const utils = trpc.useUtils();
@@ -1025,6 +1026,15 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
         ? trpc.community.getComments.useQuery(post.id, { enabled: showComments })
         : trpc.groupContent.getComments.useQuery(post.id, { enabled: showComments });
 
+    const deletePost = trpc.community.deletePost.useMutation({
+        onSuccess: () => {
+            utils.community.getPosts.invalidate();
+            toast.success("Post deleted successfully.");
+        }
+    });
+
+    const isOwnerOrAdmin = user?.id === post.userId || user?.role === 'admin';
+
     const handleLike = () => {
         setIsLiked(!isLiked);
         if (type === 'community') likeCommunity.mutate({ postId: post.id });
@@ -1041,30 +1051,30 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            className="p-10 rounded-[3rem] bg-card/30 border border-white/5 backdrop-blur-3xl hover:border-purple-500/20 transition-all group relative overflow-hidden"
+            className="p-10 rounded-[3rem] bg-card/30 border border-border/50 backdrop-blur-3xl hover:border-purple-500/20 transition-all group relative overflow-hidden"
         >
             <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 blur-[60px] pointer-events-none" />
             
             <div className="flex items-center gap-4 mb-8">
-                <Avatar className="w-14 h-14 border-2 border-white/5 ring-4 ring-purple-500/5">
+                <Avatar className="w-14 h-14 border-2 border-border/50 ring-4 ring-purple-500/5">
                     <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-lg font-black">{post.authorName?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
                 <div>
                     <h4 className="font-black text-xl tracking-tight text-white/90">{post.authorName || 'Student Alpha'}</h4>
-                    <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                    <p className="text-[10px] text-foreground/30 font-black uppercase tracking-[0.2em] flex items-center gap-2">
                         <Clock size={10} /> {new Date(post.createdAt || new Date()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </p>
                 </div>
             </div>
 
             <h3 className="text-3xl font-black tracking-tighter mb-4 group-hover:text-purple-400 transition-colors leading-tight">{post.title}</h3>
-            <p className="text-white/60 leading-relaxed text-lg mb-8 font-medium">{post.content}</p>
+            <p className="text-foreground/60 leading-relaxed text-lg mb-8 font-medium">{post.content}</p>
             
-            <div className="flex gap-6 pt-8 border-t border-white/5 items-center">
+            <div className="flex gap-6 pt-8 border-t border-border/50 items-center">
                 <button 
                     onClick={handleLike}
                     className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all font-black text-sm ${
-                        isLiked ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-white/5 text-white/30 hover:bg-white/10 hover:text-red-400'
+                        isLiked ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-white/5 text-foreground/30 hover:bg-white/10 hover:text-red-400'
                     }`}
                 >
                     <Heart size={20} fill={isLiked ? "currentColor" : "none"} /> 
@@ -1073,13 +1083,22 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                 
                 <button 
                     onClick={() => setShowComments(!showComments)}
-                    className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 text-white/30 hover:bg-white/10 hover:text-blue-400 transition-all font-black text-sm"
+                    className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 text-foreground/30 hover:bg-white/10 hover:text-blue-400 transition-all font-black text-sm"
                 >
                     <MessageCircle size={20} /> 
                     <span>{post.commentsCount || 0}</span>
                 </button>
 
-                <div className="ml-auto flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/10">
+                {isOwnerOrAdmin && type === 'community' && (
+                    <button 
+                        onClick={() => deletePost.mutate({ postId: post.id })}
+                        className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 text-foreground/30 hover:bg-red-500 hover:text-white transition-all font-black text-sm"
+                    >
+                        Delete
+                    </button>
+                )}
+
+                <div className="ml-auto flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-foreground/10">
                     <Hash size={12} /> SECURE TRANSMISSION
                 </div>
             </div>
@@ -1092,11 +1111,11 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                     >
-                        <div className="mt-8 space-y-4 pt-8 border-t border-white/5">
+                        <div className="mt-8 space-y-4 pt-8 border-t border-border/50">
                             <div className="flex gap-4">
                                 <Input 
                                     placeholder="Add a neural comment..." 
-                                    className="h-12 bg-white/5 border-white/5 rounded-2xl px-6 focus:ring-purple-500/50"
+                                    className="h-12 bg-white/5 border-border/50 rounded-2xl px-6 focus:ring-purple-500/50"
                                     value={commentText}
                                     onChange={(e) => setCommentText(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
@@ -1112,16 +1131,16 @@ const GroupEnvironment = ({ groupId }: { groupId: number }) => {
 
                             <div className="space-y-4 mt-6">
                                 {comments.data?.map((comment: any) => (
-                                    <div key={comment.id} className="flex gap-4 p-4 rounded-3xl bg-white/[0.02] border border-white/5">
+                                    <div key={comment.id} className="flex gap-4 p-4 rounded-3xl bg-white/[0.02] border border-border/50">
                                         <Avatar className="w-8 h-8">
                                             <AvatarFallback className="text-[10px]">{comment.authorName?.[0]}</AvatarFallback>
                                         </Avatar>
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-xs font-black text-white/80">{comment.authorName}</span>
-                                                <span className="text-[9px] text-white/20 uppercase font-black">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                                <span className="text-xs font-black text-foreground/80">{comment.authorName}</span>
+                                                <span className="text-[9px] text-foreground/20 uppercase font-black">{new Date(comment.createdAt).toLocaleDateString()}</span>
                                             </div>
-                                            <p className="text-sm text-white/60 font-medium">{comment.content}</p>
+                                            <p className="text-sm text-foreground/60 font-medium">{comment.content}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -1149,26 +1168,26 @@ const PostCreator = ({ groupId }: { groupId?: number }) => {
     });
 
     return (
-        <div className="p-10 rounded-[3rem] bg-gradient-to-br from-white/10 to-white/5 border border-white/10 backdrop-blur-3xl shadow-2xl shadow-purple-500/5 group focus-within:border-purple-500/40 transition-all">
+        <div className="p-10 rounded-[3rem] bg-gradient-to-br from-white/10 to-white/5 border border-border backdrop-blur-3xl shadow-2xl shadow-purple-500/5 group focus-within:border-purple-500/40 transition-all">
             <div className="flex items-center gap-3 mb-6">
                 <div className="w-2 h-8 bg-purple-500 rounded-full animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-white/40">Broadcasting to Collective</span>
+                <span className="text-xs font-black uppercase tracking-[0.3em] text-foreground/40">Broadcasting to Collective</span>
             </div>
             <Input 
                 placeholder="Post Designation (Title)" 
-                className="bg-transparent border-none text-2xl font-black p-0 mb-6 focus-visible:ring-0 placeholder:text-white/10 h-auto"
+                className="bg-transparent border-none text-2xl font-black p-0 mb-6 focus-visible:ring-0 placeholder:text-foreground/10 h-auto"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
             />
             <textarea 
                 placeholder="Synchronize your study insights or results with the group..."
-                className="w-full bg-transparent border-none resize-none min-h-[120px] text-lg text-white/60 focus:outline-none placeholder:text-white/10 font-medium leading-relaxed"
+                className="w-full bg-transparent border-none resize-none min-h-[120px] text-lg text-foreground/60 focus:outline-none placeholder:text-foreground/10 font-medium leading-relaxed"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
             />
-            <div className="flex justify-between items-center pt-8 mt-4 border-t border-white/5">
+            <div className="flex justify-between items-center pt-8 mt-4 border-t border-border/50">
                 <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" className="rounded-xl text-white/20 hover:text-purple-400 hover:bg-purple-400/10">
+                    <Button variant="ghost" size="sm" className="rounded-xl text-foreground/20 hover:text-purple-400 hover:bg-purple-400/10">
                         <Plus size={18} className="mr-2" /> Add Intel
                     </Button>
                 </div>

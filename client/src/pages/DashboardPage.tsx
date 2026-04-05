@@ -50,7 +50,7 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-card/30 backdrop-blur-3xl border border-white/5 p-12 rounded-[2.5rem] mb-12 relative overflow-hidden group border-purple-500/20 shadow-2xl shadow-purple-500/10"
+          className="bg-card/30 backdrop-blur-3xl border border-border/50 p-12 rounded-[2.5rem] mb-12 relative overflow-hidden group border-purple-500/20 shadow-2xl shadow-purple-500/10"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-blue-500/10 opacity-50 group-hover:opacity-100 transition-opacity" />
           
@@ -75,19 +75,19 @@ export default function DashboardPage() {
                 onClick={() => setLocation("/schedule")}
                 variant="outline"
                 size="lg"
-                className="border-white/10 bg-white/5 hover:bg-white/10 rounded-2xl px-8 py-7 text-lg font-bold backdrop-blur-xl group hover:scale-105 transition-all"
+                className="border-border bg-white/5 hover:bg-white/10 rounded-2xl px-8 py-7 text-lg font-bold backdrop-blur-xl group hover:scale-105 transition-all"
               >
                 <Clock className="w-5 h-5 mr-2" />
                 View Schedule
               </Button>
             </div>
 
-            <div className="mt-12 flex justify-center gap-12 border-t border-white/5 pt-12">
+            <div className="mt-12 flex justify-center gap-12 border-t border-border/50 pt-12">
                <div className="text-center">
                  <div className="text-2xl font-black text-purple-400">50K+</div>
                  <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">Active Users</div>
                </div>
-               <div className="text-center border-x border-white/5 px-12">
+               <div className="text-center border-x border-border/50 px-12">
                  <div className="text-2xl font-black text-emerald-400">95%</div>
                  <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">Success Rate</div>
                </div>
@@ -114,8 +114,8 @@ export default function DashboardPage() {
                 transition={{ delay: i * 0.1 }}
                 onClick={() => stat.path && setLocation(stat.path)}
                 className={cn(
-                  "bg-card/40 backdrop-blur-3xl border border-white/10 p-6 rounded-3xl group transition-all shadow-xl hover:scale-105",
-                  i === 0 ? "border-cyan-500/30 shadow-cyan-500/10" : "border-white/5",
+                  "bg-card/40 backdrop-blur-3xl border border-border p-6 rounded-3xl group transition-all shadow-xl hover:scale-105",
+                  i === 0 ? "border-cyan-500/30 shadow-cyan-500/10" : "border-border/50",
                   stat.path && "cursor-pointer hover:bg-white/[0.05]"
                 )}
               >
@@ -135,7 +135,7 @@ export default function DashboardPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card/30 backdrop-blur-xl border border-white/10 p-8 rounded-[2rem] shadow-2xl"
+          className="bg-card/30 backdrop-blur-xl border border-border p-8 rounded-[2rem] shadow-2xl"
         >
           <div className="flex justify-between items-end mb-6">
             <div>
@@ -149,7 +149,7 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-white/5 p-1 relative">
+          <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-border/50 p-1 relative">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${sessions?.length ? (sessions?.filter(s => s.completed === 1).length / sessions.length) * 100 : 0}%` }}

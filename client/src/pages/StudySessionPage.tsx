@@ -358,10 +358,10 @@ export default function StudySessionPage() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1 }}
               onClick={() => startSession(m)}
-              className="group relative bg-card/30 backdrop-blur-xl border border-white/5 hover:border-purple-500/40 p-8 rounded-[2rem] text-left transition-all duration-500 hover:scale-[1.02]"
+              className="group relative bg-card/30 backdrop-blur-xl border border-border/50 hover:border-purple-500/40 p-8 rounded-[2rem] text-left transition-all duration-500 hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
-              <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center mb-6 group-hover:bg-purple-500/10 group-hover:border-purple-500/20 transition-all">
+              <div className="w-16 h-16 rounded-2xl bg-white/5 border border-border/50 flex items-center justify-center mb-6 group-hover:bg-purple-500/10 group-hover:border-purple-500/20 transition-all">
                 <m.icon className="w-8 h-8 text-foreground/20 group-hover:text-purple-400 transition-colors" />
               </div>
               <h3 className="text-xl font-bold mb-2 group-hover:text-purple-400 transition-colors tracking-tight">{m.title}</h3>
@@ -382,7 +382,7 @@ export default function StudySessionPage() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden flex flex-col">
         {/* Top Bar */}
-        <header className="h-20 border-b border-white/5 px-8 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
+        <header className="h-20 border-b border-border/50 px-8 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" className="rounded-full w-10 h-10 p-0" onClick={() => setMethod(null)}>
                     <ArrowLeft className="w-5 h-5 text-foreground/40" />
@@ -429,7 +429,7 @@ export default function StudySessionPage() {
                     <Button 
                         size="icon" 
                         variant="ghost" 
-                        className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl ml-2"
+                        className="w-10 h-10 bg-white/5 border border-border rounded-xl ml-2"
                         onClick={() => setIsActive(!isActive)}
                     >
                         {isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -443,7 +443,7 @@ export default function StudySessionPage() {
             </div>
 
             <div className="flex items-center gap-3">
-                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 mr-4">
+                <div className="flex bg-white/5 p-1 rounded-2xl border border-border/50 mr-4">
                     {[
                         { id: 'content', icon: BookOpen },
                         { id: 'mindmap', icon: Brain },
@@ -466,7 +466,7 @@ export default function StudySessionPage() {
                 </div>
                 <Button 
                     variant="outline" 
-                    className="border-white/5 bg-white/5 hover:bg-white/10 rounded-xl px-6 text-xs font-bold"
+                    className="border-border/50 bg-white/5 hover:bg-white/10 rounded-xl px-6 text-xs font-bold"
                     onClick={initiateQuiz}
                 >
                     End Session
@@ -481,7 +481,7 @@ export default function StudySessionPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-3xl overflow-y-auto pt-20"
+                    className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-3xl overflow-y-auto pt-20"
                 >
                     {isGeneratingQuiz ? (
                         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
@@ -540,7 +540,7 @@ export default function StudySessionPage() {
                 {!exceptionTimeLeft && (
                     <button 
                         onClick={() => setIsExceptionAsking(true)}
-                        className="ml-2 text-[9px] font-black bg-white/10 hover:bg-white/20 px-2 py-1 rounded-lg transition-colors border border-white/10"
+                        className="ml-2 text-[9px] font-black bg-white/10 hover:bg-white/20 px-2 py-1 rounded-lg transition-colors border border-border"
                     >
                         REQUEST ACCESS
                     </button>
@@ -570,7 +570,7 @@ export default function StudySessionPage() {
                         >
                             <div className="space-y-4">
                                 <h1 className="text-4xl font-black tracking-tight">{session?.subject}</h1>
-                                <div className="flex items-center gap-4 text-sm text-foreground/40 pb-8 border-b border-white/5">
+                                <div className="flex items-center gap-4 text-sm text-foreground/40 pb-8 border-b border-border/50">
                                     <span className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full font-bold">12 Topics</span>
                                     <span>2.4k Words Analyzed</span>
                                 </div>
@@ -605,7 +605,7 @@ export default function StudySessionPage() {
                                 <p className="text-foreground/40 font-medium">Visualizing relationships in: {session?.subject}</p>
                             </div>
                             
-                            <div className="relative w-full max-w-3xl aspect-[16/9] bg-card/20 backdrop-blur-md border border-white/10 rounded-[3rem] p-8 flex items-center justify-center overflow-hidden">
+                            <div className="relative w-full max-w-3xl aspect-[16/9] bg-card/20 backdrop-blur-md border border-border rounded-[3rem] p-8 flex items-center justify-center overflow-hidden">
                                 {/* Connecting lines background */}
                                 <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
                                     <path d="M 50% 50% L 20% 20% M 50% 50% L 80% 20% M 50% 50% L 20% 80% M 50% 50% L 80% 80%" stroke="currentColor" strokeWidth="2" fill="none" />
@@ -629,7 +629,7 @@ export default function StudySessionPage() {
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: node.delay, type: 'spring' }}
                                         style={{ top: node.top, left: node.left, right: node.right, bottom: node.bottom }}
-                                        className="absolute p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400/50 rounded-2xl text-sm font-bold transition-all shadow-xl group max-w-[150px] text-center"
+                                        className="absolute p-4 bg-white/5 hover:bg-white/10 border border-border hover:border-purple-400/50 rounded-2xl text-sm font-bold transition-all shadow-xl group max-w-[150px] text-center"
                                     >
                                         <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-purple-500 flex items-center justify-center mx-auto mb-2 text-xs transition-colors">
                                             {i + 1}
@@ -649,7 +649,7 @@ export default function StudySessionPage() {
                             className="h-full flex flex-col items-center justify-center gap-8"
                         >
                             <div className="w-full max-w-lg aspect-[4/3] relative perspective-1000 group cursor-pointer">
-                                <div className="w-full h-full p-12 bg-card/40 backdrop-blur-xl border border-white/10 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center text-center transition-all duration-700 group-hover:[transform:rotateY(180deg)] [transform-style:preserve-3d]">
+                                <div className="w-full h-full p-12 bg-card/40 backdrop-blur-xl border border-border rounded-[3rem] shadow-2xl flex flex-col items-center justify-center text-center transition-all duration-700 group-hover:[transform:rotateY(180deg)] [transform-style:preserve-3d]">
                                     {/* Front */}
                                     <div className="absolute inset-0 flex flex-col items-center justify-center p-12 [backface-visibility:hidden]">
                                         <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 mb-6">
@@ -667,7 +667,7 @@ export default function StudySessionPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <Button variant="outline" className="h-14 w-14 rounded-full border-white/5 bg-white/5"><RotateCcw className="w-5 h-5" /></Button>
+                                <Button variant="outline" className="h-14 w-14 rounded-full border-border/50 bg-white/5"><RotateCcw className="w-5 h-5" /></Button>
                                 <Button className="h-14 px-8 rounded-full bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-500/20">Next Card</Button>
                             </div>
                         </motion.div>
@@ -688,7 +688,7 @@ export default function StudySessionPage() {
                                 <p className="text-foreground/40 text-lg">Type a simple explanation of what you just learned. ZED AI will grade your clarity.</p>
                             </div>
                             <textarea 
-                                className="w-full h-64 bg-white/5 border border-white/10 rounded-[2rem] p-8 text-lg focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-foreground/10"
+                                className="w-full h-64 bg-white/5 border border-border rounded-[2rem] p-8 text-lg focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-foreground/10"
                                 placeholder="Once upon a time, there was this concept called..."
                             />
                             <Button className="h-16 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-lg shadow-xl shadow-amber-500/10">Analyze Clarity</Button>
@@ -723,8 +723,8 @@ export default function StudySessionPage() {
                                 <p className="text-foreground/40 font-medium">Topic: Core Fundamentals - {session?.subject}</p>
                             </div>
 
-                            <div className="bg-card/40 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl">
-                                <div className="p-10 border-b border-white/5 bg-white/5">
+                            <div className="bg-card/40 backdrop-blur-xl border border-border rounded-[2rem] overflow-hidden shadow-2xl">
+                                <div className="p-10 border-b border-border/50 bg-white/5">
                                     <h3 className="text-xl font-bold leading-tight">Which of the following best describes the 'Spaced Repetition' technique?</h3>
                                 </div>
                                 <div className="p-8 space-y-3">
@@ -736,7 +736,7 @@ export default function StudySessionPage() {
                                     ].map((opt, i) => (
                                         <button 
                                             key={i}
-                                            className="w-full text-left p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/40 hover:bg-purple-500/10 transition-all font-medium text-foreground/70 group"
+                                            className="w-full text-left p-5 rounded-2xl bg-white/5 border border-border/50 hover:border-purple-500/40 hover:bg-purple-500/10 transition-all font-medium text-foreground/70 group"
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-xs font-black group-hover:bg-purple-500 group-hover:text-white">{String.fromCharCode(65 + i)}</div>
@@ -756,8 +756,8 @@ export default function StudySessionPage() {
             </div>
 
             {/* Right: AI Panel */}
-            <aside className="w-[400px] border-l border-white/5 bg-background/50 backdrop-blur-xl flex flex-col">
-                <div className="p-6 border-b border-white/5 flex items-center gap-3">
+            <aside className="w-[400px] border-l border-border/50 bg-background/50 backdrop-blur-xl flex flex-col">
+                <div className="p-6 border-b border-border/50 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center text-white">
                         <Sparkles className="w-4 h-4" />
                     </div>
@@ -768,21 +768,21 @@ export default function StudySessionPage() {
                     {chatMessages.map((m, i) => (
                         <div key={i} className={cn(
                             "p-4 rounded-2xl text-xs leading-relaxed",
-                            m.role === 'ai' ? "bg-white/5 border border-white/5 text-foreground/70" : "bg-purple-600 ml-auto max-w-[80%] text-white"
+                            m.role === 'ai' ? "bg-white/5 border border-border/50 text-foreground/70" : "bg-purple-600 ml-auto max-w-[80%] text-white"
                         )}>
                             {m.content}
                         </div>
                     ))}
                 </div>
 
-                <div className="p-6 border-t border-white/5">
+                <div className="p-6 border-t border-border/50">
                     <div className="relative group">
                         <input 
                             value={chatInput}
                             onChange={(e) => setChatInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                             placeholder="Request context..."
-                            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-6 pr-12 text-xs focus:outline-none focus:border-purple-500/50 transition-all font-medium"
+                            className="w-full bg-white/5 border border-border rounded-xl py-4 pl-6 pr-12 text-xs focus:outline-none focus:border-purple-500/50 transition-all font-medium"
                         />
                         <button 
                             onClick={handleSendMessage}
@@ -835,7 +835,7 @@ export default function StudySessionPage() {
                                             "aspect-square rounded-2xl border transition-all duration-500 flex items-center justify-center font-black text-[10px] uppercase tracking-tighter",
                                             flippedCards.includes(card.id) || matchedPairs.includes(card.id)
                                                 ? "bg-blue-500/20 border-blue-500 text-blue-400 [transform:rotateY(0deg)]"
-                                                : "bg-white/5 border-white/10 text-transparent [transform:rotateY(180deg)] hover:border-white/20"
+                                                : "bg-white/5 border-border text-transparent [transform:rotateY(180deg)] hover:border-white/20"
                                         )}
                                     >
                                         {(flippedCards.includes(card.id) || matchedPairs.includes(card.id)) ? card.content : "?"}
@@ -844,7 +844,7 @@ export default function StudySessionPage() {
                             </div>
                         </div>
 
-                        <Button onClick={() => setBlockTimeLeft(0)} variant="outline" className="border-white/5 text-foreground/30 hover:text-foreground">
+                        <Button onClick={() => setBlockTimeLeft(0)} variant="outline" className="border-border/50 text-foreground/30 hover:text-foreground">
                             Skip Break
                         </Button>
                     </div>
@@ -863,7 +863,7 @@ export default function StudySessionPage() {
                     <motion.div 
                         initial={{ scale: 0.9, y: 20 }}
                         animate={{ scale: 1, y: 0 }}
-                        className="bg-card border border-white/10 rounded-[3rem] p-12 max-w-lg w-full text-center shadow-[0_0_50px_rgba(168,85,247,0.2)]"
+                        className="bg-card border border-border rounded-[3rem] p-12 max-w-lg w-full text-center shadow-[0_0_50px_rgba(168,85,247,0.2)]"
                     >
                         <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-600 rounded-3xl mx-auto mb-8 flex items-center justify-center text-white shadow-xl shadow-green-500/20">
                             <CheckCircle className="w-12 h-12" />
@@ -872,13 +872,13 @@ export default function StudySessionPage() {
                         <p className="text-foreground/40 mb-10 font-medium">Neural pathways reinforced successfully.</p>
                         
                         <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="p-6 bg-white/5 rounded-2xl border border-white/5">
+                            <div className="p-6 bg-white/5 rounded-2xl border border-border/50">
                                 <div className="text-3xl font-black text-purple-400">
                                     +{Math.max(0, (Math.round(totalSessionTime / 60) * 10) - (distractions * 15))}
                                 </div>
                                 <div className="text-[10px] uppercase tracking-widest font-black text-foreground/20">XP Gained</div>
                             </div>
-                            <div className="p-6 bg-white/5 rounded-2xl border border-white/5">
+                            <div className="p-6 bg-white/5 rounded-2xl border border-border/50">
                                 <div className={cn("text-3xl font-black", distractions > 0 ? "text-red-400" : "text-emerald-400")}>
                                     {distractions}
                                 </div>
@@ -996,7 +996,7 @@ export default function StudySessionPage() {
                     <motion.div 
                         initial={{ scale: 0.9, y: 20 }}
                         animate={{ scale: 1, y: 0 }}
-                        className="bg-card border border-white/10 rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl space-y-8"
+                        className="bg-card border border-border rounded-[2.5rem] p-10 max-w-md w-full shadow-2xl space-y-8"
                     >
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -1017,7 +1017,7 @@ export default function StudySessionPage() {
                         <div className="space-y-4">
                             <textarea 
                                 id="exception-reason"
-                                className="w-full h-32 bg-white/5 border border-white/10 rounded-2xl p-4 text-xs focus:outline-none focus:border-amber-500/50 transition-all"
+                                className="w-full h-32 bg-white/5 border border-border rounded-2xl p-4 text-xs focus:outline-none focus:border-amber-500/50 transition-all"
                                 placeholder="Why do you need to break focus?"
                             />
                             <Button 

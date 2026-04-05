@@ -52,7 +52,7 @@ export default function AnalyticsPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.1 }}
-                            className="bg-card/30 backdrop-blur-xl border border-white/5 p-6 rounded-3xl group hover:border-purple-500/30 transition-all shadow-lg"
+                            className="bg-card/30 backdrop-blur-xl border border-border/50 p-6 rounded-3xl group hover:border-purple-500/30 transition-all shadow-lg"
                         >
                             <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110", stat.bg)}>
                                 <stat.icon className={cn("w-6 h-6", stat.color)} />
@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-card/30 backdrop-blur-xl border border-white/5 p-8 rounded-3xl"
+                        className="bg-card/30 backdrop-blur-xl border border-border/50 p-8 rounded-3xl"
                     >
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -120,11 +120,11 @@ export default function AnalyticsPage() {
                                 Your neural synchronicity is peaking in the <strong>Evening</strong>. We suggest moving deeper topics to 7:00 PM - 9:00 PM slots.
                             </p>
                             <div className="flex gap-4">
-                                <div className="p-4 bg-black/40 border border-white/5 rounded-2xl flex-1 text-center">
+                                <div className="p-4 bg-background/40 border border-border/50 rounded-2xl flex-1 text-center">
                                     <div className="text-[10px] text-foreground/30 mb-1 uppercase tracking-widest font-black">Retention</div>
                                     <div className="text-xl font-black text-purple-400">84%</div>
                                 </div>
-                                <div className="p-4 bg-black/40 border border-white/5 rounded-2xl flex-1 text-center">
+                                <div className="p-4 bg-background/40 border border-border/50 rounded-2xl flex-1 text-center">
                                     <div className="text-[10px] text-foreground/30 mb-1 uppercase tracking-widest font-black">Focus Vibe</div>
                                     <div className="text-xl font-black text-blue-400">Stable</div>
                                 </div>
@@ -135,18 +135,18 @@ export default function AnalyticsPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-card/30 backdrop-blur-xl border border-white/5 p-8 rounded-3xl"
+                            className="bg-card/30 backdrop-blur-xl border border-border/50 p-8 rounded-3xl"
                         >
                             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                                 <BarChart3 className="w-5 h-5 text-blue-400" />
                                 Efficiency Metrics
                             </h2>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="text-center p-6 bg-white/5 border border-white/5 rounded-2xl group hover:border-blue-500/30 transition-all">
+                                <div className="text-center p-6 bg-white/5 border border-border/50 rounded-2xl group hover:border-blue-500/30 transition-all">
                                     <div className="text-3xl font-black text-blue-400 mb-1">9.2</div>
                                     <div className="text-[10px] text-foreground/30 uppercase tracking-widest font-bold">Focus Score</div>
                                 </div>
-                                <div className="text-center p-6 bg-white/5 border border-white/5 rounded-2xl group hover:border-purple-500/30 transition-all">
+                                <div className="text-center p-6 bg-white/5 border border-border/50 rounded-2xl group hover:border-purple-500/30 transition-all">
                                     <div className="text-3xl font-black text-purple-400">2.4x</div>
                                     <div className="text-[10px] text-foreground/30 uppercase tracking-widest font-bold">Pace Multiplier</div>
                                 </div>

@@ -926,15 +926,29 @@ export const appRouter = router({
       
       return post || { success: true };
     }),
-    getPosts: publicProcedure.query(async () => {
+    getPosts: publicProcedure.query(async ({ ctx }) => {
       const posts = await dbHelpers.getAllCommunityPosts();
       return await Promise.all(posts.map(async (post) => {
         const user = await dbHelpers.getUserById(post.userId);
         const profile = await dbHelpers.getUserProfile(post.userId);
-        return { ...post, authorName: user?.name || 'Unknown', authorUsername: user?.username || 'unknown', authorAvatar: profile?.profilePhoto || null };
+        const hasLiked = ctx.user ? await dbHelpers.hasUserLikedPost(post.id, ctx.user.id) : false;
+        return { ...post, authorName: user?.name || 'Unknown', authorUsername: user?.username || 'unknown', authorAvatar: profile?.profilePhoto || null, hasLiked };
       }));
     }),
-    getMyPosts: protectedProcedure.query(async ({ ctx }) => await dbHelpers.getUserCommunityPosts(ctx.user.id)),
+    getMyPosts: protectedProcedure.query(async ({ ctx }) => {
+      const posts = await dbHelpers.getUserCommunityPosts(ctx.user.id);
+      return await Promise.all(posts.map(async (post) => {
+        const hasLiked = await dbHelpers.hasUserLikedPost(post.id, ctx.user.id);
+        return { ...post, hasLiked };
+      }));
+    }),
+    deletePost: protectedProcedure.input(z.object({ postId: z.number() })).mutation(async ({ ctx, input }) => {
+      const post = await dbHelpers.getCommunityPost(input.postId);
+      if (!post) throw new TRPCError({ code: "NOT_FOUND" });
+      if (post.userId !== ctx.user.id && ctx.user.role !== 'admin') throw new TRPCError({ code: "FORBIDDEN" });
+      await dbHelpers.deleteCommunityPost(input.postId);
+      return { success: true };
+    }),
     likePost: protectedProcedure.input(z.object({ postId: z.number() })).mutation(async ({ ctx, input }) => {
       const alreadyLiked = await dbHelpers.hasUserLikedPost(input.postId, ctx.user.id);
       if (alreadyLiked) {
@@ -987,20 +1001,29 @@ export const appRouter = router({
     }),
 
     getFriends: protectedProcedure.query(async ({ ctx }) => {
-      const userFriends = await db.select({
-        id: users.id,
-        name: users.name,
-        username: users.username,
-        avatar: userProfiles.profilePhoto,
-        status: userProfiles.status,
-        isFavorite: friends.isFavorite
-      })
-      .from(friends)
-      .innerJoin(users, eq(friends.friendId, users.id))
-      .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
-      .where(and(eq(friends.userId, ctx.user.id), eq(friends.status, 'accepted')))
-      .orderBy(asc(users.name));
-      return userFriends;
+      const friendships = await db.select().from(friends)
+        .where(
+          and(
+            or(eq(friends.userId, ctx.user.id), eq(friends.friendId, ctx.user.id)),
+            eq(friends.status, 'accepted')
+          )
+        );
+      
+      const userFriends = await Promise.all(friendships.map(async (f) => {
+        const otherId = f.userId === ctx.user.id ? f.friendId : f.userId;
+        const [user] = await db.select().from(users).where(eq(users.id, otherId)).limit(1);
+        const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, otherId)).limit(1);
+        return {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          avatar: profile?.profilePhoto || null,
+          status: profile?.status || null,
+          isFavorite: f.isFavorite
+        };
+      }));
+      
+      return userFriends.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }),
 
     getFriendRequests: protectedProcedure.query(async ({ ctx }) => {
@@ -1012,7 +1035,7 @@ export const appRouter = router({
       })
       .from(friends)
       .innerJoin(users, eq(friends.userId, users.id))
-      .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+      .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
       .where(and(eq(friends.friendId, ctx.user.id), eq(friends.status, 'pending')));
     }),
 
@@ -1155,7 +1178,7 @@ export const appRouter = router({
     getJoinRequests: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
       const [admin] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.role, "admin")));
       if (!admin) throw new TRPCError({ code: "FORBIDDEN" });
-      return await db.select({ id: users.id, name: users.name, username: users.username, avatar: userProfiles.profilePhoto }).from(users).innerJoin(studyGroupMembers, eq(users.id, studyGroupMembers.userId)).innerJoin(userProfiles, eq(users.id, userProfiles.userId)).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.status, "pending")));
+      return await db.select({ id: users.id, name: users.name, username: users.username, avatar: userProfiles.profilePhoto }).from(users).innerJoin(studyGroupMembers, eq(users.id, studyGroupMembers.userId)).leftJoin(userProfiles, eq(users.id, userProfiles.userId)).where(and(eq(studyGroupMembers.groupId, input), eq(studyGroupMembers.status, "pending")));
     }),
     handleJoinRequest: protectedProcedure.input(z.object({ groupId: z.number(), userId: z.number(), action: z.enum(["approve", "reject"]) })).mutation(async ({ ctx, input }) => {
       const [admin] = await db.select().from(studyGroupMembers).where(and(eq(studyGroupMembers.groupId, input.groupId), eq(studyGroupMembers.userId, ctx.user.id), eq(studyGroupMembers.role, "admin")));
@@ -1287,7 +1310,7 @@ export const appRouter = router({
         })
         .from(studyGroupPostComments)
         .innerJoin(users, eq(studyGroupPostComments.userId, users.id))
-        .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+        .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
         .where(eq(studyGroupPostComments.postId, input))
         .orderBy(asc(studyGroupPostComments.createdAt));
     }),

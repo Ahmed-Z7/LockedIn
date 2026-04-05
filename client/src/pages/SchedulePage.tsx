@@ -123,11 +123,11 @@ export default function SchedulePage() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl flex items-center justify-between"
+            className="p-6 rounded-3xl bg-white/5 border border-border backdrop-blur-xl flex items-center justify-between"
           >
             <div>
-              <p className="text-white/40 text-xs font-black uppercase tracking-widest mb-1">Daily Sync</p>
-              <h2 className="text-3xl font-black text-white">{completedSessions}<span className="text-white/20">/{totalSessions}</span></h2>
+              <p className="text-foreground/40 text-xs font-black uppercase tracking-widest mb-1">Daily Sync</p>
+              <h2 className="text-3xl font-black text-white">{completedSessions}<span className="text-foreground/20">/{totalSessions}</span></h2>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center">
               <CheckCircle2 className="w-6 h-6 text-purple-400" />
@@ -138,10 +138,10 @@ export default function SchedulePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl flex items-center justify-between"
+            className="p-6 rounded-3xl bg-white/5 border border-border backdrop-blur-xl flex items-center justify-between"
           >
             <div>
-              <p className="text-white/40 text-xs font-black uppercase tracking-widest mb-1">Neural Integration</p>
+              <p className="text-foreground/40 text-xs font-black uppercase tracking-widest mb-1">Neural Integration</p>
               <h2 className="text-3xl font-black text-white">{progressPercent}%</h2>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center overflow-hidden relative">
@@ -157,10 +157,10 @@ export default function SchedulePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="p-6 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl flex items-center justify-between"
+            className="p-6 rounded-3xl bg-white/5 border border-border backdrop-blur-xl flex items-center justify-between"
           >
             <div>
-              <p className="text-white/40 text-xs font-black uppercase tracking-widest mb-1">Active Timeline</p>
+              <p className="text-foreground/40 text-xs font-black uppercase tracking-widest mb-1">Active Timeline</p>
               <h2 className="text-xl font-black text-white">Focus Mode Active</h2>
             </div>
             <div className="flex gap-1">
@@ -178,7 +178,7 @@ export default function SchedulePage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-black tracking-tighter text-white">Neural Timeline</h1>
-                <p className="text-white/40 text-sm font-medium">Synchronizing your biological rhythm with data.</p>
+                <p className="text-foreground/40 text-sm font-medium">Synchronizing your biological rhythm with data.</p>
               </div>
               <div className="flex gap-4">
                 <Button 
@@ -190,7 +190,7 @@ export default function SchedulePage() {
                 </Button>
                 <Button 
                     onClick={() => setLocation('/start-learning')}
-                    className="bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl h-12 px-6 gap-2 group transition-all"
+                    className="bg-white/5 hover:bg-white/10 text-white border border-border rounded-2xl h-12 px-6 gap-2 group transition-all"
                 >
                   <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                   Initialize New Path
@@ -223,14 +223,14 @@ export default function SchedulePage() {
                       "group p-6 rounded-[2rem] border transition-all duration-500",
                       session.completed 
                         ? "bg-white/[0.02] border-emerald-500/10 opacity-70" 
-                        : "bg-white/5 border-white/5 hover:border-purple-500/30 hover:bg-white/[0.07] hover:translate-x-2"
+                        : "bg-white/5 border-border/50 hover:border-purple-500/30 hover:bg-white/[0.07] hover:translate-x-2"
                     )}>
                       <div className="flex items-start gap-6">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className={cn(
                               "text-xl font-black tracking-tight",
-                              session.completed ? "text-white/40 line-through" : "text-white"
+                              session.completed ? "text-foreground/40 line-through" : "text-white"
                             )}>
                               {session.subject}
                             </h3>
@@ -241,7 +241,7 @@ export default function SchedulePage() {
                             )}
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-6 text-[10px] font-black uppercase tracking-widest text-white/30">
+                          <div className="flex flex-wrap items-center gap-6 text-[10px] font-black uppercase tracking-widest text-foreground/30">
                             <span className="flex items-center gap-2">
                               <Calendar className="w-3.5 h-3.5" />
                               {new Date(session.scheduledTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' })}
@@ -284,8 +284,8 @@ export default function SchedulePage() {
                           <Button 
                             onClick={() => handleToggleStatus(session.id, session.completed || 0)}
                             className={cn(
-                              "h-10 w-full rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 flex items-center justify-center gap-2",
-                              session.completed ? "text-emerald-500 border-emerald-500/20" : "text-white/40"
+                              "h-10 w-full rounded-2xl bg-white/5 border border-border hover:bg-white/10 flex items-center justify-center gap-2",
+                              session.completed ? "text-emerald-500 border-emerald-500/20" : "text-foreground/40"
                             )}
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -299,12 +299,12 @@ export default function SchedulePage() {
                   </motion.div>
                 ))
               ) : (
-                <div className="py-20 text-center bg-white/5 rounded-[3rem] border border-dashed border-white/10">
+                <div className="py-20 text-center bg-white/5 rounded-[3rem] border border-dashed border-border">
                   <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <Calendar className="w-10 h-10 text-white/10" />
+                    <Calendar className="w-10 h-10 text-foreground/10" />
                   </div>
                   <h3 className="text-2xl font-black text-white mb-2">Timeline Empty</h3>
-                  <p className="text-white/30 mb-8 max-w-xs mx-auto">No neural paths detected. Initialize a path from your study materials.</p>
+                  <p className="text-foreground/30 mb-8 max-w-xs mx-auto">No neural paths detected. Initialize a path from your study materials.</p>
                   <Button onClick={() => setLocation('/start-learning')} className="bg-purple-600 hover:bg-purple-700 rounded-2xl px-10 h-14 font-black">
                     Start Learning
                   </Button>
@@ -318,13 +318,13 @@ export default function SchedulePage() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl h-[650px] relative"
+              className="bg-white/5 backdrop-blur-3xl border border-border rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl h-[650px] relative"
             >
               {/* Animated Glow Wrapper */}
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
 
               {/* Chat Header */}
-              <div className="p-6 border-b border-white/5 relative z-10 flex items-center gap-4">
+              <div className="p-6 border-b border-border/50 relative z-10 flex items-center gap-4">
                 <div className="w-12 h-12 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20">
                   <Bot className="w-6 h-6 text-white" />
                 </div>
@@ -347,7 +347,7 @@ export default function SchedulePage() {
                     className={cn(
                       "max-w-[85%] p-4 rounded-3xl text-sm font-medium leading-relaxed shadow-xl",
                       msg.role === 'ai' 
-                        ? "bg-white/5 border border-white/5 self-start rounded-tl-none text-white/80" 
+                        ? "bg-white/5 border border-border/50 self-start rounded-tl-none text-foreground/80" 
                         : "bg-gradient-to-br from-purple-600 to-indigo-600 self-end ml-auto rounded-tr-none text-white ring-4 ring-purple-500/10"
                     )}
                   >
@@ -358,13 +358,13 @@ export default function SchedulePage() {
               </div>
 
               {/* Quick Prompt Interface */}
-              <div className="p-6 pt-2 bg-black/20 border-t border-white/5 relative z-10">
+              <div className="p-6 pt-2 bg-background/20 border-t border-border/50 relative z-10">
                 <div className="flex flex-wrap gap-2 mb-4">
                     {['Ease Load', 'Fast Track', 'Add Break'].map(tag => (
                         <button 
                             key={tag}
                             onClick={() => { setChatInp(tag); }}
-                            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl hover:bg-purple-500/30 hover:border-purple-500/50 transition-all text-white/40 hover:text-white"
+                            className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-white/5 border border-border rounded-xl hover:bg-purple-500/30 hover:border-purple-500/50 transition-all text-foreground/40 hover:text-white"
                         >
                             {tag}
                         </button>
@@ -377,7 +377,7 @@ export default function SchedulePage() {
                     onChange={(e) => setChatInp(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
                     placeholder="Sync Request..."
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-5 pr-14 text-sm focus:outline-none focus:border-purple-500/50 transition-all font-medium text-white placeholder:text-white/20"
+                    className="w-full bg-white/5 border border-border rounded-2xl py-4 pl-5 pr-14 text-sm focus:outline-none focus:border-purple-500/50 transition-all font-medium text-white placeholder:text-foreground/20"
                   />
                   <button 
                       onClick={handleSendChat}
@@ -398,17 +398,17 @@ export default function SchedulePage() {
         {examConfig.open && (
            <motion.div 
              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-             className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-xl flex items-center justify-center p-6"
+             className="fixed inset-0 z-[200] bg-background/80 backdrop-blur-xl flex items-center justify-center p-6"
            >
              <motion.div 
                initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-               className="bg-zinc-900 border border-white/10 p-8 rounded-[2.5rem] max-w-sm w-full text-center space-y-6"
+               className="bg-zinc-900 border border-border p-8 rounded-[2.5rem] max-w-sm w-full text-center space-y-6"
              >
                 <div className="w-16 h-16 bg-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto">
                     <BookOpen className="w-8 h-8 text-indigo-400" />
                 </div>
                 <h2 className="text-2xl font-black text-white">Neural Exam</h2>
-                <p className="text-white/40 text-sm">Select target question depth for ${selectedSessionForExam?.subject}</p>
+                <p className="text-foreground/40 text-sm">Select target question depth for ${selectedSessionForExam?.subject}</p>
                 
                 <div className="flex gap-2">
                     {[10, 20, 30].map(c => (
@@ -417,7 +417,7 @@ export default function SchedulePage() {
                             onClick={() => setExamConfig(prev => ({ ...prev, count: c }))}
                             className={cn(
                                 "flex-1 py-3 rounded-xl border text-xs font-black transition-all",
-                                examConfig.count === c ? "bg-indigo-600 border-indigo-600 text-white" : "border-white/5 bg-white/5 text-white/40"
+                                examConfig.count === c ? "bg-indigo-600 border-indigo-600 text-white" : "border-border/50 bg-white/5 text-foreground/40"
                             )}
                         >
                             {c} Qs
@@ -442,7 +442,7 @@ export default function SchedulePage() {
         {isExamActive && (
             <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-3xl pt-24 overflow-y-auto"
+                className="fixed inset-0 z-[300] bg-background/95 backdrop-blur-3xl pt-24 overflow-y-auto"
             >
                 {isGeneratingExam ? (
                     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">

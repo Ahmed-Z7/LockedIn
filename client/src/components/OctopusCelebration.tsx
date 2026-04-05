@@ -24,7 +24,7 @@ export function OctopusCelebration({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center"
+                    className="fixed inset-0 z-[1000] bg-background/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center"
                 >
                     <motion.div
                         initial={{ scale: 0.5, rotate: -20, opacity: 0 }}
@@ -85,7 +85,7 @@ export function OctopusCelebration({
                         initial={{ y: 20, opacity: 0 }} 
                         animate={{ y: 0, opacity: 1 }} 
                         transition={{ delay: 0.5 }}
-                        className="text-white/60 text-xl mb-8 max-w-md mx-auto"
+                        className="text-foreground/60 text-xl mb-8 max-w-md mx-auto"
                     >
                         {subtitle}
                     </motion.p>

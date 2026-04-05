@@ -74,11 +74,11 @@ function ChatWindow({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 40, scale: 0.95 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className="w-[340px] bg-[#0D0D18] border border-white/10 rounded-[1.5rem] shadow-2xl shadow-purple-500/20 overflow-hidden flex flex-col"
+      className="w-[340px] bg-[#0D0D18] border border-border rounded-[1.5rem] shadow-2xl shadow-purple-500/20 overflow-hidden flex flex-col"
       style={{ maxHeight: minimized ? "60px" : "480px" }}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-900/60 to-indigo-900/60 border-b border-white/5 shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-900/60 to-indigo-900/60 border-b border-border/50 shrink-0">
         <Avatar className="w-8 h-8 border border-purple-500/30">
           <AvatarImage src={userAvatar || undefined} />
           <AvatarFallback className="text-xs bg-purple-800">{userName[0]}</AvatarFallback>
@@ -87,26 +87,26 @@ function ChatWindow({
           <p className="font-bold text-sm truncate">{userName}</p>
           <div className="flex items-center gap-1">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[10px] text-white/40 uppercase tracking-widest">Online</span>
+            <span className="text-[10px] text-foreground/40 uppercase tracking-widest">Online</span>
           </div>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={handleFullscreen}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-white/10 text-foreground/40 hover:text-white transition-colors"
             title="Open Fullscreen"
           >
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setMinimized(!minimized)}
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-white/10 text-foreground/40 hover:text-white transition-colors"
           >
             {minimized ? <MessageCircle className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
           </button>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-red-500/20 text-foreground/40 hover:text-red-400 transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -122,7 +122,7 @@ function ChatWindow({
                 <div className="w-6 h-6 rounded-full border-2 border-purple-500/30 border-t-purple-500 animate-spin" />
               </div>
             ) : messagesQuery.data?.length === 0 ? (
-              <div className="text-center py-8 text-white/20 text-sm font-medium">
+              <div className="text-center py-8 text-foreground/20 text-sm font-medium">
                 Start the conversation ✨
               </div>
             ) : (
@@ -134,11 +134,11 @@ function ChatWindow({
                       className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                         isOwn
                           ? "bg-purple-600 text-white rounded-tr-none shadow-md shadow-purple-500/20"
-                          : "bg-white/5 border border-white/5 text-white/80 rounded-tl-none"
+                          : "bg-white/5 border border-border/50 text-foreground/80 rounded-tl-none"
                       }`}
                     >
                       <p>{msg.content}</p>
-                      <p className={`text-[9px] mt-1 ${isOwn ? "text-white/50" : "text-white/20"}`}>
+                      <p className={`text-[9px] mt-1 ${isOwn ? "text-white/50" : "text-foreground/20"}`}>
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
@@ -150,14 +150,14 @@ function ChatWindow({
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-white/5 shrink-0">
+          <div className="p-3 border-t border-border/50 shrink-0">
             <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3 focus-within:ring-1 focus-within:ring-purple-500/50 transition-all">
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder="Type a message..."
-                className="bg-transparent border-none focus-visible:ring-0 text-sm text-white placeholder:text-white/20 py-2"
+                className="bg-transparent border-none focus-visible:ring-0 text-sm text-white placeholder:text-foreground/20 py-2"
               />
               <Button
                 onClick={handleSend}

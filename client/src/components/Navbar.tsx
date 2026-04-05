@@ -20,7 +20,7 @@ export default function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-black/25 backdrop-blur-md dark:backdrop-blur-md border-b border-[#E5E7EB] dark:border-purple-500/20"
+      className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-background/25 backdrop-blur-md dark:backdrop-blur-md border-b border-[#E5E7EB] dark:border-purple-500/20"
       style={{
         boxShadow: '0 4px 16px rgba(99, 102, 241, 0.08)',
       }}
@@ -41,7 +41,7 @@ export default function Navbar() {
             <img 
               src={APP_LOGO} 
               alt="LockedIn Logo" 
-              className="relative w-8 h-8 rounded-lg object-contain bg-white/10 dark:bg-black/10 backdrop-blur-sm p-1 shadow-md"
+              className="relative w-8 h-8 rounded-lg object-contain bg-white/10 dark:bg-background/10 backdrop-blur-sm p-1 shadow-md"
             />
           </div>
           <span className="text-xl font-bold text-[#334155] dark:bg-gradient-to-r dark:from-purple-400 dark:to-blue-400 dark:bg-clip-text dark:text-transparent">

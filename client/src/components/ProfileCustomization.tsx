@@ -51,18 +51,18 @@ export const AvatarWithFrame: React.FC<AvatarWithFrameProps> = ({ src, username,
         frame.glow
       )}>
           {frame.icon && (
-              <div className="absolute -top-2 -right-2 bg-background border border-white/10 rounded-full w-8 h-8 flex items-center justify-center text-sm shadow-xl">
+              <div className="absolute -top-2 -right-2 bg-background border border-border rounded-full w-8 h-8 flex items-center justify-center text-sm shadow-xl">
                   {frame.icon}
               </div>
           )}
       </div>
 
       {/* Avatar Content */}
-      <div className="w-full h-full rounded-full bg-card/80 backdrop-blur-md overflow-hidden relative z-0 border border-white/5">
+      <div className="w-full h-full rounded-full bg-card/80 backdrop-blur-md overflow-hidden relative z-0 border border-border/50">
         {src ? (
           <img src={src} alt={username} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-white/20 font-black uppercase text-2xl">
+          <div className="w-full h-full flex items-center justify-center text-foreground/20 font-black uppercase text-2xl">
             {username?.[0] || '?'}
           </div>
         )}
@@ -73,9 +73,9 @@ export const AvatarWithFrame: React.FC<AvatarWithFrameProps> = ({ src, username,
 
 export const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     return (
-        <div className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md flex items-center gap-3 group hover:border-purple-500/50 transition-all cursor-default">
+        <div className="px-4 py-2 rounded-2xl bg-white/5 border border-border backdrop-blur-md flex items-center gap-3 group hover:border-purple-500/50 transition-all cursor-default">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-            <span className="text-xs font-bold text-white/60 group-hover:text-white transition-colors">{status}</span>
+            <span className="text-xs font-bold text-foreground/60 group-hover:text-white transition-colors">{status}</span>
         </div>
     );
 };

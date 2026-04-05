@@ -71,14 +71,14 @@ export default function GamificationLevelsPage() {
                         NEURAL ASCENSION MAP
                     </motion.h1>
                     <div className="flex items-center justify-center gap-4 mb-8">
-                        <div className="bg-white/5 backdrop-blur-md border border-white/10 px-6 py-2 rounded-full flex items-center gap-3">
+                        <div className="bg-white/5 backdrop-blur-md border border-border px-6 py-2 rounded-full flex items-center gap-3">
                             <Star className="text-yellow-400 w-5 h-5 fill-yellow-400" />
                             <span className="font-bold">{Math.round(overallProgress)}% SYNCED</span>
                         </div>
                     </div>
 
                     {/* Overall Progress Bar */}
-                    <div className="max-w-md mx-auto h-3 bg-white/5 rounded-full overflow-hidden border border-white/10 shadow-[0_0_20px_rgba(0,240,255,0.1)]">
+                    <div className="max-w-md mx-auto h-3 bg-white/5 rounded-full overflow-hidden border border-border shadow-[0_0_20px_rgba(0,240,255,0.1)]">
                         <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${overallProgress}%` }}
@@ -105,7 +105,7 @@ export default function GamificationLevelsPage() {
                                         ? 'bg-purple-900/40 border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.2)]' 
                                         : level.status === 'unlocked'
                                         ? 'bg-cyan-900/20 border-cyan-500/50 hover:bg-cyan-900/40 shadow-[0_0_20px_rgba(34,211,238,0.1)]'
-                                        : 'bg-slate-900/50 border-white/5'}
+                                        : 'bg-slate-900/50 border-border/50'}
                                 `}>
                                     {/* Level Number Badge */}
                                     <div className={`
@@ -167,7 +167,7 @@ export default function GamificationLevelsPage() {
                     <Button 
                         variant="outline" 
                         onClick={() => setLocation('/schedule')}
-                        className="bg-transparent border-white/10 text-white/50 hover:text-white"
+                        className="bg-transparent border-border text-white/50 hover:text-white"
                     >
                         Back to Schedule View
                     </Button>
@@ -181,7 +181,7 @@ export default function GamificationLevelsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center"
+                        className="fixed inset-0 z-[100] bg-background/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center"
                     >
                         <motion.div
                             initial={{ scale: 0.5, rotate: -20, opacity: 0 }}
@@ -237,7 +237,7 @@ export default function GamificationLevelsPage() {
                             initial={{ y: 20, opacity: 0 }} 
                             animate={{ y: 0, opacity: 1 }} 
                             transition={{ delay: 0.5 }}
-                            className="text-white/60 text-xl mb-8 max-w-md mx-auto"
+                            className="text-foreground/60 text-xl mb-8 max-w-md mx-auto"
                         >
                             Your neural network is evolving. The Octopus is pleased with your progress.
                         </motion.p>

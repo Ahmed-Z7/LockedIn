@@ -150,8 +150,11 @@ export default function NotificationsPage() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ delay: idx * 0.03 }}
+                    onClick={() => {
+                        if (!notif.read) markAsReadMutation.mutate({ notificationId: notif.id });
+                    }}
                     className={cn(
-                        "relative group p-4 rounded-2xl border bg-gradient-to-br transition-all duration-500",
+                        "relative group p-4 rounded-2xl border bg-gradient-to-br transition-all duration-500 cursor-pointer hover:shadow-lg hover:scale-[1.01]",
                         styles
                     )}
                   >
@@ -214,7 +217,7 @@ export default function NotificationsPage() {
                                 <Button 
                                     size="sm" 
                                     variant="outline"
-                                    className="bg-white/5 hover:bg-red-500/20 text-red-400 border-white/10 h-8 px-4 text-[10px] uppercase font-black tracking-widest rounded-xl"
+                                    className="bg-white/5 hover:bg-red-500/20 text-red-400 border-border h-8 px-4 text-[10px] uppercase font-black tracking-widest rounded-xl"
                                     onClick={() => {
                                         if (notif.type === 'friend_request') {
                                           rejectMutation.mutate(notif.fromUserId);
@@ -249,7 +252,7 @@ export default function NotificationsPage() {
               })}
             </AnimatePresence>
           ) : (
-            <div className="py-20 text-center bg-card/10 rounded-3xl border border-dashed border-white/5">
+            <div className="py-20 text-center bg-card/10 rounded-3xl border border-dashed border-border/50">
                 <Bell className="w-12 h-12 text-foreground/10 mx-auto mb-4" />
                 <p className="text-foreground/30 font-medium italic">The void is silent...</p>
             </div>
@@ -265,7 +268,7 @@ export default function NotificationsPage() {
                 <Button 
                     onClick={() => setLimit(prev => prev + 5)}
                     variant="outline" 
-                    className="border-white/10 hover:border-purple-500/30 bg-white/5 text-foreground/60 rounded-xl gap-2 h-12 px-8"
+                    className="border-border hover:border-purple-500/30 bg-white/5 text-foreground/60 rounded-xl gap-2 h-12 px-8"
                 >
                     Expand Signals
                     <ChevronDown className="w-4 h-4" />
@@ -277,7 +280,7 @@ export default function NotificationsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          className="mt-24 border-t border-white/5 pt-12 mb-20"
+          className="mt-24 border-t border-border/50 pt-12 mb-20"
         >
           <div className="flex items-center gap-3 mb-8">
             <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-400">
@@ -296,7 +299,7 @@ export default function NotificationsPage() {
               <motion.div
                 key={setting.id}
                 whileHover={{ scale: 1.02 }}
-                className="p-4 bg-card/30 border border-white/5 rounded-2xl flex items-center justify-between group"
+                className="p-4 bg-card/30 border border-border/50 rounded-2xl flex items-center justify-between group"
               >
                 <div className="flex items-center gap-3">
                     <setting.icon className="w-4 h-4 text-foreground/30 group-hover:text-purple-400 transition-colors" />

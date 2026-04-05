@@ -311,7 +311,7 @@ export async function getPostComments(postId: number) {
   })
     .from(postComments)
     .innerJoin(users, eq(postComments.userId, users.id))
-    .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
+    .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
     .where(eq(postComments.postId, postId))
     .orderBy(desc(postComments.createdAt));
 }

@@ -75,7 +75,7 @@ export default function LeaderboardPage() {
 
                 {/* Navigation Tabs */}
                 <div className="flex justify-center mb-16">
-                    <div className="flex p-2 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md">
+                    <div className="flex p-2 bg-white/5 rounded-2xl border border-border backdrop-blur-md">
                         {[
                             { id: 'global', icon: Globe, label: 'Global Rank' },
                             { id: 'level', icon: Star, label: 'My Level' },
@@ -175,7 +175,7 @@ export default function LeaderboardPage() {
                                                 animate={{ opacity: 1, x: 0 }}
                                                 transition={{ delay: idx * 0.05 }}
                                                 key={user.id}
-                                                className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group/item"
+                                                className="flex items-center gap-6 p-4 rounded-2xl bg-white/5 border border-border/50 hover:bg-white/10 transition-colors group/item"
                                             >
                                                 <div className="w-12 text-center font-black text-2xl text-foreground/40">
                                                     #{rank}

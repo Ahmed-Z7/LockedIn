@@ -41,8 +41,8 @@ export function QuizValidation({ quiz, onComplete, onRetry, subject }: QuizValid
             <XCircle className="w-10 h-10 text-red-500" />
         </div>
         <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Neural Link Failure</h2>
-        <p className="text-white/40 text-sm max-w-xs">ZED was unable to synthesize the exam matrix. Please try again later.</p>
-        <Button onClick={onRetry} className="h-12 px-8 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10">Close Telemetry</Button>
+        <p className="text-foreground/40 text-sm max-w-xs">ZED was unable to synthesize the exam matrix. Please try again later.</p>
+        <Button onClick={onRetry} className="h-12 px-8 rounded-xl bg-white/5 border border-border hover:bg-white/10">Close Telemetry</Button>
       </div>
     );
   }
@@ -111,7 +111,7 @@ export function QuizValidation({ quiz, onComplete, onRetry, subject }: QuizValid
           </p>
 
           {!isPassed && (
-            <Card className="bg-black/40 border-red-500/30 p-6 text-left mb-6">
+            <Card className="bg-background/40 border-red-500/30 p-6 text-left mb-6">
               <div className="flex items-start gap-4">
                 <AlertCircle className="text-red-400 shrink-0 mt-1" />
                 <div>
@@ -193,7 +193,7 @@ export function QuizValidation({ quiz, onComplete, onRetry, subject }: QuizValid
       </h2>
 
       <div className="mb-10">
-        <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5">
+        <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden border border-border/50">
           <motion.div 
             className="h-full bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.5)]" 
             initial={{ width: 0 }}
@@ -229,7 +229,7 @@ export function QuizValidation({ quiz, onComplete, onRetry, subject }: QuizValid
               <div className="flex items-center gap-4">
                 <div className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black border",
-                    isSelected ? "bg-transparent border-current" : "bg-white/5 border-white/10 text-zinc-500"
+                    isSelected ? "bg-transparent border-current" : "bg-white/5 border-border text-zinc-500"
                 )}>
                     {String.fromCharCode(65 + i)}
                 </div>
@@ -246,7 +246,7 @@ export function QuizValidation({ quiz, onComplete, onRetry, subject }: QuizValid
         })}
       </div>
 
-      <div className="mt-12 pt-8 border-t border-white/5 flex items-center gap-4 text-zinc-500 italic text-sm">
+      <div className="mt-12 pt-8 border-t border-border/50 flex items-center gap-4 text-zinc-500 italic text-sm">
         <AlertCircle size={16} />
         You must score at least 80% to disable the focus lock and complete the session.
       </div>

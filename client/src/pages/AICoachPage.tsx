@@ -192,7 +192,7 @@ export default function AICoachPage() {
                     New Neural Link
                 </Button>
 
-                <div className="bg-card/30 backdrop-blur-xl border border-white/5 rounded-3xl p-4 flex-1 flex flex-col min-h-[500px]">
+                <div className="bg-card/30 backdrop-blur-xl border border-border/50 rounded-3xl p-4 flex-1 flex flex-col min-h-[500px]">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40 px-4 mb-4">Neural History</h3>
                     <div className="space-y-1 overflow-y-auto max-h-[600px] scrollbar-hide">
                         {conversations?.map((conv) => (
@@ -219,7 +219,7 @@ export default function AICoachPage() {
                                                 value={editingTitle}
                                                 onChange={e => setEditingTitle(e.target.value)}
                                                 onKeyDown={e => e.key === 'Enter' && handleRenameConv(conv.id)}
-                                                className="bg-background/50 border border-white/10 rounded-lg px-2 py-1 text-[10px] w-full focus:outline-none focus:border-purple-500"
+                                                className="bg-background/50 border border-border rounded-lg px-2 py-1 text-[10px] w-full focus:outline-none focus:border-purple-500"
                                             />
                                             <button onClick={() => handleRenameConv(conv.id)} className="p-1 hover:text-white">
                                                 <Check className="w-3 h-3" />
@@ -264,10 +264,10 @@ export default function AICoachPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-card/30 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden flex flex-col h-[750px] shadow-2xl shadow-purple-500/5"
+                    className="bg-card/30 backdrop-blur-xl border border-border/50 rounded-3xl overflow-hidden flex flex-col h-[750px] shadow-2xl shadow-purple-500/5"
                 >
                     {/* Chat Header */}
-                    <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
+                    <div className="p-6 border-b border-border/50 flex items-center justify-between bg-white/5">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
                                 <Sparkles className="w-6 h-6" />
@@ -290,7 +290,7 @@ export default function AICoachPage() {
                                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full animate-ping" />
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-2xl bg-card/90 backdrop-blur-2xl border-white/5 text-foreground rounded-3xl shadow-2xl">
+                            <DialogContent className="max-w-2xl bg-card/90 backdrop-blur-2xl border-border/50 text-foreground rounded-3xl shadow-2xl">
                                 <DialogHeader>
                                     <DialogTitle className="text-2xl font-black flex items-center gap-3">
                                         <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl">
@@ -323,7 +323,7 @@ export default function AICoachPage() {
                                                         "flex items-start gap-4 p-4 rounded-2xl transition-all border text-left",
                                                         settings?.aiTone === tone.id 
                                                             ? "bg-purple-500/20 border-purple-500/50" 
-                                                            : "bg-white/5 border-white/5 hover:bg-white/10"
+                                                            : "bg-white/5 border-border/50 hover:bg-white/10"
                                                     )}
                                                 >
                                                     <div className={cn(
@@ -353,7 +353,7 @@ export default function AICoachPage() {
                                                         "flex-1 py-3 rounded-xl border text-xs font-bold transition-all",
                                                         settings?.aiLanguage === lang.toLowerCase()
                                                             ? "bg-blue-500/20 border-blue-500/50 text-blue-400"
-                                                            : "bg-white/5 border-white/5 hover:bg-white/10 text-foreground/40"
+                                                            : "bg-white/5 border-border/50 hover:bg-white/10 text-foreground/40"
                                                     )}
                                                 >
                                                     {lang}
@@ -373,7 +373,7 @@ export default function AICoachPage() {
                                                 knowledge.map((k: any) => (
                                                     <div 
                                                         key={k.id}
-                                                        className="group p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between hover:border-indigo-500/30 transition-all"
+                                                        className="group p-4 bg-white/5 border border-border/50 rounded-2xl flex items-center justify-between hover:border-indigo-500/30 transition-all"
                                                     >
                                                         <div className="flex-1">
                                                             <div className="text-[10px] uppercase font-bold text-indigo-400/50 mb-1">{k.category}</div>
@@ -418,7 +418,7 @@ export default function AICoachPage() {
                                         "px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm",
                                         msg.role === 'user' 
                                             ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-tr-none shadow-purple-500/20" 
-                                            : "bg-white/5 border border-white/10 text-foreground/90 rounded-tl-none"
+                                            : "bg-white/5 border border-border text-foreground/90 rounded-tl-none"
                                     )}>
                                         {msg.content}
                                     </div>
@@ -435,14 +435,14 @@ export default function AICoachPage() {
                     </div>
 
                     {/* Chat Input */}
-                    <div className="p-6 bg-white/5 border-t border-white/5">
+                    <div className="p-6 bg-white/5 border-t border-border/50">
                         <div className="relative group">
                             <input 
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                 placeholder="Command the AI..."
-                                className="w-full bg-background/50 border border-white/10 rounded-2xl py-4 pl-6 pr-14 text-sm focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-foreground/20"
+                                className="w-full bg-background/50 border border-border rounded-2xl py-4 pl-6 pr-14 text-sm focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-foreground/20"
                             />
                             <button 
                                 onClick={() => handleSendMessage()}
@@ -461,7 +461,7 @@ export default function AICoachPage() {
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="bg-card/30 backdrop-blur-xl border border-white/5 p-6 rounded-3xl"
+                    className="bg-card/30 backdrop-blur-xl border border-border/50 p-6 rounded-3xl"
                 >
                     <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/40 mb-4 flex items-center gap-2">
                         <MessageCircle className="w-4 h-4" />
@@ -469,19 +469,19 @@ export default function AICoachPage() {
                     </h3>
                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
                         {isHistoryLoading ? (
-                            <div className="py-4 text-center text-xs text-white/20">Loading memories...</div>
+                            <div className="py-4 text-center text-xs text-foreground/20">Loading memories...</div>
                         ) : history && history.length > 0 ? (
                             history.slice(0, 5).map((h) => (
                                 <div
                                     key={h.id}
-                                    className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/20 transition-all text-left cursor-default"
+                                    className="p-3 rounded-xl bg-white/5 border border-border/50 hover:border-purple-500/20 transition-all text-left cursor-default"
                                 >
-                                    <p className="text-[10px] text-white/40 mb-1 line-clamp-1">{h.message}</p>
+                                    <p className="text-[10px] text-foreground/40 mb-1 line-clamp-1">{h.message}</p>
                                     <p className="text-xs text-foreground/70 line-clamp-1">{h.response}</p>
                                 </div>
                             ))
                         ) : (
-                            <div className="py-4 text-center text-xs text-white/20">No history found.</div>
+                            <div className="py-4 text-center text-xs text-foreground/20">No history found.</div>
                         )}
                     </div>
                 </motion.div>
@@ -504,7 +504,7 @@ export default function AICoachPage() {
                                 <span className="text-foreground/40">Level {profile?.level || 1}</span>
                                 <span className="text-purple-400">Next: {((profile?.level || 1) * 1000)} pts</span>
                             </div>
-                            <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                            <div className="h-2 bg-background/40 rounded-full overflow-hidden">
                                 <motion.div 
                                     className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
                                     initial={{ width: 0 }}

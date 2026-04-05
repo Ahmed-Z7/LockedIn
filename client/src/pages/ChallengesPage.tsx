@@ -81,8 +81,8 @@ export default function ChallengesPage() {
               <div className="h-10 w-80 bg-white/5 rounded-lg mt-4" />
             </div>
             <div className="flex gap-4">
-               <div className="w-[160px] h-32 bg-card/30 rounded-[2rem] border border-white/5" />
-               <div className="w-[160px] h-32 bg-card/30 rounded-[2rem] border border-white/5" />
+               <div className="w-[160px] h-32 bg-card/30 rounded-[2rem] border border-border/50" />
+               <div className="w-[160px] h-32 bg-card/30 rounded-[2rem] border border-border/50" />
             </div>
           </header>
 
@@ -94,7 +94,7 @@ export default function ChallengesPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
             {[1,2,3,4,5,6].map(i => (
-              <div key={i} className="h-96 bg-card/40 border border-white/10 rounded-[2.5rem] animate-pulse" />
+              <div key={i} className="h-96 bg-card/40 border border-border rounded-[2.5rem] animate-pulse" />
             ))}
           </div>
         </div>
@@ -121,9 +121,9 @@ export default function ChallengesPage() {
             </div>
             <h1 className="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
               <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent drop-shadow-sm">NEURAL TASKS</span> <br/> 
-              <span className="text-white/20 hover:text-white transition-colors cursor-default">LEVEL UP YOUR LIFE</span>
+              <span className="text-foreground/20 hover:text-white transition-colors cursor-default">LEVEL UP YOUR LIFE</span>
             </h1>
-            <p className="text-white/40 text-lg max-w-xl font-medium tracking-tight">
+            <p className="text-foreground/40 text-lg max-w-xl font-medium tracking-tight">
               Transform your daily discipline into measurable growth. Complete global challenges to earn XP and unlock legendary neural badges.
             </p>
           </motion.div>
@@ -135,12 +135,12 @@ export default function ChallengesPage() {
                { label: 'Mastered', value: stats.completed, icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
              ].map((stat, i) => (
                <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                 className="p-8 rounded-[2rem] bg-card/30 backdrop-blur-3xl border border-white/5 flex flex-col items-center justify-center min-w-[160px] group hover:bg-white/[0.05] transition-all shadow-xl shadow-purple-500/5">
-                 <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-4">{stat.label}</p>
+                 className="p-8 rounded-[2rem] bg-card/30 backdrop-blur-3xl border border-border/50 flex flex-col items-center justify-center min-w-[160px] group hover:bg-white/[0.05] transition-all shadow-xl shadow-purple-500/5">
+                 <p className="text-[10px] font-black text-foreground/20 uppercase tracking-widest mb-4">{stat.label}</p>
                  <div className="flex items-center gap-3">
                    <p className={cn("text-4xl font-black", stat.color || "text-white")}>{stat.value}</p>
                    <div className={cn("p-2 rounded-lg", stat.bg)}>
-                     <stat.icon className={cn("w-5 h-5", stat.color || "text-white/40")} />
+                     <stat.icon className={cn("w-5 h-5", stat.color || "text-foreground/40")} />
                    </div>
                  </div>
                </motion.div>
@@ -155,7 +155,7 @@ export default function ChallengesPage() {
               "rounded-2xl px-8 h-12 font-bold transition-all", 
               activeCategory === 'all' 
                 ? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-xl shadow-purple-500/30 border-none" 
-                : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:bg-white/10"
+                : "bg-white/5 border-border text-foreground/40 hover:text-white hover:bg-white/10"
             )}>
             All Segments
           </Button>
@@ -165,7 +165,7 @@ export default function ChallengesPage() {
                 "rounded-2xl px-6 h-12 font-bold flex items-center gap-2 transition-all border",
                 activeCategory === slug 
                   ? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-xl shadow-cyan-500/30 border-none" 
-                  : "bg-white/5 border-white/10 text-white/40 hover:text-white hover:bg-white/10"
+                  : "bg-white/5 border-border text-foreground/40 hover:text-white hover:bg-white/10"
               )}>
               <meta.icon className="w-4 h-4" /> {meta.label}
             </Button>
@@ -188,7 +188,7 @@ export default function ChallengesPage() {
               return (
                 <motion.div key={challenge.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                   className={cn(
-                    "relative group bg-card/40 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10 overflow-hidden",
+                    "relative group bg-card/40 backdrop-blur-3xl border border-border rounded-[2.5rem] p-8 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10 overflow-hidden",
                     isCompleted && "border-cyan-500/30 shadow-cyan-500/5 bg-cyan-500/[0.05] shadow-[0_0_20px_rgba(6,182,212,0.15)]",
                     isInProgress && "border-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.15)] bg-purple-500/[0.02]",
                     isNotStarted && "opacity-50 hover:opacity-100 grayscale hover:grayscale-0"
@@ -210,23 +210,23 @@ export default function ChallengesPage() {
                            <CheckCircle2 className="w-3.5 h-3.5" /> Synchronized
                          </div>
                        ) : (
-                         <div className="flex items-center gap-1.5 font-black text-[10px] text-white/30 uppercase tracking-widest border border-white/5 px-3 py-1.5 rounded-full bg-white/5">
+                         <div className="flex items-center gap-1.5 font-black text-[10px] text-foreground/30 uppercase tracking-widest border border-border/50 px-3 py-1.5 rounded-full bg-white/5">
                            <Activity className="w-3.5 h-3.5" /> Active
                          </div>
                        )}
                     </div>
 
                     <h3 className="text-2xl font-black mb-3 tracking-tight leading-tight group-hover:text-purple-400 transition-colors uppercase">{challenge.title}</h3>
-                    <p className="text-white/40 text-sm leading-relaxed font-bold mb-8 h-10 overflow-hidden line-clamp-2">{challenge.description}</p>
+                    <p className="text-foreground/40 text-sm leading-relaxed font-bold mb-8 h-10 overflow-hidden line-clamp-2">{challenge.description}</p>
 
                     <div className="space-y-4 mb-10">
-                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/20">
+                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-foreground/20">
                         <span>Neural Progress</span>
                         <span className={cn("font-mono", isCompleted ? "text-emerald-400" : "text-white")}>
                           {progressRaw.toLocaleString()} / {target.toLocaleString()}
                         </span>
                       </div>
-                      <div className="h-4 bg-white/5 rounded-full overflow-hidden p-[2px] border border-white/10 shadow-inner relative">
+                      <div className="h-4 bg-white/5 rounded-full overflow-hidden p-[2px] border border-border shadow-inner relative">
                         <motion.div className={cn("h-full rounded-full bg-gradient-to-r transition-all duration-1000 relative overflow-hidden shadow-[0_0_15px_rgba(6,182,212,0.4)]", 
                             isCompleted ? "from-cyan-400 to-blue-600" : "from-purple-600 via-indigo-500 to-cyan-500"
                         )}
@@ -238,17 +238,17 @@ export default function ChallengesPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                    <div className="flex items-center justify-between pt-6 border-t border-border/50">
                       <div className="flex gap-4">
                         <div>
-                          <p className="text-[8px] font-black text-white/20 uppercase tracking-tighter mb-1">XP Reward</p>
+                          <p className="text-[8px] font-black text-foreground/20 uppercase tracking-tighter mb-1">XP Reward</p>
                           <p className="text-sm font-black text-yellow-500/80 tracking-tight flex items-center gap-1">
                             <Zap className="w-3 h-3 fill-yellow-500" /> +{challenge.rewardXp}
                           </p>
                         </div>
                         <div className="w-px h-8 bg-white/5" />
                         <div>
-                          <p className="text-[8px] font-black text-white/20 uppercase tracking-tighter mb-1">Difficulty</p>
+                          <p className="text-[8px] font-black text-foreground/20 uppercase tracking-tighter mb-1">Difficulty</p>
                           <p className={cn("text-sm font-black tracking-tight capitalize", 
                             challenge.difficulty === 'hard' ? 'text-red-400/80' : 
                             challenge.difficulty === 'medium' ? 'text-orange-400/80' : 'text-emerald-400/80'
@@ -262,7 +262,7 @@ export default function ChallengesPage() {
                         disabled={isCompleted}
                         className={cn(
                           "rounded-xl px-6 font-bold h-10 text-[10px] uppercase tracking-widest transition-all",
-                          isCompleted ? "bg-emerald-500/10 text-emerald-400/40 border border-emerald-500/20" : "bg-white/5 hover:bg-white/10 text-white border border-white/10 active:scale-95"
+                          isCompleted ? "bg-emerald-500/10 text-emerald-400/40 border border-emerald-500/20" : "bg-white/5 hover:bg-white/10 text-white border border-border active:scale-95"
                         )}
                       >
                         {isCompleted ? "MASTERED" : "REINFORCE"}
@@ -276,11 +276,11 @@ export default function ChallengesPage() {
         </div>
 
         {filteredChallenges.length === 0 && (
-          <div className="text-center py-32 bg-white/[0.01] rounded-[3rem] border border-dashed border-white/5">
+          <div className="text-center py-32 bg-white/[0.01] rounded-[3rem] border border-dashed border-border/50">
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8">
-               <Lock className="w-8 h-8 text-white/10" />
+               <Lock className="w-8 h-8 text-foreground/10" />
             </div>
-            <p className="text-white/20 font-black uppercase tracking-[0.2em]">No neural matches found in this segment.</p>
+            <p className="text-foreground/20 font-black uppercase tracking-[0.2em]">No neural matches found in this segment.</p>
           </div>
         )}
 

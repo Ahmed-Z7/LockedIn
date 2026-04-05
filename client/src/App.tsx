@@ -25,6 +25,7 @@ import StudySessionPage from "./pages/StudySessionPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import GamificationLevelsPage from "./pages/GamificationLevelsPage";
 import AuthPage from "./pages/AuthPage";
+import AdminPage from "./pages/AdminPage";
 
 function Router() {
   return (
@@ -53,6 +54,7 @@ function Router() {
       <Route path="/leaderboard" component={LeaderboardPage} />
       <Route path="/gamification-levels" component={GamificationLevelsPage} />
       <Route path="/study-session/:id" component={StudySessionPage} />
+      <Route path="/admin" component={AdminPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

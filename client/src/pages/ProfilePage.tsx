@@ -188,7 +188,7 @@ export default function ProfilePage() {
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="relative group p-10 rounded-[3rem] bg-card/40 backdrop-blur-3xl border border-white/10 overflow-hidden shadow-2xl shadow-purple-500/10"
+                    className="relative group p-10 rounded-[3rem] bg-card/40 backdrop-blur-3xl border border-border overflow-hidden shadow-2xl shadow-purple-500/10"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
                     
@@ -237,7 +237,7 @@ export default function ProfilePage() {
                                         <Button 
                                             size="sm" 
                                             variant="outline"
-                                            className="rounded-full border-white/10 bg-white/5 h-9 px-4 transition-all"
+                                            className="rounded-full border-border bg-white/5 h-9 px-4 transition-all"
                                             onClick={() => setLocation(`/messages?user=${targetUserId}`)}
                                         >
                                             <MessageSquare className="w-4 h-4 mr-2" /> Message
@@ -247,7 +247,7 @@ export default function ProfilePage() {
                             </div>
                             
                             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                                <span className="text-white/40 font-bold tracking-tight">@{profile?.username}</span>
+                                <span className="text-foreground/40 font-bold tracking-tight">@{profile?.username}</span>
                                 <StatusBadge status={(profile as any)?.status || 'Ana LOCKEDIN'} />
                                 <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] uppercase font-black tracking-widest">
                                     {getLevelTitle(profile?.level || 1)}
@@ -261,7 +261,7 @@ export default function ProfilePage() {
                                     <Button 
                                         variant="outline" 
                                         size="sm" 
-                                        className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-9"
+                                        className="rounded-xl border-border/50 bg-white/5 text-xs font-bold h-9"
                                         onClick={() => setIsCustomizing(true)}
                                     >
                                         <Sparkles className="w-3.5 h-3.5 mr-2 text-cyan-400" /> Customize
@@ -269,7 +269,7 @@ export default function ProfilePage() {
                                     <Button 
                                         variant="outline" 
                                         size="sm" 
-                                        className="rounded-xl border-white/5 bg-white/5 text-xs font-bold h-10 px-5"
+                                        className="rounded-xl border-border/50 bg-white/5 text-xs font-bold h-10 px-5"
                                         onClick={() => { setTempName(profile?.name || ''); setTempBio(profile?.bio || ''); setIsEditing(true); }}
                                     >
                                         <Edit3 className="w-3.5 h-3.5 mr-2 text-purple-400" /> Edit Profile
@@ -302,21 +302,21 @@ export default function ProfilePage() {
                                     value={tempName}
                                     onChange={(e) => setTempName(e.target.value)}
                                     placeholder="Neural Designation (Nickname)"
-                                    className="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white"
+                                    className="bg-white/5 border border-border rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white"
                                 />
                                 <textarea 
                                     value={tempBio}
                                     onChange={(e) => setTempBio(e.target.value)}
                                     placeholder="Input neural bio description..."
-                                    className="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all resize-none h-20 text-white"
+                                    className="bg-white/5 border border-border rounded-2xl p-4 text-sm focus:outline-none focus:border-purple-500/50 transition-all resize-none h-20 text-white"
                                 />
                                 <div className="flex gap-2">
                                     <Button onClick={handleUpdateProfile} className="bg-purple-600 hover:bg-purple-700 rounded-xl px-6 font-bold h-9 text-xs">Save Update</Button>
-                                    <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl px-6 text-white/40 h-9 text-xs">Cancel</Button>
+                                    <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl px-6 text-foreground/40 h-9 text-xs">Cancel</Button>
                                 </div>
                             </div>
                         ) : (
-                            <p className="text-white/60 leading-relaxed max-w-xl text-sm italic">
+                            <p className="text-foreground/60 leading-relaxed max-w-xl text-sm italic">
                                 "{profile?.bio || "No biometric summary detected."}"
                             </p>
                         )}
@@ -326,22 +326,22 @@ export default function ProfilePage() {
 
                       <div className="flex flex-col items-center md:items-start gap-6 px-8">
                         <div className="text-center md:text-left">
-                          <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-2">Neural Tier</p>
+                          <p className="text-[10px] text-foreground/30 font-black uppercase tracking-[0.2em] mb-2">Neural Tier</p>
                           <p className="text-5xl font-black text-white leading-none bg-gradient-to-br from-white to-white/40 bg-clip-text text-transparent">LV.{level}</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="w-full mt-10 p-8 rounded-[2rem] bg-white/[0.03] border border-white/10 backdrop-blur-md relative overflow-hidden">
+                    <div className="w-full mt-10 p-8 rounded-[2rem] bg-white/[0.03] border border-border backdrop-blur-md relative overflow-hidden">
                       <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-3">
                           <Zap className="w-5 h-5 text-cyan-400 fill-cyan-400/20" />
-                          <span className="text-xs font-black uppercase tracking-widest text-white/60">Neural XP Status</span>
+                          <span className="text-xs font-black uppercase tracking-widest text-foreground/60">Neural XP Status</span>
                           </div>
                           <span className="text-xs font-black text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">Mastery: {progressPercent.toFixed(0)}%</span>
                       </div>
                       
-                      <div className="h-4 bg-white/5 rounded-full overflow-hidden p-[2px] border border-white/10 shadow-inner relative">
+                      <div className="h-4 bg-white/5 rounded-full overflow-hidden p-[2px] border border-border shadow-inner relative">
                           <motion.div 
                               className="h-full rounded-full bg-gradient-to-r from-purple-600 via-cyan-500 to-blue-500 relative overflow-hidden"
                               initial={{ width: 0 }}
@@ -356,9 +356,9 @@ export default function ProfilePage() {
                           </motion.div>
                       </div>
                       
-                      <div className="flex justify-between mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+                      <div className="flex justify-between mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/20">
                           <span>Level {level}</span>
-                          <span className="text-white/40">{xpNeededForNext - xpThisLevel} XP TO ASCEND</span>
+                          <span className="text-foreground/40">{xpNeededForNext - xpThisLevel} XP TO ASCEND</span>
                           <span>Level {level + 1}</span>
                       </div>
                     </div>
@@ -367,18 +367,18 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                       {stats.map((stat, i) => (
                       <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + (i * 0.1) }}
-                          className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-white/10 flex flex-col items-center justify-center group hover:bg-white/[0.05] transition-all hover:scale-105 shadow-xl shadow-purple-500/5">
+                          className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-border flex flex-col items-center justify-center group hover:bg-white/[0.05] transition-all hover:scale-105 shadow-xl shadow-purple-500/5">
                           <div className={cn("p-4 rounded-2xl bg-white/5 mb-4 group-hover:scale-110 transition-transform", stat.color)}>
                               <stat.icon className="w-8 h-8" />
                           </div>
-                          <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+                          <p className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
                           <p className="text-3xl font-black tracking-tighter text-white">{stat.value}</p>
                       </motion.div>
                       ))}
                   </div>
 
                   <div className="w-full">
-                      <TabsList className="bg-card/20 backdrop-blur-xl border border-white/5 p-1 rounded-2xl mb-8">
+                      <TabsList className="bg-card/20 backdrop-blur-xl border border-border/50 p-1 rounded-2xl mb-8">
                       <TabsTrigger value="badges" className="rounded-xl px-10 font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white transition-all">
                           Neural Awards
                       </TabsTrigger>
@@ -397,12 +397,12 @@ export default function ProfilePage() {
                               const Icon = meta.icon;
                               return (
                                   <motion.div key={name} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }}
-                                      className={cn("relative p-6 rounded-[2rem] border flex flex-col items-center text-center transition-all group backdrop-blur-xl", isEarned ? "bg-purple-900/10 border-purple-500/20 shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10" : "bg-white/[0.01] border-white/5 grayscale opacity-30")}>
-                                      <div className={cn("p-4 rounded-xl mb-4 group-hover:scale-110 transition-transform", isEarned ? meta.color + " bg-white/5 shadow-inner" : "text-white/20")}>
+                                      className={cn("relative p-6 rounded-[2rem] border flex flex-col items-center text-center transition-all group backdrop-blur-xl", isEarned ? "bg-purple-900/10 border-purple-500/20 shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10" : "bg-white/[0.01] border-border/50 grayscale opacity-30")}>
+                                      <div className={cn("p-4 rounded-xl mb-4 group-hover:scale-110 transition-transform", isEarned ? meta.color + " bg-white/5 shadow-inner" : "text-foreground/20")}>
                                           <Icon className="w-8 h-8" />
                                       </div>
                                       <h4 className="text-sm font-bold mb-1 tracking-tight text-white">{name}</h4>
-                                      <p className="text-[9px] text-white/30 leading-tight uppercase font-black">{isEarned ? "Validated" : "Access Locked"}</p>
+                                      <p className="text-[9px] text-foreground/30 leading-tight uppercase font-black">{isEarned ? "Validated" : "Access Locked"}</p>
                                   </motion.div>
                               );
                               })}
@@ -412,24 +412,24 @@ export default function ProfilePage() {
                       <TabsContent value="activity">
                           <div className="space-y-4">
                               {progression?.activities?.length === 0 ? (
-                                  <div className="py-20 text-center text-white/20 font-bold uppercase tracking-widest bg-white/[0.01] rounded-3xl border border-dashed border-white/5">
+                                  <div className="py-20 text-center text-foreground/20 font-bold uppercase tracking-widest bg-white/[0.01] rounded-3xl border border-dashed border-border/50">
                                       No neural activity detected in current cycle.
                                   </div>
                               ) : (
                                   progression?.activities?.map((activity, i) => (
                                       <motion.div key={activity.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                                          className="p-6 rounded-2xl bg-card/10 backdrop-blur-xl border border-white/5 flex items-center justify-between group hover:bg-white/[0.05] transition-all shadow-lg">
+                                          className="p-6 rounded-2xl bg-card/10 backdrop-blur-xl border border-border/50 flex items-center justify-between group hover:bg-white/[0.05] transition-all shadow-lg">
                                           <div className="flex items-center gap-5">
                                               <div className={`p-3 rounded-xl shadow-inner ${activity.type === 'level_up' ? 'bg-amber-500/10 text-amber-400' : activity.type === 'badge_earned' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-purple-500/10 text-purple-400'}`}>
                                                   {activity.type === 'level_up' ? <Trophy className="w-5 h-5" /> : activity.type === 'badge_earned' ? <Award className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
                                               </div>
                                               <div>
-                                                  <p className="font-bold text-sm tracking-tight text-white/80 group-hover:text-white transition-colors">{activity.description}</p>
-                                                  <p className="text-[9px] text-white/20 uppercase font-black tracking-widest mt-1">{new Date(activity.createdAt).toLocaleDateString()}</p>
+                                                  <p className="font-bold text-sm tracking-tight text-foreground/80 group-hover:text-white transition-colors">{activity.description}</p>
+                                                  <p className="text-[9px] text-foreground/20 uppercase font-black tracking-widest mt-1">{new Date(activity.createdAt).toLocaleDateString()}</p>
                                               </div>
                                           </div>
                                           <div className="flex flex-col items-end">
-                                              <p className={`font-black tracking-tighter shadow-sm ${(activity.xpGain ?? 0) > 0 ? 'text-emerald-400' : 'text-white/10'}`}>
+                                              <p className={`font-black tracking-tighter shadow-sm ${(activity.xpGain ?? 0) > 0 ? 'text-emerald-400' : 'text-foreground/10'}`}>
                                                   {(activity.xpGain ?? 0) > 0 ? `+${activity.xpGain} XP` : '--'}
                                               </p>
                                           </div>
@@ -468,41 +468,41 @@ export default function ProfilePage() {
       <AnimatePresence>
         {isCustomizing && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCustomizing(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCustomizing(false)} className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-card/90 backdrop-blur-3xl border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl p-10">
+              className="relative w-full max-w-2xl bg-card/90 backdrop-blur-3xl border border-border rounded-[3rem] overflow-hidden shadow-2xl p-10">
               
               <h2 className="text-3xl font-black mb-8 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">Neural Customization</h2>
               
               <div className="space-y-10">
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-widest text-white/40 mb-6 flex items-center gap-2">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-foreground/40 mb-6 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-cyan-400" /> Avatar Frames
                   </h3>
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
                     {AVATAR_FRAMES.map((f) => (
                       <button key={f.id} onClick={() => handleUpdateFrame(f.id)}
                         className={cn("flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all hover:scale-105", 
-                        (profile as any)?.avatarFrame === f.id ? "bg-purple-500/10 border-purple-500" : "bg-white/5 border-white/5 hover:border-white/20")}>
+                        (profile as any)?.avatarFrame === f.id ? "bg-purple-500/10 border-purple-500" : "bg-white/5 border-border/50 hover:border-white/20")}>
                         <div className={cn("w-12 h-12 rounded-full border-2", f.color, f.glow)} />
-                        <span className="text-[10px] font-bold text-white/60">{f.name}</span>
+                        <span className="text-[10px] font-bold text-foreground/60">{f.name}</span>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-black uppercase tracking-widest text-white/40 mb-6 flex items-center gap-2">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-foreground/40 mb-6 flex items-center gap-2">
                     <Zap className="w-4 h-4 text-purple-400" /> Presets & Humorous Status
                   </h3>
                   <div className="space-y-3">
                     {STATUS_PRESETS.map((s) => (
                       <button key={s.id} onClick={() => handleUpdateStatus(s.text)}
                         className={cn("w-full text-left p-4 rounded-2xl border transition-all hover:translate-x-2 flex items-center justify-between group",
-                        (profile as any)?.status === s.text ? "bg-cyan-500/10 border-cyan-500 shadow-[0_0_20px_rgba(34,211,238,0.2)]" : "bg-white/5 border-white/5 hover:border-purple-500/30")}>
+                        (profile as any)?.status === s.text ? "bg-cyan-500/10 border-cyan-500 shadow-[0_0_20px_rgba(34,211,238,0.2)]" : "bg-white/5 border-border/50 hover:border-purple-500/30")}>
                         <div className="flex items-center gap-3">
                             <div className={cn("w-2 h-2 rounded-full", (profile as any)?.status === s.text ? "bg-cyan-400 animate-pulse" : "bg-white/10")} />
-                            <span className="text-sm font-medium text-white/80 group-hover:text-white">{s.text}</span>
+                            <span className="text-sm font-medium text-foreground/80 group-hover:text-white">{s.text}</span>
                         </div>
                         {(profile as any)?.status === s.text && <CheckCircle2 className="w-4 h-4 text-cyan-400" />}
                       </button>
@@ -590,9 +590,9 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
 
     if (!isOwnProfile) {
         return (
-            <div className="py-20 text-center flex flex-col items-center gap-4 bg-white/[0.02] border border-dashed border-white/10 rounded-[3rem]">
-                 <Shield className="w-8 h-8 text-white/10" />
-                 <p className="text-xs font-black text-white/20 uppercase tracking-[0.2em]">Neural Network data is private.</p>
+            <div className="py-20 text-center flex flex-col items-center gap-4 bg-white/[0.02] border border-dashed border-border rounded-[3rem]">
+                 <Shield className="w-8 h-8 text-foreground/10" />
+                 <p className="text-xs font-black text-foreground/20 uppercase tracking-[0.2em]">Neural Network data is private.</p>
             </div>
         );
     }
@@ -600,7 +600,7 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
     if (friendsQuery.isLoading) return (
         <div className="h-64 flex flex-col items-center justify-center gap-4">
             <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
-            <div className="font-black text-white/20 uppercase tracking-[0.3em] text-xs">Scanning Neural Network...</div>
+            <div className="font-black text-foreground/20 uppercase tracking-[0.3em] text-xs">Scanning Neural Network...</div>
         </div>
     );
 
@@ -618,7 +618,7 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
                                     <AvatarWithFrame src={req.avatar} username={req.username || ''} size="sm" />
                                     <div>
                                         <p className="font-bold text-sm tracking-tight text-white">{req.name}</p>
-                                        <p className="text-[10px] text-white/40 font-mono">@{req.username}</p>
+                                        <p className="text-[10px] text-foreground/40 font-mono">@{req.username}</p>
                                     </div>
                                 </div>
                                 <Button size="sm" onClick={() => { acceptMutation.mutate(req.id); utils.social.getFriends.invalidate(); utils.social.getFriendRequests.invalidate(); toast.success("Neural link established!"); }} 
@@ -643,13 +643,13 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
             )}
 
             <div className="space-y-6">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-white/40 flex items-center gap-2">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-foreground/40 flex items-center gap-2">
                     <Zap className="w-4 h-4" /> All Connections ({regularFriends.length})
                 </h3>
                 {friends.length === 0 ? (
-                    <div className="py-20 text-center flex flex-col items-center gap-4 bg-white/[0.02] border border-dashed border-white/10 rounded-[3rem]">
-                         <div className="p-4 bg-white/5 rounded-full"><UserPlus className="w-8 h-8 text-white/10" /></div>
-                         <p className="text-xs font-black text-white/20 uppercase tracking-[0.2em]">No neural connections detected.</p>
+                    <div className="py-20 text-center flex flex-col items-center gap-4 bg-white/[0.02] border border-dashed border-border rounded-[3rem]">
+                         <div className="p-4 bg-white/5 rounded-full"><UserPlus className="w-8 h-8 text-foreground/10" /></div>
+                         <p className="text-xs font-black text-foreground/20 uppercase tracking-[0.2em]">No neural connections detected.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -665,12 +665,12 @@ const FriendsList = ({ isOwnProfile, targetUserId }: { isOwnProfile: boolean, ta
 
 const FriendCard = ({ friend, isFavorite = false, onAction }: { friend: any, isFavorite?: boolean, onAction: any }) => (
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-        className="p-6 rounded-[2.5rem] bg-card/20 border border-white/5 backdrop-blur-xl group hover:border-purple-500/30 transition-all shadow-xl hover:shadow-purple-500/5">
+        className="p-6 rounded-[2.5rem] bg-card/20 border border-border/50 backdrop-blur-xl group hover:border-purple-500/30 transition-all shadow-xl hover:shadow-purple-500/5">
         <div className="flex items-center gap-4 mb-6">
             <AvatarWithFrame src={friend.avatar} username={friend.username || ''} size="md" />
             <div className="flex-1 overflow-hidden">
                 <p className="font-bold text-sm truncate text-white">{friend.name}</p>
-                <p className="text-[10px] text-white/40 truncate font-mono">@{friend.username}</p>
+                <p className="text-[10px] text-foreground/40 truncate font-mono">@{friend.username}</p>
             </div>
             <div className="flex flex-col gap-1">
                 {isFavorite && <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }}><Heart className="w-4 h-4 text-pink-500 fill-pink-500" /></motion.div>}
@@ -699,10 +699,10 @@ const FriendCard = ({ friend, isFavorite = false, onAction }: { friend: any, isF
 );
 
 const StreakCalendar = ({ profile }: { profile: any }) => (
-    <div className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-white/10 relative overflow-hidden shadow-2xl shadow-cyan-500/5 group">
+    <div className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-border relative overflow-hidden shadow-2xl shadow-cyan-500/5 group">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="flex items-center justify-between mb-8 relative z-10">
-            <h3 className="font-black text-[10px] uppercase tracking-widest text-white/40 flex items-center gap-2">
+            <h3 className="font-black text-[10px] uppercase tracking-widest text-foreground/40 flex items-center gap-2">
                 <Flame className="w-4 h-4 text-cyan-400" /> Neural Streak
             </h3>
             <div className="text-4xl font-black text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]">{profile?.streak || 0}d</div>
@@ -710,25 +710,25 @@ const StreakCalendar = ({ profile }: { profile: any }) => (
         <div className="grid grid-cols-7 gap-2 mb-8 relative z-10">
             {['M','T','W','T','F','S','S'].map((d, i) => (
                 <div key={i} className="flex flex-col items-center gap-2">
-                    <span className="text-[8px] font-black text-white/20 tracking-tighter">{d}</span>
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-all", i < (profile?.streak || 0) ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30 scale-110" : "bg-white/5 text-white/10")}>
+                    <span className="text-[8px] font-black text-foreground/20 tracking-tighter">{d}</span>
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-all", i < (profile?.streak || 0) ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30 scale-110" : "bg-white/5 text-foreground/10")}>
                         {i < (profile?.streak || 0) && <CheckCircle2 className="w-3.5 h-3.5" />}
                     </div>
                 </div>
             ))}
         </div>
-        <p className="text-[10px] text-white/40 leading-relaxed font-bold relative z-10">SYSTEM ACCURACY: OPTIMAL. FLOW SYNC DETECTED.</p>
+        <p className="text-[10px] text-foreground/40 leading-relaxed font-bold relative z-10">SYSTEM ACCURACY: OPTIMAL. FLOW SYNC DETECTED.</p>
     </div>
 );
 
 const ZedCorePreview = ({ setLocation }: { setLocation: any }) => (
-    <div className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-white/10 relative overflow-hidden shadow-2xl shadow-purple-500/5">
+    <div className="p-8 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border border-border relative overflow-hidden shadow-2xl shadow-purple-500/5">
         <h3 className="text-xl font-bold mb-6 flex items-center gap-3 text-white">
            <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl"><Bot className="w-5 h-5 text-white" /></div>
            ZED CORE
         </h3>
-        <p className="text-xs text-white/40 mb-6 font-medium leading-relaxed">ZED is optimizing focus cycles based on your biometrics.</p>
-        <Button onClick={() => setLocation('/ai-coach')} className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-6 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 text-white">
+        <p className="text-xs text-foreground/40 mb-6 font-medium leading-relaxed">ZED is optimizing focus cycles based on your biometrics.</p>
+        <Button onClick={() => setLocation('/ai-coach')} className="w-full bg-white/5 hover:bg-white/10 border border-border py-6 rounded-2xl font-black text-[10px] uppercase tracking-widest gap-2 text-white">
             <Settings className="w-4 h-4" /> Neural Training Center
         </Button>
     </div>

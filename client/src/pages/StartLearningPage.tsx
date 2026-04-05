@@ -136,7 +136,7 @@ export default function StartLearningPage() {
                             exit={{ opacity: 0, scale: 1.05 }}
                             className="grid gap-6 md:grid-cols-1"
                         >
-                            <div className="bg-card/50 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
+                            <div className="bg-card/50 backdrop-blur-xl border border-border p-8 rounded-3xl shadow-2xl">
                                 <label className="block text-sm font-medium text-foreground/70 mb-3">
                                     Paste Study Material (Syllabus, Notes, or Topics)
                                 </label>
@@ -185,7 +185,7 @@ export default function StartLearningPage() {
                                 </Button>
                             </div>
 
-                            <div className="bg-card/30 backdrop-blur-xl border border-white/5 p-8 rounded-3xl text-center group cursor-pointer hover:border-purple-500/30 transition-all">
+                            <div className="bg-card/30 backdrop-blur-xl border border-border/50 p-8 rounded-3xl text-center group cursor-pointer hover:border-purple-500/30 transition-all">
                                 <div className="w-16 h-16 bg-purple-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                                     <Upload className="w-8 h-8 text-purple-400" />
                                 </div>
@@ -198,7 +198,7 @@ export default function StartLearningPage() {
                             key="analyzing"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-card/50 backdrop-blur-xl border border-white/10 p-12 rounded-3xl shadow-2xl text-center"
+                            className="bg-card/50 backdrop-blur-xl border border-border p-12 rounded-3xl shadow-2xl text-center"
                         >
                             <div className="relative w-24 h-24 mx-auto mb-8">
                                 <motion.div

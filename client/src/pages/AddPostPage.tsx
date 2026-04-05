@@ -71,17 +71,17 @@ export default function AddPostPage() {
           <h1 className="text-5xl font-black tracking-tighter mb-4 bg-gradient-to-r from-white via-white to-white/40 bg-clip-text text-transparent italic">
             INITIALIZE <span className="text-purple-500 underline decoration-purple-500/30 underline-offset-8">DATA</span> DUMP
           </h1>
-          <p className="text-white/40 font-medium tracking-wide">Sync your progress with the global neural network.</p>
+          <p className="text-foreground/40 font-medium tracking-wide">Sync your progress with the global neural network.</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card/40 backdrop-blur-3xl border border-white/10 rounded-[3rem] p-10 shadow-2xl shadow-purple-500/10"
+          className="bg-card/40 backdrop-blur-3xl border border-border rounded-[3rem] p-10 shadow-2xl shadow-purple-500/10"
         >
           {/* Category Selector */}
           <div className="mb-10">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-4 block">Neural Category</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 mb-4 block">Neural Category</label>
             <div className="grid grid-cols-3 gap-4">
               {[
                 { id: 'general', label: 'General', icon: Zap },
@@ -100,10 +100,10 @@ export default function AddPostPage() {
                       "p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2",
                       isActive
                         ? 'border-purple-500 bg-purple-500/10 text-white shadow-[0_0_20px_rgba(168,85,247,0.2)]'
-                        : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20'
+                        : 'border-border/50 bg-white/5 text-foreground/40 hover:border-white/20'
                     )}
                   >
-                    <Icon className={cn("w-5 h-5", isActive ? "text-purple-400" : "text-white/20")} />
+                    <Icon className={cn("w-5 h-5", isActive ? "text-purple-400" : "text-foreground/20")} />
                     <span className="text-xs font-bold">{type.label}</span>
                   </motion.button>
                 );
@@ -113,41 +113,41 @@ export default function AddPostPage() {
 
           {/* Title */}
           <div className="mb-8">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-4 block">Transmission Title</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 mb-4 block">Transmission Title</label>
             <input
               type="text"
               value={postTitle}
               onChange={(e) => setPostTitle(e.target.value)}
               placeholder="Designate your broadcast..."
               maxLength={200}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/20 focus:outline-none focus:border-purple-500/50 transition-all text-lg font-bold"
+              className="w-full bg-white/5 border border-border rounded-2xl px-6 py-4 text-white placeholder-white/20 focus:outline-none focus:border-purple-500/50 transition-all text-lg font-bold"
             />
             <div className="flex justify-end mt-2">
-              <span className="text-[10px] font-mono text-white/10 uppercase tracking-widest">{postTitle.length} / 200</span>
+              <span className="text-[10px] font-mono text-foreground/10 uppercase tracking-widest">{postTitle.length} / 200</span>
             </div>
           </div>
 
           {/* Content */}
           <div className="mb-10">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-4 block">Neural Payload</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 mb-4 block">Neural Payload</label>
             <textarea
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
               placeholder="Describe your neural findings or milestones..."
               maxLength={5000}
-              className="w-full h-48 bg-white/5 border border-white/10 rounded-[2rem] px-6 py-6 text-white placeholder-white/20 focus:outline-none focus:border-purple-500/50 transition-all resize-none text-base leading-relaxed"
+              className="w-full h-48 bg-white/5 border border-border rounded-[2rem] px-6 py-6 text-white placeholder-white/20 focus:outline-none focus:border-purple-500/50 transition-all resize-none text-base leading-relaxed"
             />
             <div className="flex justify-end mt-2">
-              <span className="text-[10px] font-mono text-white/10 uppercase tracking-widest">{postContent.length} / 5000</span>
+              <span className="text-[10px] font-mono text-foreground/10 uppercase tracking-widest">{postContent.length} / 5000</span>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between gap-6 pt-10 border-t border-white/5">
+          <div className="flex items-center justify-between gap-6 pt-10 border-t border-border/50">
             <Button 
                 variant="ghost" 
                 onClick={() => setLocation('/community')}
-                className="rounded-2xl px-8 h-14 font-black uppercase text-[10px] tracking-widest text-white/40 hover:text-white"
+                className="rounded-2xl px-8 h-14 font-black uppercase text-[10px] tracking-widest text-foreground/40 hover:text-white"
             >
                 Abort Sync
             </Button>
@@ -176,17 +176,17 @@ export default function AddPostPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="mt-12 p-8 rounded-[2.5rem] bg-white/[0.02] border border-dashed border-white/10"
+            className="mt-12 p-8 rounded-[2.5rem] bg-white/[0.02] border border-dashed border-border"
         >
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-purple-400 mb-4 flex items-center gap-2">
                 <Target className="w-4 h-4" /> Transmission Protocols
             </h3>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <li className="text-xs text-white/30 flex items-start gap-2">
+                <li className="text-xs text-foreground/30 flex items-start gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-purple-500/40 mt-1" />
                     Share high-focus achievements to inspire the collective.
                 </li>
-                <li className="text-xs text-white/30 flex items-start gap-2">
+                <li className="text-xs text-foreground/30 flex items-start gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-purple-500/40 mt-1" />
                     Use clear designations for your neural findings.
                 </li>

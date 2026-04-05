@@ -183,7 +183,7 @@ export default function AuthPage() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="w-full max-w-md relative z-10"
       >
-        <div className="relative z-10 bg-black/40 border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-2xl">
+        <div className="relative z-10 bg-background/40 border border-border rounded-3xl p-8 shadow-2xl backdrop-blur-2xl">
           <div className="text-center mb-8">
             <motion.div 
               initial={{ scale: 0 }}
@@ -225,7 +225,7 @@ export default function AuthPage() {
                         id="email"
                         type="email"
                         placeholder="you@example.com"
-                        className="pl-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                        className="pl-11 bg-white/5 border-border text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         required
@@ -243,7 +243,7 @@ export default function AuthPage() {
                           <Input
                             id="reset-code"
                             placeholder="• • • • • •"
-                            className="pl-11 bg-white/5 border-white/10 text-white focus:border-pink-500 focus:ring-pink-500/20 transition-all h-14 text-2xl tracking-[0.5em] text-center font-bold font-mono"
+                            className="pl-11 bg-white/5 border-border text-white focus:border-pink-500 focus:ring-pink-500/20 transition-all h-14 text-2xl tracking-[0.5em] text-center font-bold font-mono"
                             value={verificationCode}
                             onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
                             required
@@ -260,7 +260,7 @@ export default function AuthPage() {
                             id="new-password"
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="pl-11 pr-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                            className="pl-11 pr-11 bg-white/5 border-border text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                             required
@@ -285,7 +285,7 @@ export default function AuthPage() {
                             id="confirm-new-password"
                             type={showConfirmPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="pl-11 pr-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                            className="pl-11 pr-11 bg-white/5 border-border text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
                             value={formData.confirmPassword}
                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                             required
@@ -342,7 +342,7 @@ export default function AuthPage() {
                         <Input
                           id="name"
                           placeholder="CoolOctopus99"
-                          className="pl-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                          className="pl-11 bg-white/5 border-border text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           required={!isLogin}
@@ -359,7 +359,7 @@ export default function AuthPage() {
                         id="email"
                         type="email"
                         placeholder="you@example.com"
-                        className="pl-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                        className="pl-11 bg-white/5 border-border text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         required
@@ -378,7 +378,7 @@ export default function AuthPage() {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="pl-11 pr-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                        className="pl-11 pr-11 bg-white/5 border-border text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         required
@@ -404,7 +404,7 @@ export default function AuthPage() {
                           id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="••••••••"
-                          className="pl-11 pr-11 bg-white/5 border-white/10 text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
+                          className="pl-11 pr-11 bg-white/5 border-border text-white focus:border-purple-500 focus:ring-purple-500/20 transition-all h-12"
                           value={formData.confirmPassword}
                           onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                           required={!isLogin}
@@ -445,7 +445,7 @@ export default function AuthPage() {
                   type="button"
                   variant="outline"
                   onClick={handleGoogleAuth}
-                  className="w-full h-12 bg-white/5 hover:bg-white/10 border-white/10 text-white transition-colors flex items-center justify-center gap-3 rounded-xl"
+                  className="w-full h-12 bg-white/5 hover:bg-white/10 border-border text-white transition-colors flex items-center justify-center gap-3 rounded-xl"
                 >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" clipRule="evenodd" d="M23.52 12.27c0-.85-.08-1.67-.22-2.47H12v4.67h6.46a5.53 5.53 0 0 1-2.4 3.63v3.02h3.88c2.27-2.09 3.58-5.17 3.58-8.85Z" fill="#4285F4"/>
