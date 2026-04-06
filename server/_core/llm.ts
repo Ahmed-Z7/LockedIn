@@ -94,20 +94,22 @@ async function invokeViaGemini(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
+  // Models with their correct API version
   const modelsToTry = [
-    "gemini-2.0-flash-lite",   // highest free-tier RPM, try first
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
+    { id: "gemini-2.0-flash-lite", apiVersion: "v1beta" },
+    { id: "gemini-2.0-flash",      apiVersion: "v1beta" },
+    { id: "gemini-2.0-flash-exp",  apiVersion: "v1beta" },
+    { id: "gemini-1.5-flash",      apiVersion: "v1" },
+    { id: "gemini-1.5-pro",        apiVersion: "v1" },
   ];
 
   let lastError = "";
-  for (const modelId of modelsToTry) {
+  for (const model of modelsToTry) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
-      console.log(`[AI FALLBACK] Trying Gemini model ${modelId}...`);
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${ENV.geminiApiKey}`;
+      console.log(`[AI FALLBACK] Trying Gemini model ${model.id} (${model.apiVersion})...`);
+      const url = `https://generativelanguage.googleapis.com/${model.apiVersion}/models/${model.id}:generateContent?key=${ENV.geminiApiKey}`;
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -122,17 +124,35 @@ async function invokeViaGemini(params: InvokeParams): Promise<InvokeResult> {
       if (response.ok) {
         const data = await response.json();
         const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!aiText) throw new Error(`Empty response from ${modelId}`);
-        console.log(`[AI FALLBACK SUCCESS] ${modelId} responded.`);
+        if (!aiText) throw new Error(`Empty response from ${model.id}`);
+        console.log(`[AI FALLBACK SUCCESS] ${model.id} responded.`);
         return { choices: [{ message: { role: "model", content: aiText } }] };
       }
 
-      const err = await response.json().catch(() => ({}));
-      lastError = `${modelId} status ${response.status}: ${err?.error?.message || "Unknown"}`;
+      // Parse error body
+      let errBody: any = {};
+      try { errBody = await response.json(); } catch {}
+      const errMsg = errBody?.error?.message || "Unknown error";
+
+      // 429 = quota/rate limit — skip to next model
+      if (response.status === 429) {
+        lastError = `${model.id} quota exceeded (429)`;
+        console.warn(`[AI FALLBACK SKIP] ${lastError}`);
+        continue;
+      }
+
+      // 404 = model not available — skip to next
+      if (response.status === 404) {
+        lastError = `${model.id} not found (404)`;
+        console.warn(`[AI FALLBACK SKIP] ${lastError}`);
+        continue;
+      }
+
+      lastError = `${model.id} error ${response.status}: ${errMsg}`;
       console.warn(`[AI FALLBACK ERROR] ${lastError}`);
     } catch (err: any) {
       clearTimeout(timeout);
-      lastError = err.name === "AbortError" ? `${modelId} timeout` : err.message;
+      lastError = err.name === "AbortError" ? `${model.id} timeout` : err.message;
       console.warn(`[AI FALLBACK FAILURE] ${lastError}`);
     }
   }
