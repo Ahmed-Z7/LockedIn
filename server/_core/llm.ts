@@ -94,13 +94,13 @@ async function invokeViaGemini(params: InvokeParams): Promise<InvokeResult> {
     };
   });
 
-  // Models with their correct API version
+  // All AI Studio keys must use v1beta endpoint
   const modelsToTry = [
     { id: "gemini-2.0-flash-lite", apiVersion: "v1beta" },
     { id: "gemini-2.0-flash",      apiVersion: "v1beta" },
-    { id: "gemini-2.0-flash-exp",  apiVersion: "v1beta" },
-    { id: "gemini-1.5-flash",      apiVersion: "v1" },
-    { id: "gemini-1.5-pro",        apiVersion: "v1" },
+    { id: "gemini-1.5-flash-8b",   apiVersion: "v1beta" }, // separate free-tier quota pool
+    { id: "gemini-1.5-flash",      apiVersion: "v1beta" },
+    { id: "gemini-1.5-pro",        apiVersion: "v1beta" },
   ];
 
   let lastError = "";
