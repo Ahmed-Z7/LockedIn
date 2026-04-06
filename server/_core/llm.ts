@@ -95,9 +95,10 @@ async function invokeViaGemini(params: InvokeParams): Promise<InvokeResult> {
   });
 
   const modelsToTry = [
+    "gemini-2.0-flash-lite",   // highest free-tier RPM, try first
     "gemini-2.0-flash",
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-pro-latest",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
   ];
 
   let lastError = "";
