@@ -8,4 +8,5 @@ export const ENV = {
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   forgeApiUrl: process.env.VITE_FORGE_API_URL ?? "",
   forgeApiKey: process.env.VITE_FORGE_API_KEY ?? "",
+  groqApiKey: process.env.GROQ_API_KEY ?? "",
 };

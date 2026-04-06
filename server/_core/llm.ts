@@ -76,6 +76,61 @@ async function invokeViaForge(params: InvokeParams): Promise<InvokeResult> {
   }
 }
 
+// --- Groq: Free tier, OpenAI-compatible, no billing required ---
+async function invokeViaGroq(params: InvokeParams): Promise<InvokeResult> {
+  if (!ENV.groqApiKey) throw new Error("GROQ_API_KEY is not configured");
+
+  const messages = params.messages.map(m => ({
+    role: m.role === "model" ? "assistant" : m.role,
+    content: m.content,
+  }));
+
+  const groqModels = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "gemma2-9b-it",
+  ];
+
+  let lastError = "";
+  for (const model of groqModels) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    try {
+      console.log(`[AI GROQ] Trying ${model}...`);
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${ENV.groqApiKey}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 2048 }),
+      });
+      clearTimeout(timeout);
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+        if (!content) throw new Error(`Empty response from ${model}`);
+        console.log(`[AI GROQ SUCCESS] ${model} responded.`);
+        return { choices: [{ message: { role: "assistant", content } }] };
+      }
+
+      let errBody: any = {};
+      try { errBody = await response.json(); } catch {}
+      lastError = `${model} error ${response.status}: ${errBody?.error?.message || "Unknown"}`;
+      if (response.status === 429) { console.warn(`[AI GROQ SKIP] ${model} rate limited`); continue; }
+      console.warn(`[AI GROQ ERROR] ${lastError}`);
+    } catch (err: any) {
+      clearTimeout(timeout);
+      lastError = err.name === "AbortError" ? `${model} timeout` : err.message;
+      console.warn(`[AI GROQ FAILURE] ${lastError}`);
+    }
+  }
+  throw new Error(`All Groq models failed. Last: ${lastError}`);
+}
+
+
 // --- Fallback: Gemini API ---
 async function invokeViaGemini(params: InvokeParams): Promise<InvokeResult> {
   if (!ENV.geminiApiKey) throw new Error("GEMINI_API_KEY is not configured");
@@ -160,24 +215,25 @@ async function invokeViaGemini(params: InvokeParams): Promise<InvokeResult> {
   throw new Error(`All Gemini models failed. Last error: ${lastError}`);
 }
 
-// --- Main entry point ---
+// --- Main entry point: Forge → Groq → Gemini ---
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  // Try Forge first (no quota issues), fall back to Gemini
+  // 1. Try Forge (enterprise, if configured)
   if (ENV.forgeApiUrl && ENV.forgeApiKey) {
-    try {
-      return await invokeViaForge(params);
-    } catch (err: any) {
-      console.warn(`[AI] Forge failed, falling back to Gemini. Reason: ${err.message}`);
-    }
+    try { return await invokeViaForge(params); }
+    catch (err: any) { console.warn(`[AI] Forge failed: ${err.message}`); }
   }
 
+  // 2. Try Groq (free, fast, no billing)
+  if (ENV.groqApiKey) {
+    try { return await invokeViaGroq(params); }
+    catch (err: any) { console.warn(`[AI] Groq failed: ${err.message}`); }
+  }
+
+  // 3. Try Gemini (fallback)
   if (ENV.geminiApiKey) {
-    try {
-      return await invokeViaGemini(params);
-    } catch (err: any) {
-      throw new Error(`Neural Pulse Erratic: ${err.message}`);
-    }
+    try { return await invokeViaGemini(params); }
+    catch (err: any) { throw new Error(`Neural Pulse Erratic: ${err.message}`); }
   }
 
-  throw new Error("No AI provider is configured. Please set VITE_FORGE_API_KEY or GEMINI_API_KEY.");
+  throw new Error("No AI provider configured. Set GROQ_API_KEY, GEMINI_API_KEY, or VITE_FORGE_API_KEY.");
 }

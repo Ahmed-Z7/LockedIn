@@ -39,9 +39,19 @@ export default function StudySessionPage() {
 
   // Custom session config state
   const [showCustomConfig, setShowCustomConfig] = useState(false);
-  const [customWork, setCustomWork] = useState(45);
-  const [customBreak, setCustomBreak] = useState(10);
+  const [customWork, setCustomWork] = useState(25);
+  const [customBreak, setCustomBreak] = useState(5);
+  const [customRounds, setCustomRounds] = useState(3);
   const [customFocusLock, setCustomFocusLock] = useState(true);
+
+  // Rounds tracking
+  const [totalRounds, setTotalRounds] = useState(1);
+  const [currentRound, setCurrentRound] = useState(1);
+  const [sessionWorkMins, setSessionWorkMins] = useState(25);
+  const [sessionBreakMins, setSessionBreakMins] = useState(5);
+
+  // Hardcore lock overlay
+  const [fullscreenExited, setFullscreenExited] = useState(false);
 
   // State
   const [method, setMethod] = useState<StudyMethod | null>(null);
@@ -99,62 +109,124 @@ export default function StudySessionPage() {
     return () => clearInterval(interval);
   }, [isActive, blockTimeLeft, isBreak, exceptionTimeLeft]);
 
-  // Focus Lock Logic
+  // ═══════════════════════════════════════════
+  // HARDCORE FOCUS LOCK — ALL EXITS BLOCKED
+  // ═══════════════════════════════════════════
   useEffect(() => {
-    if (isLocked && !isBreak && !exceptionTimeLeft) {
-        const handleVisibility = () => {
-            if (document.hidden) {
-                setDistractions(prev => prev + 1);
-                toast.error("FOCUS COMPROMISED. RETURN TO SESSION IMMEDIATELY.", {
-                    duration: 5000,
-                    icon: <AlertCircle className="text-red-500" />
-                });
-            }
-        };
+    if (!isLocked || isBreak || exceptionTimeLeft) return;
 
-        const handleBlur = () => {
-            setDistractions(prev => prev + 1);
-        };
+    // 1. Block ALL keyboard escape routes
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const blockedKeys = ['Escape', 'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12'];
+      if (blockedKeys.includes(e.key)) { e.preventDefault(); e.stopPropagation(); return false; }
+      // Block Ctrl+W/T/N/R/L/Tab/Shift+I (devtools)
+      if (e.ctrlKey && ['w','W','t','T','n','N','r','R','l','L'].includes(e.key)) {
+        e.preventDefault(); e.stopPropagation(); return false;
+      }
+      if (e.ctrlKey && e.shiftKey && ['i','I','j','J','c','C'].includes(e.key)) {
+        e.preventDefault(); e.stopPropagation(); return false;
+      }
+      // Block Alt+F4 / Alt+Tab
+      if (e.altKey && (e.key === 'F4' || e.key === 'Tab' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault(); e.stopPropagation(); return false;
+      }
+      // Block Ctrl+Tab (switch tabs)
+      if (e.ctrlKey && e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); return false; }
+    };
 
-        const preventExit = (e: BeforeUnloadEvent) => {
-            e.preventDefault();
-            e.returnValue = "";
-        };
+    // 2. Block right-click
+    const handleContextMenu = (e: MouseEvent) => { e.preventDefault(); };
 
-        document.addEventListener("visibilitychange", handleVisibility);
-        window.addEventListener("blur", handleBlur);
-        window.addEventListener("beforeunload", preventExit);
+    // 3. Block drag (to prevent dragging URL bar)
+    const handleDragStart = (e: DragEvent) => { e.preventDefault(); };
 
-        return () => {
-            document.removeEventListener("visibilitychange", handleVisibility);
-            window.removeEventListener("blur", handleBlur);
-            window.removeEventListener("beforeunload", preventExit);
-        };
-    }
+    // 4. Detect tab visibility change
+    const handleVisibility = () => {
+      if (document.hidden) {
+        setDistractions(prev => prev + 1);
+        toast.error("⚠️ FOCUS BREACH — TAB SWITCH DETECTED", { duration: 4000 });
+      }
+    };
+
+    // 5. Detect window blur (alt-tab / another app)
+    const handleBlur = () => {
+      setDistractions(prev => prev + 1);
+      // Try to reclaim focus
+      setTimeout(() => window.focus(), 100);
+    };
+
+    // 6. Block page unload
+    const preventExit = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+
+    // 7. Fullscreen exit — show brutal overlay + re-enter fullscreen immediately
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setFullscreenExited(true);
+        setDistractions(prev => prev + 1);
+        // Immediately try to re-enter fullscreen
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        setFullscreenExited(false);
+      }
+    };
+
+    // Register all with capture phase for max priority
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
+    document.addEventListener('contextmenu', handleContextMenu, { capture: true });
+    document.addEventListener('dragstart', handleDragStart, { capture: true });
+    document.addEventListener('visibilitychange', handleVisibility);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('beforeunload', preventExit);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, { capture: true });
+      document.removeEventListener('contextmenu', handleContextMenu, { capture: true });
+      document.removeEventListener('dragstart', handleDragStart, { capture: true });
+      document.removeEventListener('visibilitychange', handleVisibility);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('beforeunload', preventExit);
+    };
   }, [isLocked, isBreak, exceptionTimeLeft]);
 
   const handlePhaseComplete = () => {
     setIsActive(false);
-    const selectedMethod = STUDY_METHODS.find(m => m.id === method);
     if (!isBreak) {
-      toast.success("Focus block complete! Time for a neural recharge.");
-      setIsBreak(true);
-      setBlockTimeLeft((selectedMethod?.break || 5) * 60);
-      initializeMemoryGame();
-      if (method === 'feynman') setActiveTool('feynman');
+      // Work block done
+      if (currentRound < totalRounds) {
+        // More rounds remain — start break
+        toast.success(`Round ${currentRound}/${totalRounds} complete! Recharging neural network.`);
+        setIsBreak(true);
+        setBlockTimeLeft(sessionBreakMins * 60);
+        initializeMemoryGame();
+        if (method === 'feynman') setActiveTool('feynman');
+      } else {
+        // ALL ROUNDS DONE — trigger final exam
+        toast.success('All rounds complete! Time for the final validation.', { duration: 3000 });
+        setTimeout(() => initiateQuiz(), 1200);
+      }
     } else {
-      toast("Break over. Re-initializing Focus Lock...", { icon: "🔥" });
+      // Break done — next round
+      const next = currentRound + 1;
+      setCurrentRound(next);
+      toast(`Round ${next}/${totalRounds} — Lock In!`, { icon: '⚡', duration: 2000 });
       setIsBreak(false);
-      setBlockTimeLeft((selectedMethod?.work || 25) * 60);
+      setBlockTimeLeft(sessionWorkMins * 60);
       setIsActive(true);
       setIsLocked(true);
     }
   };
 
-  const startSession = async (m: any) => {
+  const startSession = async (m: any, rounds: number = 1) => {
     setMethod(m.id as StudyMethod);
     setBlockTimeLeft(m.work * 60);
-    setTargetSessionTime(session?.duration || 60); // Use session duration from DB/Prop
+    setTargetSessionTime(session?.duration || m.work * rounds);
+    setTotalRounds(rounds);
+    setCurrentRound(1);
+    setSessionWorkMins(m.work);
+    setSessionBreakMins(m.break);
+    setFullscreenExited(false);
     
     // Trigger "Focus Kicking In" Animation
     setIsFocusKickingIn(true);
@@ -171,16 +243,14 @@ export default function StudySessionPage() {
     // Sequence the high-impact intro
     setTimeout(() => {
         setIsFocusKickingIn(false);
-        setShowStartCelebration(true); // TRIGGER OCTOPUS START CELEBRATION
-        
-        // Let octopus stay for 4 seconds, then start session
+        setShowStartCelebration(true);
         setTimeout(() => {
             setShowStartCelebration(false);
             setIsActive(true);
             setIsLocked(true);
-            setChatMessages([{ role: 'ai', content: `Neural link established for ${m.title}. Focus Lock system active. I've prepared your materials. Welcome to the flow state.` }]);
+            setChatMessages([{ role: 'ai', content: `Neural link established. ${rounds} round${rounds > 1 ? 's' : ''} of ${m.work}min focus. Focus Lock: ACTIVE. No escape until completion.` }]);
         }, 4000);
-    }, 5500); // Extended for visual impact
+    }, 5500);
   };
 
   const handleExceptionSubmit = async (reason: string) => {
@@ -428,14 +498,14 @@ export default function StudySessionPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[500] bg-background/80 backdrop-blur-2xl flex items-center justify-center p-6"
+              className="fixed inset-0 z-[500] bg-background/80 backdrop-blur-2xl flex items-center justify-center p-4"
               onClick={(e) => { if (e.target === e.currentTarget) setShowCustomConfig(false); }}
             >
               <motion.div
                 initial={{ scale: 0.9, y: 30 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.9, y: 30 }}
-                className="bg-card border border-cyan-500/20 rounded-[3rem] p-10 max-w-lg w-full shadow-[0_0_60px_rgba(6,182,212,0.15)] space-y-8"
+                className="bg-card border border-cyan-500/20 rounded-[3rem] p-8 max-w-lg w-full shadow-[0_0_60px_rgba(6,182,212,0.15)] space-y-6 max-h-[90vh] overflow-y-auto"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -453,31 +523,25 @@ export default function StudySessionPage() {
                   </Button>
                 </div>
 
-                {/* Work Duration */}
+                {/* Work Duration — 1 to 60 min */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-cyan-400" />
-                      <span className="font-bold text-sm">Focus Duration</span>
+                      <span className="font-bold text-sm">Focus Duration / Round</span>
                     </div>
                     <span className="text-2xl font-black text-cyan-400">{customWork}<span className="text-sm font-bold text-foreground/30 ml-1">min</span></span>
                   </div>
-                  <div className="relative">
-                    <input
-                      type="range"
-                      min={10}
-                      max={180}
-                      step={5}
-                      value={customWork}
-                      onChange={(e) => setCustomWork(Number(e.target.value))}
-                      className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(6,182,212,0.5)]"
-                    />
-                    <div className="flex justify-between text-[10px] text-foreground/20 font-bold mt-1">
-                      <span>10m</span><span>1h</span><span>3h</span>
-                    </div>
+                  <input
+                    type="range" min={1} max={60} step={1} value={customWork}
+                    onChange={(e) => setCustomWork(Number(e.target.value))}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                  />
+                  <div className="flex justify-between text-[10px] text-foreground/20 font-bold">
+                    <span>1m</span><span>15m</span><span>30m</span><span>45m</span><span>60m</span>
                   </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[25, 45, 60, 90].map(v => (
+                  <div className="grid grid-cols-5 gap-2">
+                    {[10, 20, 25, 45, 60].map(v => (
                       <button key={v} onClick={() => setCustomWork(v)}
                         className={cn("py-2 rounded-xl text-xs font-black transition-all",
                           customWork === v ? "bg-cyan-500 text-white" : "bg-white/5 text-foreground/40 hover:bg-white/10"
@@ -486,7 +550,7 @@ export default function StudySessionPage() {
                   </div>
                 </div>
 
-                {/* Break Duration */}
+                {/* Break Duration — 1 to 30 min */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -495,19 +559,13 @@ export default function StudySessionPage() {
                     </div>
                     <span className="text-2xl font-black text-blue-400">{customBreak}<span className="text-sm font-bold text-foreground/30 ml-1">min</span></span>
                   </div>
-                  <div className="relative">
-                    <input
-                      type="range"
-                      min={2}
-                      max={60}
-                      step={1}
-                      value={customBreak}
-                      onChange={(e) => setCustomBreak(Number(e.target.value))}
-                      className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(96,165,250,0.5)]"
-                    />
-                    <div className="flex justify-between text-[10px] text-foreground/20 font-bold mt-1">
-                      <span>2m</span><span>15m</span><span>60m</span>
-                    </div>
+                  <input
+                    type="range" min={1} max={30} step={1} value={customBreak}
+                    onChange={(e) => setCustomBreak(Number(e.target.value))}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(96,165,250,0.5)]"
+                  />
+                  <div className="flex justify-between text-[10px] text-foreground/20 font-bold">
+                    <span>1m</span><span>10m</span><span>20m</span><span>30m</span>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     {[5, 10, 15, 20].map(v => (
@@ -519,72 +577,95 @@ export default function StudySessionPage() {
                   </div>
                 </div>
 
+                {/* Rounds Selector */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <RotateCcw className="w-4 h-4 text-emerald-400" />
+                      <span className="font-bold text-sm">Number of Rounds</span>
+                    </div>
+                    <span className="text-2xl font-black text-emerald-400">{customRounds}<span className="text-sm font-bold text-foreground/30 ml-1">rounds</span></span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setCustomRounds(r => Math.max(1, r - 1))}
+                      className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 border border-border/50 flex items-center justify-center text-xl font-black transition-all active:scale-95"
+                    >−</button>
+                    <div className="flex-1 grid grid-cols-5 gap-2">
+                      {[1,2,3,4,5].map(v => (
+                        <button key={v} onClick={() => setCustomRounds(v)}
+                          className={cn("py-3 rounded-xl text-sm font-black transition-all",
+                            customRounds === v ? "bg-emerald-500 text-white" : "bg-white/5 text-foreground/40 hover:bg-white/10"
+                          )}>{v}</button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setCustomRounds(r => Math.min(10, r + 1))}
+                      className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 border border-border/50 flex items-center justify-center text-xl font-black transition-all active:scale-95"
+                    >+</button>
+                  </div>
+                  <div className="flex justify-center gap-1 mt-1">
+                    {Array.from({ length: customRounds }).map((_, i) => (
+                      <div key={i} className="w-2 h-2 rounded-full bg-emerald-500" />
+                    ))}
+                    {Array.from({ length: Math.max(0, 10 - customRounds) }).map((_, i) => (
+                      <div key={i} className="w-2 h-2 rounded-full bg-white/10" />
+                    ))}
+                  </div>
+                </div>
+
                 {/* Focus Lock Toggle */}
-                <div>
-                  <button
-                    onClick={() => setCustomFocusLock(!customFocusLock)}
-                    className={cn(
-                      "w-full p-5 rounded-2xl border transition-all flex items-center justify-between",
-                      customFocusLock
-                        ? "bg-purple-500/10 border-purple-500/30"
-                        : "bg-white/5 border-border/50 hover:border-white/10"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Lock className={cn("w-5 h-5", customFocusLock ? "text-purple-400" : "text-foreground/20")} />
-                      <div className="text-left">
-                        <div className={cn("font-bold text-sm", customFocusLock ? "text-purple-400" : "text-foreground/40")}>Neural Focus Lock</div>
-                        <div className="text-xs text-foreground/30">Block distractions and prevent tab switching</div>
+                <button
+                  onClick={() => setCustomFocusLock(!customFocusLock)}
+                  className={cn(
+                    "w-full p-4 rounded-2xl border transition-all flex items-center justify-between",
+                    customFocusLock ? "bg-red-500/10 border-red-500/30" : "bg-white/5 border-border/50 hover:border-white/10"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Lock className={cn("w-5 h-5", customFocusLock ? "text-red-400" : "text-foreground/20")} />
+                    <div className="text-left">
+                      <div className={cn("font-bold text-sm", customFocusLock ? "text-red-400" : "text-foreground/40")}>
+                        {customFocusLock ? "HARDCORE LOCK-IN ACTIVE" : "Focus Lock Disabled"}
                       </div>
+                      <div className="text-xs text-foreground/30">No exits. No tabs. No escape until done.</div>
                     </div>
-                    <div className={cn(
-                      "w-12 h-6 rounded-full transition-all relative",
-                      customFocusLock ? "bg-purple-500" : "bg-white/10"
-                    )}>
-                      <div className={cn(
-                        "absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-all",
-                        customFocusLock ? "left-7" : "left-1"
-                      )} />
-                    </div>
-                  </button>
-                </div>
+                  </div>
+                  <div className={cn("w-12 h-6 rounded-full transition-all relative", customFocusLock ? "bg-red-500" : "bg-white/10")}>
+                    <div className={cn("absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-all", customFocusLock ? "left-7" : "left-1")} />
+                  </div>
+                </button>
 
-                {/* Session Summary */}
-                <div className="p-4 bg-white/5 rounded-2xl border border-border/50 flex items-center justify-between">
-                  <div className="text-center">
+                {/* Summary */}
+                <div className="p-4 bg-white/5 rounded-2xl border border-border/50 grid grid-cols-4 gap-2 text-center">
+                  <div>
                     <div className="text-xl font-black text-cyan-400">{customWork}m</div>
-                    <div className="text-[10px] text-foreground/20 font-black uppercase tracking-widest">Focus</div>
+                    <div className="text-[10px] text-foreground/20 font-black uppercase">Focus</div>
                   </div>
-                  <div className="text-foreground/20">+</div>
-                  <div className="text-center">
+                  <div>
                     <div className="text-xl font-black text-blue-400">{customBreak}m</div>
-                    <div className="text-[10px] text-foreground/20 font-black uppercase tracking-widest">Break</div>
+                    <div className="text-[10px] text-foreground/20 font-black uppercase">Break</div>
                   </div>
-                  <div className="text-foreground/20">=</div>
-                  <div className="text-center">
-                    <div className="text-xl font-black text-emerald-400">{customWork + customBreak}m</div>
-                    <div className="text-[10px] text-foreground/20 font-black uppercase tracking-widest">Cycle</div>
+                  <div>
+                    <div className="text-xl font-black text-emerald-400">{customRounds}x</div>
+                    <div className="text-[10px] text-foreground/20 font-black uppercase">Rounds</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-black text-purple-400">{customWork * customRounds}m</div>
+                    <div className="text-[10px] text-foreground/20 font-black uppercase">Total</div>
                   </div>
                 </div>
 
-                {/* Launch Button */}
+                {/* Launch */}
                 <Button
                   onClick={() => {
                     setShowCustomConfig(false);
-                    const customMethod = {
-                      id: 'custom' as StudyMethod,
-                      title: `Custom (${customWork}/${customBreak})`,
-                      desc: 'Your custom session configuration.',
-                      icon: SlidersHorizontal,
-                      work: customWork,
-                      break: customBreak,
-                    };
-                    startSession(customMethod);
+                    startSession({ id: 'custom', title: `Custom ${customWork}m×${customRounds}`, desc: '', icon: SlidersHorizontal, work: customWork, break: customBreak }, customRounds);
                   }}
                   className="w-full h-16 rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-white font-black text-lg shadow-xl shadow-cyan-500/20 transition-all"
                 >
                   <Zap className="w-5 h-5 mr-2" />
-                  Lock In — {customWork}m Focus
+                  Lock In — {customRounds} Round{customRounds > 1 ? 's' : ''} × {customWork}m
                 </Button>
               </motion.div>
             </motion.div>
@@ -595,8 +676,48 @@ export default function StudySessionPage() {
   }
 
   // Session UI (To be expanded in next steps)
+  // Session UI
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden flex flex-col">
+        {/* Hardcore Fullscreen Guard — only shows if user escapes fullscreen */}
+        <AnimatePresence>
+          {fullscreenExited && isLocked && !isBreak && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center"
+            >
+              <div className="absolute inset-0">
+                <motion.div animate={{ scale: [1,1.2,1], opacity: [0.2,0.5,0.2] }} transition={{ duration: 3, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] bg-red-600/20 rounded-full blur-[120px]" />
+              </div>
+              <div className="relative z-10 text-center space-y-8 max-w-lg p-8">
+                <motion.div animate={{ rotate: [0, -5, 5, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="w-24 h-24 rounded-3xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto">
+                  <Lock className="w-12 h-12 text-red-400" />
+                </motion.div>
+                <div>
+                  <p className="text-red-400 font-black tracking-[0.3em] uppercase text-sm mb-2">⚠ Focus Violation Detected</p>
+                  <h2 className="text-5xl font-black tracking-tighter">You Escaped.</h2>
+                  <p className="text-foreground/40 mt-4 text-lg leading-relaxed">
+                    Fullscreen was exited. You are locked in until the timer ends.<br/>
+                    Return to focus now.
+                  </p>
+                  <div className="mt-2 text-red-400/60 font-bold text-sm">Distraction #{distractions} logged.</div>
+                </div>
+                <button
+                  onClick={() => {
+                    document.documentElement.requestFullscreen().then(() => setFullscreenExited(false)).catch(() => setFullscreenExited(false));
+                  }}
+                  className="w-full h-16 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-black text-lg shadow-xl shadow-red-500/20 transition-all active:scale-95"
+                >
+                  🔒 Return to Session
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+
         {/* Top Bar */}
         <header className="h-20 border-b border-border/50 px-8 flex items-center justify-between backdrop-blur-md sticky top-0 z-50">
             <div className="flex items-center gap-4">
@@ -608,6 +729,11 @@ export default function StudySessionPage() {
                     <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-foreground/30 font-black">
                         <div className={cn("w-2 h-2 rounded-full", isBreak ? "bg-blue-400 animate-pulse" : "bg-purple-500 animate-[pulse_1.5s_infinite]")} />
                         {isBreak ? "Refueling Circuit" : "Neural Focus Active"}
+                        {totalRounds > 1 && (
+                          <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                            Round {currentRound}/{totalRounds}
+                          </span>
+                        )}
                     </div>
                 </div>
                 <Button 
