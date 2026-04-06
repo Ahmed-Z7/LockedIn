@@ -372,19 +372,20 @@ export const appRouter = router({
     analyzeMaterial: protectedProcedure
       .input(z.object({
         content: z.string(),
-        days: z.number().min(1).max(30),
-        hoursPerDay: z.number().min(1).max(12)
+        days: z.number().optional(),
+        hoursPerDay: z.number().optional()
       }))
       .mutation(async ({ input }) => {
         try {
-          const prompt = `Analyze the following study material and extract exactly 5 to 10 logical study topics.
-          Output formatting (JSON array):
-          [{ "title": "...", "difficulty": "...", "duration": 60 }]
-          Material: ${input.content.substring(0, 5000)}`;
+          const prompt = `Analyze the following study material and divide it logically into exactly 10 progressive learning levels (Mastery Tiers).
+          Output MUST be ONLY a JSON array of exactly 10 items in this format:
+          [{ "title": "Tier 1: ...", "difficulty": "easy", "duration": 45 }, ...]
+          Ensure difficulty scales from 'easy' to 'medium' to 'hard' near level 10.
+          Material: ${input.content.substring(0, 10000)}`;
 
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "You are an expert curriculum analyzer. Extract structured study topics accurately in JSON." },
+              { role: "system", content: "You are an expert curriculum AI. Return purely valid JSON array of length 10." },
               { role: "user", content: prompt },
             ],
           });
@@ -392,11 +393,29 @@ export const appRouter = router({
           const content = response.choices[0]?.message?.content || "[]";
           const rawContent = typeof content === "string" ? content : String(content);
           const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
-          const topics = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
+          
+          let topics = [];
+          try {
+             topics = JSON.parse(jsonMatch ? jsonMatch[0] : "[]");
+          } catch(e) {
+             console.error("JSON parse failed for Neural AI response", e);
+          }
 
-          return { topics: topics.length > 0 ? topics : [{ title: 'Core Fundamentals', difficulty: 'medium', duration: 60 }] };
+          if (!Array.isArray(topics) || topics.length === 0) {
+              throw new Error("Invalid format returned by AI");
+          }
+
+          return { topics };
         } catch (error: any) {
-          return { topics: [{ title: 'Overview', difficulty: 'medium', duration: 60 }] };
+          console.error("Neural AI Material Processing Error:", error);
+          // Safe fallback to pure 10 levels
+          return { 
+              topics: Array.from({length: 10}).map((_, i) => ({ 
+                 title: `Mastery Tier ${i+1}: AI Recovery Mode`, 
+                 difficulty: i < 3 ? 'easy' : i < 7 ? 'medium' : 'hard', 
+                 duration: 45 
+              })) 
+          };
         }
       }),
 

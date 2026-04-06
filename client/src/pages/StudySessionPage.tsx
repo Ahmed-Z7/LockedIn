@@ -82,6 +82,7 @@ export default function StudySessionPage() {
   const [quizData, setQuizData] = useState<any[]>([]);
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
   const [showStartCelebration, setShowStartCelebration] = useState(false);
+  const [isMinigameActive, setIsMinigameActive] = useState(false);
   
   const chatMutation = trpc.aiCoach.chat.useMutation();
   const generateQuizMutation = trpc.aiCoach.generateQuiz.useMutation();
@@ -1145,51 +1146,115 @@ export default function StudySessionPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6 text-center"
+                    className="fixed inset-0 z-[100] bg-[#09090b] flex flex-col items-center justify-center p-6 text-center select-none"
+                    style={{ backgroundImage: 'radial-gradient(circle at center, rgba(168, 85, 247, 0.1) 0%, transparent 70%)' }}
                 >
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] bg-blue-500/10 rounded-full blur-[120px]" />
+                    <div className="absolute top-10 left-10 right-10 flex items-center justify-between text-indigo-400 font-black tracking-widest text-sm uppercase">
+                        <span>BREAK MODE ACTIVE</span>
+                        <div className="flex items-center gap-2">
+                           <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+                           <span className="text-emerald-400">DISTRACTION LOCK SUSPENDED - BROWSE FREELY</span>
+                        </div>
                     </div>
-                    <div className="relative z-10 w-full max-w-4xl">
-                        <div className="text-8xl font-black font-mono tracking-tighter text-blue-400 mb-8 animate-[pulse_2s_infinite]">
-                            {formatTime(blockTimeLeft)}
-                        </div>
-                        <h2 className="text-4xl font-extrabold mb-4 tracking-tight">Refueling Neural Network</h2>
-                        <p className="text-foreground/40 text-lg mb-12">Break is active. Let's recharge with a quick cognition challenge.</p>
-                        
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-12">
-                            <div className="space-y-6 text-left">
-                                <h3 className="text-2xl font-bold flex items-center gap-3 text-blue-400">
-                                    <Gamepad2 className="w-6 h-6" /> Cognitive Memory Match
-                                </h3>
-                                <p className="text-foreground/40 text-lg leading-relaxed">
-                                    Match the core concepts of your current session to maintain neural alignment during rest.
-                                </p>
-                                <div className="text-xs font-black uppercase tracking-widest text-foreground/20"> Pairs Matched: {matchedPairs.length / 2} / 4 </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-4 gap-4 max-w-sm mx-auto lg:mx-0">
-                                {memoryCards.map((card) => (
-                                    <button
-                                        key={card.id}
-                                        onClick={() => handleCardClick(card.id)}
-                                        className={cn(
-                                            "aspect-square rounded-2xl border transition-all duration-500 flex items-center justify-center font-black text-[10px] uppercase tracking-tighter",
-                                            flippedCards.includes(card.id) || matchedPairs.includes(card.id)
-                                                ? "bg-blue-500/20 border-blue-500 text-blue-400 [transform:rotateY(0deg)]"
-                                                : "bg-white/5 border-border text-transparent [transform:rotateY(180deg)] hover:border-white/20"
-                                        )}
-                                    >
-                                        {(flippedCards.includes(card.id) || matchedPairs.includes(card.id)) ? card.content : "?"}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
 
-                        <Button onClick={() => setBlockTimeLeft(0)} variant="outline" className="border-border/50 text-foreground/30 hover:text-foreground">
-                            Skip Break
-                        </Button>
+                    <div className="relative z-10 w-full max-w-4xl flex flex-col items-center">
+                        {!isMinigameActive ? (
+                            <>
+                                <motion.img 
+                                    initial={{ scale: 0.8, y: 30 }}
+                                    animate={{ scale: 1, y: [0, -10, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                                    src="/images/octopus/octopus_main.png" 
+                                    alt="Sleeping Octopus" 
+                                    className="w-64 h-64 object-contain mb-8 filter drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+                                    onError={(e) => {
+                                        (e.target as any).src = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Zzz.png";
+                                    }}
+                                />
+
+                                <h2 className="text-5xl font-black mb-4 tracking-tighter text-white">Neural Rest Phase</h2>
+                                <p className="text-foreground/40 text-lg mb-8 font-bold tracking-widest">
+                                    Your cognitive load is high. The Octopus commands you to rest.
+                                </p>
+
+                                <div className="text-[120px] leading-none font-black font-mono tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-indigo-400 to-purple-600 mb-12 drop-shadow-[0_0_50px_rgba(99,102,241,0.5)]">
+                                    {formatTime(blockTimeLeft)}
+                                </div>
+                                
+                                <div className="flex gap-6 z-20">
+                                    <Button 
+                                        onClick={() => setIsMinigameActive(true)}
+                                        className="h-16 px-8 rounded-[2rem] bg-indigo-600 hover:bg-indigo-500 text-white font-black text-lg transition-all hover:scale-105 shadow-[0_0_40px_rgba(79,70,229,0.3)]"
+                                    >
+                                        <Gamepad2 className="w-6 h-6 mr-3" />
+                                        PLAY BREAK MINIGAME
+                                    </Button>
+                                    <Button 
+                                        onClick={() => setBlockTimeLeft(0)} 
+                                        variant="outline" 
+                                        className="h-16 px-8 rounded-[2rem] border-white/10 bg-white/5 text-white/50 hover:text-white hover:bg-white/10 font-bold transition-all"
+                                    >
+                                        Skip Break
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="w-full">
+                                <div className="flex items-center justify-between mb-12">
+                                    <div className="text-left">
+                                        <h3 className="text-3xl font-black flex items-center gap-3 text-indigo-400 uppercase tracking-tighter">
+                                            <Gamepad2 className="w-8 h-8" /> Cognitive Memory Match
+                                        </h3>
+                                        <p className="text-foreground/40 text-lg font-bold">
+                                            Pairs Matched: <span className="text-white">{matchedPairs.length / 2} / 4</span>
+                                        </p>
+                                    </div>
+                                    <div className="text-6xl font-black font-mono tracking-tighter text-white/50 drop-shadow-xl">
+                                        {formatTime(blockTimeLeft)}
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto mb-12">
+                                    {memoryCards.map((card) => (
+                                        <button
+                                            key={card.id}
+                                            onClick={() => handleCardClick(card.id)}
+                                            className={cn(
+                                                "aspect-square rounded-3xl border-2 transition-all duration-500 flex items-center justify-center font-black text-sm uppercase tracking-tighter p-4 break-words",
+                                                flippedCards.includes(card.id) || matchedPairs.includes(card.id)
+                                                    ? "bg-indigo-500/20 border-indigo-500 text-indigo-300 [transform:rotateY(0deg)] shadow-[0_0_30px_rgba(99,102,241,0.3)]"
+                                                    : "bg-white/5 border-white/10 text-transparent [transform:rotateY(180deg)] hover:border-white/30"
+                                            )}
+                                        >
+                                            {(flippedCards.includes(card.id) || matchedPairs.includes(card.id)) ? card.content : "?"}
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                <Button 
+                                    onClick={() => setIsMinigameActive(false)} 
+                                    variant="ghost" 
+                                    className="text-foreground/40 hover:text-white hover:bg-white/10 rounded-xl"
+                                >
+                                    Back to Resting
+                                </Button>
+                            </div>
+                        )}
                     </div>
+                    
+                    {/* Background floating zzz */}
+                    {[...Array(5)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 100, x: Math.random() * 400 - 200 }}
+                            animate={{ opacity: [0, 1, 0], y: -200, scale: [0.5, 1.5, 1] }}
+                            transition={{ duration: 4, repeat: Infinity, delay: i * 0.8 }}
+                            className="absolute text-5xl font-black text-purple-500/20 z-0 select-none pointer-events-none"
+                            style={{ left: '50%', bottom: '30%' }}
+                        >
+                            z
+                        </motion.div>
+                    ))}
                 </motion.div>
             )}
         </AnimatePresence>

@@ -4,7 +4,7 @@ import {
   Calendar, Clock, CheckCircle2, Circle, 
   Bot, Send, Sparkles, ChevronRight, 
   AlertTriangle, RotateCcw, Play, Plus,
-  Loader2, Map, BookOpen
+  Loader2, Map, BookOpen, X
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { QuizValidation } from '@/components/QuizValidation';
+import GamificationLevelsPage from './GamificationLevelsPage';
 
 export default function SchedulePage() {
   const { isAuthenticated } = useAuth();
@@ -31,6 +32,7 @@ export default function SchedulePage() {
   const [quizData, setQuizData] = useState<any[]>([]);
   const [isExamActive, setIsExamActive] = useState(false);
   const [isGeneratingExam, setIsGeneratingExam] = useState(false);
+  const [isProgressMapOpen, setIsProgressMapOpen] = useState(false);
 
   const { data: schedule, isLoading } = trpc.study.getSchedule.useQuery(undefined, { 
     enabled: isAuthenticated 
@@ -182,7 +184,7 @@ export default function SchedulePage() {
               </div>
               <div className="flex gap-4">
                 <Button 
-                    onClick={() => setLocation('/gamification-levels')}
+                    onClick={() => setIsProgressMapOpen(true)}
                     className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-2xl h-12 px-6 gap-2 group transition-all"
                 >
                   <Map className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -462,6 +464,29 @@ export default function SchedulePage() {
                     />
                 )}
             </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PROGRESS MAP MODAL */}
+      <AnimatePresence>
+        {isProgressMapOpen && (
+           <motion.div 
+             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+             className="fixed inset-0 z-[400] bg-background/95 backdrop-blur-3xl overflow-y-auto"
+           >
+             <div className="min-h-screen relative">
+                 <button 
+                    onClick={() => setIsProgressMapOpen(false)}
+                    className="absolute top-8 right-8 z-[500] w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white"
+                 >
+                    <X className="w-6 h-6" />
+                 </button>
+                 {/* Embed the gamification component but force it not to manage its own location routing for 'Back' */}
+                 <div className="pointer-events-auto">
+                    <GamificationLevelsPage embedded onClose={() => setIsProgressMapOpen(false)} />
+                 </div>
+             </div>
+           </motion.div>
         )}
       </AnimatePresence>
     </div>

@@ -26,7 +26,12 @@ const LEVEL_ICONS = [
 // Fallback icons if some are missing from lucide
 function Sparkle(props: any) { return <Sparkles {...props} /> }
 
-export default function GamificationLevelsPage() {
+export interface GamificationProps {
+    embedded?: boolean;
+    onClose?: () => void;
+}
+
+export default function GamificationLevelsPage({ embedded, onClose }: GamificationProps = {}) {
     const [location, setLocation] = useLocation();
     const { data: sessions, isLoading, refetch } = trpc.study.getSchedule.useQuery();
     const savePlanMutation = trpc.study.savePlan.useMutation();
@@ -163,15 +168,17 @@ export default function GamificationLevelsPage() {
                     })}
                 </div>
 
-                <div className="mt-16 text-center">
-                    <Button 
-                        variant="outline" 
-                        onClick={() => setLocation('/schedule')}
-                        className="bg-transparent border-border text-white/50 hover:text-white"
-                    >
-                        Back to Schedule View
-                    </Button>
-                </div>
+                {!embedded && (
+                    <div className="mt-16 text-center">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setLocation('/schedule')}
+                            className="bg-transparent border-border text-white/50 hover:text-white"
+                        >
+                            Back to Schedule View
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Level Complete Celebration Overlay */}
