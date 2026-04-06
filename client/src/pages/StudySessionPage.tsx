@@ -4,7 +4,8 @@ import {
   Clock, Play, Pause, RotateCcw, SkipForward, 
   Brain, BookOpen, Lightbulb, MessageSquare, 
   CheckCircle, AlertCircle, Timer, Gamepad2, 
-  Send, Loader2, X, Zap, Map, Sparkles, ArrowLeft, Layout
+  Send, Loader2, X, Zap, Map, Sparkles, ArrowLeft, Layout,
+  SlidersHorizontal, Lock, Coffee, ChevronUp, ChevronDown
 } from "lucide-react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -35,6 +36,12 @@ export default function StudySessionPage() {
   const updateStatus = trpc.study.updateSession.useMutation();
 
   const [showCelebration, setShowCelebration] = useState(false);
+
+  // Custom session config state
+  const [showCustomConfig, setShowCustomConfig] = useState(false);
+  const [customWork, setCustomWork] = useState(45);
+  const [customBreak, setCustomBreak] = useState(10);
+  const [customFocusLock, setCustomFocusLock] = useState(true);
 
   // State
   const [method, setMethod] = useState<StudyMethod | null>(null);
@@ -357,23 +364,232 @@ export default function StudySessionPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1 }}
-              onClick={() => startSession(m)}
-              className="group relative bg-card/30 backdrop-blur-xl border border-border/50 hover:border-purple-500/40 p-8 rounded-[2rem] text-left transition-all duration-500 hover:scale-[1.02]"
+              onClick={() => {
+                if (m.id === 'custom') {
+                  setShowCustomConfig(true);
+                } else {
+                  startSession(m);
+                }
+              }}
+              className={cn(
+                "group relative bg-card/30 backdrop-blur-xl border border-border/50 p-8 rounded-[2rem] text-left transition-all duration-500 hover:scale-[1.02]",
+                m.id === 'custom'
+                  ? "hover:border-cyan-500/40 ring-2 ring-cyan-500/10"
+                  : "hover:border-purple-500/40"
+              )}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
-              <div className="w-16 h-16 rounded-2xl bg-white/5 border border-border/50 flex items-center justify-center mb-6 group-hover:bg-purple-500/10 group-hover:border-purple-500/20 transition-all">
-                <m.icon className="w-8 h-8 text-foreground/20 group-hover:text-purple-400 transition-colors" />
+              <div className={cn(
+                "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]",
+                m.id === 'custom'
+                  ? "bg-gradient-to-br from-cyan-500/5 to-indigo-500/5"
+                  : "bg-gradient-to-br from-purple-500/5 to-indigo-500/5"
+              )} />
+              <div className={cn(
+                "w-16 h-16 rounded-2xl border border-border/50 flex items-center justify-center mb-6 transition-all",
+                m.id === 'custom'
+                  ? "bg-cyan-500/10 border-cyan-500/20 group-hover:bg-cyan-500/20"
+                  : "bg-white/5 group-hover:bg-purple-500/10 group-hover:border-purple-500/20"
+              )}>
+                {m.id === 'custom'
+                  ? <SlidersHorizontal className="w-8 h-8 text-cyan-400" />
+                  : <m.icon className="w-8 h-8 text-foreground/20 group-hover:text-purple-400 transition-colors" />
+                }
               </div>
-              <h3 className="text-xl font-bold mb-2 group-hover:text-purple-400 transition-colors tracking-tight">{m.title}</h3>
+              {m.id === 'custom' && (
+                <div className="absolute top-4 right-4 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/20 rounded-full text-[10px] font-black text-cyan-400 uppercase tracking-widest">
+                  YOU CHOOSE
+                </div>
+              )}
+              <h3 className={cn(
+                "text-xl font-bold mb-2 transition-colors tracking-tight",
+                m.id === 'custom' ? "text-cyan-400" : "group-hover:text-purple-400"
+              )}>{m.title}</h3>
               <p className="text-foreground/40 text-sm leading-relaxed mb-6">{m.desc}</p>
-              <div className="flex items-center gap-3 text-xs font-bold text-foreground/20 uppercase tracking-widest">
-                <span>{m.work}m Focus</span>
-                <span className="w-1 h-1 rounded-full bg-foreground/10" />
-                <span>{m.break}m Recovery</span>
-              </div>
+              {m.id === 'custom' ? (
+                <div className="flex items-center gap-2 text-xs font-bold text-cyan-400/60 uppercase tracking-widest">
+                  <SlidersHorizontal className="w-3 h-3" />
+                  <span>Fully configurable</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-xs font-bold text-foreground/20 uppercase tracking-widest">
+                  <span>{m.work}m Focus</span>
+                  <span className="w-1 h-1 rounded-full bg-foreground/10" />
+                  <span>{m.break}m Recovery</span>
+                </div>
+              )}
             </motion.button>
           ))}
         </div>
+
+        {/* Custom Session Config Modal */}
+        <AnimatePresence>
+          {showCustomConfig && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[500] bg-background/80 backdrop-blur-2xl flex items-center justify-center p-6"
+              onClick={(e) => { if (e.target === e.currentTarget) setShowCustomConfig(false); }}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 30 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 30 }}
+                className="bg-card border border-cyan-500/20 rounded-[3rem] p-10 max-w-lg w-full shadow-[0_0_60px_rgba(6,182,212,0.15)] space-y-8"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                      <SlidersHorizontal className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black tracking-tight">Custom Session</h2>
+                      <p className="text-xs text-foreground/30 font-bold uppercase tracking-widest">Design your rhythm</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" className="rounded-full w-9 h-9 p-0" onClick={() => setShowCustomConfig(false)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Work Duration */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-cyan-400" />
+                      <span className="font-bold text-sm">Focus Duration</span>
+                    </div>
+                    <span className="text-2xl font-black text-cyan-400">{customWork}<span className="text-sm font-bold text-foreground/30 ml-1">min</span></span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min={10}
+                      max={180}
+                      step={5}
+                      value={customWork}
+                      onChange={(e) => setCustomWork(Number(e.target.value))}
+                      className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-cyan-400 [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                    />
+                    <div className="flex justify-between text-[10px] text-foreground/20 font-bold mt-1">
+                      <span>10m</span><span>1h</span><span>3h</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[25, 45, 60, 90].map(v => (
+                      <button key={v} onClick={() => setCustomWork(v)}
+                        className={cn("py-2 rounded-xl text-xs font-black transition-all",
+                          customWork === v ? "bg-cyan-500 text-white" : "bg-white/5 text-foreground/40 hover:bg-white/10"
+                        )}>{v}m</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Break Duration */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Coffee className="w-4 h-4 text-blue-400" />
+                      <span className="font-bold text-sm">Break Duration</span>
+                    </div>
+                    <span className="text-2xl font-black text-blue-400">{customBreak}<span className="text-sm font-bold text-foreground/30 ml-1">min</span></span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min={2}
+                      max={60}
+                      step={1}
+                      value={customBreak}
+                      onChange={(e) => setCustomBreak(Number(e.target.value))}
+                      className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/10 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400 [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(96,165,250,0.5)]"
+                    />
+                    <div className="flex justify-between text-[10px] text-foreground/20 font-bold mt-1">
+                      <span>2m</span><span>15m</span><span>60m</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[5, 10, 15, 20].map(v => (
+                      <button key={v} onClick={() => setCustomBreak(v)}
+                        className={cn("py-2 rounded-xl text-xs font-black transition-all",
+                          customBreak === v ? "bg-blue-500 text-white" : "bg-white/5 text-foreground/40 hover:bg-white/10"
+                        )}>{v}m</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Focus Lock Toggle */}
+                <div>
+                  <button
+                    onClick={() => setCustomFocusLock(!customFocusLock)}
+                    className={cn(
+                      "w-full p-5 rounded-2xl border transition-all flex items-center justify-between",
+                      customFocusLock
+                        ? "bg-purple-500/10 border-purple-500/30"
+                        : "bg-white/5 border-border/50 hover:border-white/10"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Lock className={cn("w-5 h-5", customFocusLock ? "text-purple-400" : "text-foreground/20")} />
+                      <div className="text-left">
+                        <div className={cn("font-bold text-sm", customFocusLock ? "text-purple-400" : "text-foreground/40")}>Neural Focus Lock</div>
+                        <div className="text-xs text-foreground/30">Block distractions and prevent tab switching</div>
+                      </div>
+                    </div>
+                    <div className={cn(
+                      "w-12 h-6 rounded-full transition-all relative",
+                      customFocusLock ? "bg-purple-500" : "bg-white/10"
+                    )}>
+                      <div className={cn(
+                        "absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-all",
+                        customFocusLock ? "left-7" : "left-1"
+                      )} />
+                    </div>
+                  </button>
+                </div>
+
+                {/* Session Summary */}
+                <div className="p-4 bg-white/5 rounded-2xl border border-border/50 flex items-center justify-between">
+                  <div className="text-center">
+                    <div className="text-xl font-black text-cyan-400">{customWork}m</div>
+                    <div className="text-[10px] text-foreground/20 font-black uppercase tracking-widest">Focus</div>
+                  </div>
+                  <div className="text-foreground/20">+</div>
+                  <div className="text-center">
+                    <div className="text-xl font-black text-blue-400">{customBreak}m</div>
+                    <div className="text-[10px] text-foreground/20 font-black uppercase tracking-widest">Break</div>
+                  </div>
+                  <div className="text-foreground/20">=</div>
+                  <div className="text-center">
+                    <div className="text-xl font-black text-emerald-400">{customWork + customBreak}m</div>
+                    <div className="text-[10px] text-foreground/20 font-black uppercase tracking-widest">Cycle</div>
+                  </div>
+                </div>
+
+                {/* Launch Button */}
+                <Button
+                  onClick={() => {
+                    setShowCustomConfig(false);
+                    const customMethod = {
+                      id: 'custom' as StudyMethod,
+                      title: `Custom (${customWork}/${customBreak})`,
+                      desc: 'Your custom session configuration.',
+                      icon: SlidersHorizontal,
+                      work: customWork,
+                      break: customBreak,
+                    };
+                    startSession(customMethod);
+                  }}
+                  className="w-full h-16 rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-white font-black text-lg shadow-xl shadow-cyan-500/20 transition-all"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  Lock In — {customWork}m Focus
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
