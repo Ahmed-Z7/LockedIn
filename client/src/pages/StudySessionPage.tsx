@@ -90,12 +90,12 @@ export default function StudySessionPage() {
   // Timer logic
   useEffect(() => {
     let interval: any = null;
-    if (isActive && (blockTimeLeft > 0 || isBreak)) {
+    if (isActive) {
       interval = setInterval(() => {
         // Phase timer
         if (blockTimeLeft > 0) {
             setBlockTimeLeft((prev) => prev - 1);
-        } else if (isActive) {
+        } else {
             handlePhaseComplete();
         }
 
