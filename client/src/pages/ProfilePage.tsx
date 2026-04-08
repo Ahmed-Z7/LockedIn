@@ -18,7 +18,8 @@ import Navbar from "@/components/Navbar";
 import { AvatarWithFrame, StatusBadge, AVATAR_FRAMES, STATUS_PRESETS } from '@/components/ProfileCustomization';
 import { OctopusCelebration } from '@/components/OctopusCelebration';
 import { cn } from '@/lib/utils';
-import { UserPlus, UserCheck, Heart, Share2, MoreHorizontal, Users } from 'lucide-react';
+import { UserPlus, UserCheck, Heart, Share2, MoreHorizontal, Users, Languages } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const BADGE_MAP: Record<string, { icon: any, color: string, desc: string }> = {
   "Study Monk": { icon: Shield, color: "text-blue-400", desc: "Completed 5 focus-locked sessions." },
@@ -41,6 +42,7 @@ const getLevelTitle = (level: number): string => {
 export default function ProfilePage() {
   const { user } = useAuth();
   const params = useParams();
+  const { language, setLanguage, t } = useLanguage();
   const [, setLocation] = useLocation();
   const targetUserId = params.id ? Number(params.id) : user?.id;
   const isOwnProfile = !params.id || Number(params.id) === user?.id;
@@ -491,7 +493,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div>
+                  <div>
                   <h3 className="text-xs font-black uppercase tracking-widest text-foreground/40 mb-6 flex items-center gap-2">
                     <Zap className="w-4 h-4 text-purple-400" /> Presets & Humorous Status
                   </h3>
@@ -507,6 +509,34 @@ export default function ProfilePage() {
                         {(profile as any)?.status === s.text && <CheckCircle2 className="w-4 h-4 text-cyan-400" />}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-widest text-foreground/40 mb-6 flex items-center gap-2">
+                    <Languages className="w-4 h-4 text-emerald-400" /> {t('profile.settings.language')}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={() => setLanguage('en')}
+                      className={cn(
+                        "p-6 rounded-[2rem] border transition-all flex flex-col items-center gap-3",
+                        language === 'en' ? "bg-emerald-500/10 border-emerald-500 shadow-lg shadow-emerald-500/10" : "bg-white/5 border-border/50 hover:border-white/20"
+                      )}
+                    >
+                      <span className="text-2xl">🇺🇸</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{t('profile.settings.lang_en')}</span>
+                    </button>
+                    <button 
+                      onClick={() => setLanguage('ar-eg')}
+                      className={cn(
+                        "p-6 rounded-[2rem] border transition-all flex flex-col items-center gap-3",
+                        language === 'ar-eg' ? "bg-emerald-500/10 border-emerald-500 shadow-lg shadow-emerald-500/10" : "bg-white/5 border-border/50 hover:border-white/20"
+                      )}
+                    >
+                      <span className="text-2xl">🇪🇬</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{t('profile.settings.lang_ar')}</span>
+                    </button>
                   </div>
                 </div>
               </div>

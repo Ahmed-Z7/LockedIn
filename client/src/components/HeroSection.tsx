@@ -4,10 +4,12 @@ import { useLocation } from 'wouter';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { getLoginUrl } from '@/const';
 import GlowButton from './GlowButton';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function HeroSection() {
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
+  const { t } = useLanguage();
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -83,7 +85,7 @@ export default function HeroSection() {
         >
           <Brain className="w-4 h-4 text-purple-400 dark:text-purple-400" />
           <span className="text-sm font-medium text-purple-300 dark:text-purple-300">
-            AI-Powered Smart Learning
+            {t('hero.badge')}
           </span>
         </motion.div>
 
@@ -93,10 +95,10 @@ export default function HeroSection() {
           className="mb-6 text-5xl md:text-7xl font-bold tracking-tight"
         >
           <span className="bg-gradient-to-r from-[#9333EA] via-[#6366F1] to-[#06B6D4] dark:from-purple-400 dark:via-purple-500 dark:to-blue-400 bg-clip-text text-transparent">
-            Study Smarter
+            {t('hero.title.part1')}
           </span>
           <br />
-          <span className="text-[#0F172A] dark:text-foreground">Not Harder</span>
+          <span className="text-[#0F172A] dark:text-foreground">{t('hero.title.part2')}</span>
         </motion.h1>
 
         {/* Subheading */}
@@ -104,7 +106,7 @@ export default function HeroSection() {
           variants={itemVariants}
           className="mb-8 max-w-2xl mx-auto text-xl text-[#1E293B] dark:text-gray-300"
         >
-          LOCKEDIN combines AI guidance, gamified learning, and personalized scheduling to help you ace your exams with focus and motivation.
+          {t('hero.subtitle')}
         </motion.p>
 
         {/* CTA Buttons */}
@@ -121,7 +123,7 @@ export default function HeroSection() {
               boxShadow: '0 8px 32px rgba(147, 51, 234, 0.3)',
             }}
           >
-            Start Learning Today
+            {t('hero.cta.start')}
             <motion.span
               className="inline-block"
               whileHover={{ x: 5 }}
@@ -140,7 +142,7 @@ export default function HeroSection() {
               boxShadow: '0 4px 16px rgba(99, 102, 241, 0.08)',
             }}
           >
-            Try AI Coach
+            {t('hero.cta.ai')}
           </motion.button>
         </motion.div>
 
@@ -150,9 +152,9 @@ export default function HeroSection() {
           className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto"
         >
           {[
-            { label: "Active Students", value: "50K+" },
-            { label: "Success Rate", value: "95%" },
-            { label: "AI Tutoring", value: "24/7" },
+            { label: t('hero.stats.students'), value: "50K+" },
+            { label: t('hero.stats.success'), value: "95%" },
+            { label: t('hero.stats.tutoring'), value: "24/7" },
           ].map((stat, idx) => (
             <motion.div
               key={idx}

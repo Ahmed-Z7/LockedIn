@@ -7,10 +7,13 @@ import GlowButton from './GlowButton';
 import ThemeSwitcher from './ThemeSwitcher';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Languages } from 'lucide-react';
 
 export default function Navbar() {
   const [, setLocation] = useLocation();
   const { isAuthenticated } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const { data: unreadCount } = trpc.notifications.unreadCount.useQuery(undefined, {
     enabled: isAuthenticated,
     refetchInterval: 30000 // Refetch every 30s
@@ -52,13 +55,13 @@ export default function Navbar() {
         {/* Navigation Links */}
         <div className="hidden md:flex items-center gap-8">
           {[
-            { label: 'Learning', action: () => setLocation('/start-learning') },
-            { label: 'Schedule', action: () => setLocation('/schedule') },
-            { label: 'Leaderboard', action: () => setLocation('/leaderboard') },
-            { label: 'AI Coach', action: () => setLocation('/ai-coach') },
-            { label: 'Challenges', action: () => setLocation('/challenges') },
-            { label: 'Analytics', action: () => setLocation('/analytics') },
-            { label: 'Community', action: () => setLocation('/community') },
+            { label: t('nav.learning'), action: () => setLocation('/start-learning') },
+            { label: t('nav.schedule'), action: () => setLocation('/schedule') },
+            { label: t('nav.leaderboard'), action: () => setLocation('/leaderboard') },
+            { label: t('nav.aicoach'), action: () => setLocation('/ai-coach') },
+            { label: t('nav.challenges'), action: () => setLocation('/challenges') },
+            { label: t('nav.analytics'), action: () => setLocation('/analytics') },
+            { label: t('nav.community'), action: () => setLocation('/community') },
           ].map((item) => (
             <motion.button
               key={item.label}
@@ -79,6 +82,19 @@ export default function Navbar() {
 
         {/* Right Side Icons & CTA */}
         <div className="flex items-center gap-3">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setLanguage(language === 'en' ? 'ar-eg' : 'en')}
+            className="p-2 hover:bg-[#F1F3FF] dark:hover:bg-card rounded-lg transition-colors text-[#64748B] dark:text-gray-400 flex items-center gap-2 group"
+            title="Switch Language"
+          >
+            <Languages className="w-5 h-5 group-hover:text-purple-500" />
+            <span className="text-[10px] font-black uppercase tracking-tighter opacity-70">
+                {language === 'en' ? 'EN' : 'AR'}
+            </span>
+          </motion.button>
+
           <ThemeSwitcher />
           {isAuthenticated && (
             <>
@@ -121,7 +137,7 @@ export default function Navbar() {
             size="md"
             onClick={() => isAuthenticated ? setLocation('/dashboard') : window.location.href = getLoginUrl()}
           >
-            {isAuthenticated ? 'Dashboard' : 'Get Started'}
+            {isAuthenticated ? t('nav.dashboard') : t('nav.getstarted')}
           </GlowButton>
         </div>
       </div>
