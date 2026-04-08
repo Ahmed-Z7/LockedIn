@@ -99,6 +99,74 @@ export default function StudySessionPage() {
 
   const activeContent = session?.material?.content || topicExpandedContent;
 
+  // Game & Sound State
+  const [activeBreakGame, setActiveBreakGame] = useState<'memory' | 'clicker' | 'rhythm'>('memory');
+  const [clickerScore, setClickerScore] = useState(0);
+  const [clickerTargetPos, setClickerTargetPos] = useState({ top: '50%', left: '50%' });
+  const [rhythmScale, setRhythmScale] = useState(1);
+  const [rhythmTiming, setRhythmTiming] = useState(0);
+  const audioContext = useRef<AudioContext | null>(null);
+  const oscillator = useRef<OscillatorNode | null>(null);
+
+  const startBuzzer = () => {
+    try {
+      if (!audioContext.current) {
+        audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      if (oscillator.current) return;
+      
+      const osc = audioContext.current.createOscillator();
+      const gain = audioContext.current.createGain();
+      
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(800, audioContext.current.currentTime);
+      osc.connect(gain);
+      gain.connect(audioContext.current.destination);
+      
+      const now = audioContext.current.currentTime;
+      for (let i = 0; i < 200; i++) {
+        gain.gain.setValueAtTime(0.15, now + i * 0.3);
+        gain.gain.setValueAtTime(0, now + i * 0.3 + 0.15);
+      }
+      
+      osc.start();
+      oscillator.current = osc;
+    } catch(e) {}
+  };
+
+  const stopBuzzer = () => {
+    if (oscillator.current) {
+      try {
+        oscillator.current.stop();
+        oscillator.current.disconnect();
+      } catch(e) {}
+      oscillator.current = null;
+    }
+  };
+
+  const nextBreakGame = () => {
+    const games: ('memory' | 'clicker' | 'rhythm')[] = ['memory', 'clicker', 'rhythm'];
+    const currentIdx = games.indexOf(activeBreakGame);
+    const nextIdx = (currentIdx + 1) % games.length;
+    setActiveBreakGame(games[nextIdx]);
+    if (games[nextIdx] === 'clicker') {
+        moveClickerTarget();
+    }
+  };
+
+  const moveClickerTarget = () => {
+    setClickerTargetPos({
+      top: `${Math.random() * 70 + 15}%`,
+      left: `${Math.random() * 70 + 15}%`
+    });
+  };
+
+  const handleClickerHit = () => {
+    setClickerScore(prev => prev + 1);
+    moveClickerTarget();
+    toast.success("+1 OCTO-CHARGE", { duration: 500 });
+  };
+
   const chatMutation = trpc.aiCoach.chat.useMutation();
   const generateQuizMutation = trpc.aiCoach.generateQuiz.useMutation();
   const expandTopicMutation = trpc.aiCoach.expandTopic.useMutation();
@@ -230,10 +298,12 @@ export default function StudySessionPage() {
       if (!document.fullscreenElement) {
         setFullscreenExited(true);
         setDistractions(prev => prev + 1);
+        startBuzzer();
         // Immediately try to re-enter fullscreen
         document.documentElement.requestFullscreen().catch(() => {});
       } else {
         setFullscreenExited(false);
+        stopBuzzer();
       }
     };
 
@@ -774,6 +844,7 @@ export default function StudySessionPage() {
                 </div>
                 <button
                   onClick={() => {
+                    stopBuzzer();
                     document.documentElement.requestFullscreen().then(() => setFullscreenExited(false)).catch(() => setFullscreenExited(false));
                   }}
                   className="w-full h-16 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-black text-lg shadow-xl shadow-red-500/20 transition-all active:scale-95"
@@ -1336,41 +1407,95 @@ export default function StudySessionPage() {
                                 <div className="flex items-center justify-between mb-12">
                                     <div className="text-left">
                                         <h3 className="text-3xl font-black flex items-center gap-3 text-indigo-400 uppercase tracking-tighter">
-                                            <Gamepad2 className="w-8 h-8" /> Cognitive Memory Match
+                                            <Gamepad2 className="w-8 h-8" /> 
+                                            {activeBreakGame === 'memory' && "Cognitive Memory Match"}
+                                            {activeBreakGame === 'clicker' && "Dopamine Octo-Clicker"}
+                                            {activeBreakGame === 'rhythm' && "Neural Rhythm Sync"}
                                         </h3>
                                         <p className="text-foreground/40 text-lg font-bold">
-                                            Pairs Matched: <span className="text-white">{matchedPairs.length / 2} / 4</span>
+                                            {activeBreakGame === 'memory' && `Pairs Matched: ${matchedPairs.length / 2} / 4`}
+                                            {activeBreakGame === 'clicker' && `Target Hits: ${clickerScore}`}
+                                            {activeBreakGame === 'rhythm' && "Tap when rings align!"}
                                         </p>
                                     </div>
-                                    <div className="text-6xl font-black font-mono tracking-tighter text-white/50 drop-shadow-xl">
-                                        {formatTime(blockTimeLeft)}
+                                    <div className="flex items-center gap-4">
+                                        <Button 
+                                            onClick={nextBreakGame}
+                                            className="h-12 px-6 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-black uppercase tracking-widest gap-2"
+                                        >
+                                            <RotateCcw className="w-4 h-4" /> Next Game
+                                        </Button>
+                                        <div className="text-6xl font-black font-mono tracking-tighter text-white/50 drop-shadow-xl">
+                                            {formatTime(blockTimeLeft)}
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto mb-12">
-                                    {memoryCards.map((card) => (
-                                        <button
-                                            key={card.id}
-                                            onClick={() => handleCardClick(card.id)}
-                                            className={cn(
-                                                "aspect-square rounded-3xl border-2 transition-all duration-500 flex items-center justify-center font-black text-sm uppercase tracking-tighter p-4 break-words",
-                                                flippedCards.includes(card.id) || matchedPairs.includes(card.id)
-                                                    ? "bg-indigo-500/20 border-indigo-500 text-indigo-300 [transform:rotateY(0deg)] shadow-[0_0_30px_rgba(99,102,241,0.3)]"
-                                                    : "bg-white/5 border-white/10 text-transparent [transform:rotateY(180deg)] hover:border-white/30"
-                                            )}
-                                        >
-                                            {(flippedCards.includes(card.id) || matchedPairs.includes(card.id)) ? card.content : "?"}
-                                        </button>
-                                    ))}
+                                <div className="relative min-h-[400px] flex items-center justify-center">
+                                    {activeBreakGame === 'memory' && (
+                                        <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto w-full">
+                                            {memoryCards.map((card) => (
+                                                <button
+                                                    key={card.id}
+                                                    onClick={() => handleCardClick(card.id)}
+                                                    className={cn(
+                                                        "aspect-square rounded-3xl border-2 transition-all duration-500 flex items-center justify-center font-black text-sm uppercase tracking-tighter p-4 break-words",
+                                                        flippedCards.includes(card.id) || matchedPairs.includes(card.id)
+                                                            ? "bg-indigo-500/20 border-indigo-500 text-indigo-300 [transform:rotateY(0deg)] shadow-[0_0_30px_rgba(99,102,241,0.3)]"
+                                                            : "bg-white/5 border-white/10 text-transparent [transform:rotateY(180deg)] hover:border-white/30"
+                                                    )}
+                                                >
+                                                    {(flippedCards.includes(card.id) || matchedPairs.includes(card.id)) ? card.content : "?"}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {activeBreakGame === 'clicker' && (
+                                        <div className="relative w-full h-[400px] bg-white/5 rounded-[3rem] border border-white/10 overflow-hidden cursor-crosshair">
+                                            <motion.button
+                                                initial={false}
+                                                animate={{ top: clickerTargetPos.top, left: clickerTargetPos.left }}
+                                                onClick={handleClickerHit}
+                                                className="absolute w-20 h-20 bg-indigo-500 rounded-full shadow-[0_0_40px_rgba(99,102,241,0.6)] flex items-center justify-center text-white -translate-x-1/2 -translate-y-1/2 group"
+                                            >
+                                                <Zap className="w-10 h-10 group-active:scale-125 transition-transform" />
+                                            </motion.button>
+                                            <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+                                        </div>
+                                    )}
+
+                                    {activeBreakGame === 'rhythm' && (
+                                        <div className="relative w-80 h-80 flex items-center justify-center">
+                                            <motion.div 
+                                                animate={{ scale: [1.5, 0.5, 1.5] }}
+                                                transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+                                                className="absolute w-full h-full border-4 border-indigo-500/30 rounded-full"
+                                            />
+                                            <div className="w-16 h-16 bg-indigo-500 rounded-full shadow-xl shadow-indigo-500/40 relative z-10 flex items-center justify-center">
+                                                <Button 
+                                                    onClick={() => {
+                                                        toast.success("SYNC OK", { duration: 500 });
+                                                    }}
+                                                    className="w-full h-full rounded-full bg-indigo-500 hover:bg-indigo-400 p-0"
+                                                >
+                                                    <Sparkles className="w-6 h-6 text-white" />
+                                                </Button>
+                                            </div>
+                                            <div className="absolute w-24 h-24 border-2 border-white/20 rounded-full" />
+                                        </div>
+                                    )}
                                 </div>
                                 
-                                <Button 
-                                    onClick={() => setIsMinigameActive(false)} 
-                                    variant="ghost" 
-                                    className="text-foreground/40 hover:text-white hover:bg-white/10 rounded-xl"
-                                >
-                                    Back to Resting
-                                </Button>
+                                <div className="mt-12">
+                                    <Button 
+                                        onClick={() => setIsMinigameActive(false)} 
+                                        variant="ghost" 
+                                        className="text-foreground/40 hover:text-white hover:bg-white/10 rounded-xl"
+                                    >
+                                        Back to Resting
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>
