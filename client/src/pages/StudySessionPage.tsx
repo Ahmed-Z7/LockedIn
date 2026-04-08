@@ -95,7 +95,7 @@ export default function StudySessionPage() {
         // Phase timer
         if (blockTimeLeft > 0) {
             setBlockTimeLeft((prev) => prev - 1);
-        } else if (isActive && !isBreak) {
+        } else if (isActive) {
             handlePhaseComplete();
         }
 
@@ -201,6 +201,7 @@ export default function StudySessionPage() {
         setIsBreak(true);
         setBlockTimeLeft(sessionBreakMins * 60);
         initializeMemoryGame();
+        setIsActive(true); // Ensured that the timer keeps running during break
         if (method === 'feynman') setActiveTool('feynman');
       } else {
         // ALL ROUNDS DONE — trigger final exam
