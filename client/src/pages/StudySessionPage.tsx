@@ -84,8 +84,74 @@ export default function StudySessionPage() {
   const [showStartCelebration, setShowStartCelebration] = useState(false);
   const [isMinigameActive, setIsMinigameActive] = useState(false);
   
+  // Dynamic Content & Expansion State
+  const [topicExpandedContent, setTopicExpandedContent] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [isExpanding, setIsExpanding] = useState(false);
+
+  // Dynamic Tools State
+  const [mindmapNodes, setMindmapNodes] = useState<any[]>([]);
+  const [isGeneratingMindmap, setIsGeneratingMindmap] = useState(false);
+  
+  const [flashcardsItems, setFlashcardsItems] = useState<any[]>([]);
+  const [currentFlashcardIdx, setCurrentFlashcardIdx] = useState(0);
+  const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
+
+  const activeContent = session?.material?.content || topicExpandedContent;
+
   const chatMutation = trpc.aiCoach.chat.useMutation();
   const generateQuizMutation = trpc.aiCoach.generateQuiz.useMutation();
+  const expandTopicMutation = trpc.aiCoach.expandTopic.useMutation();
+  const generateMindmapMutation = trpc.aiCoach.generateMindmap.useMutation();
+  const generateFlashcardsMutation = trpc.aiCoach.generateFlashcards.useMutation();
+
+  const handleExpandTopic = async () => {
+    if (!searchKeyword.trim()) return;
+    setIsExpanding(true);
+    try {
+      const res = await expandTopicMutation.mutateAsync({ topic: searchKeyword });
+      setTopicExpandedContent(res.content);
+      toast.success("Knowledge retrieval complete.");
+    } catch (err) {
+      toast.error("Failed to retrieve knowledge.");
+    } finally {
+      setIsExpanding(false);
+    }
+  };
+
+  const loadMindmap = async () => {
+    if (mindmapNodes.length > 0) return;
+    setIsGeneratingMindmap(true);
+    try {
+      const res = await generateMindmapMutation.mutateAsync({ content: activeContent || session?.subject || "General concepts" });
+      if (res.nodes && res.nodes.length > 0) setMindmapNodes(res.nodes);
+    } catch {
+      toast.error("Failed to generate concept map.");
+    } finally {
+      setIsGeneratingMindmap(false);
+    }
+  };
+
+  const loadFlashcards = async () => {
+    if (flashcardsItems.length > 0) return;
+    setIsGeneratingFlashcards(true);
+    try {
+      const res = await generateFlashcardsMutation.mutateAsync({ content: activeContent || session?.subject || "General concepts" });
+      if (res.cards && res.cards.length > 0) setFlashcardsItems(res.cards);
+    } catch {
+      toast.error("Failed to generate flashcards.");
+    } finally {
+      setIsGeneratingFlashcards(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTool === 'mindmap' && isActive && !isBreak) {
+      loadMindmap();
+    } else if (activeTool === 'flashcards' && isActive && !isBreak) {
+      loadFlashcards();
+    }
+  }, [activeTool, isActive, isBreak]);
   
   // Timer logic
   useEffect(() => {
@@ -279,7 +345,7 @@ export default function StudySessionPage() {
     try {
       const res = await generateQuizMutation.mutateAsync({
         sessionId,
-        content: session?.material?.content || "General study productivity and focus techniques."
+        content: activeContent || session?.subject || "General study productivity and focus techniques."
       });
       if (res.quiz && res.quiz.length > 0) {
         setQuizData(res.quiz);
@@ -926,9 +992,42 @@ export default function StudySessionPage() {
                                         <div className="w-1.5 h-6 bg-purple-500 rounded-full" />
                                         Fundamentals
                                     </h2>
-                                    <p className="text-lg leading-relaxed text-foreground/70 font-medium">
-                                        {session?.material?.content || "No material content available for this session. Use the ZED Focus AI to generate a summary."}
-                                    </p>
+                                    {session?.material?.content ? (
+                                        <p className="text-lg leading-relaxed text-foreground/70 font-medium whitespace-pre-wrap">
+                                            {session.material.content}
+                                        </p>
+                                    ) : topicExpandedContent ? (
+                                        <p className="text-lg leading-relaxed text-foreground/70 font-medium whitespace-pre-wrap">
+                                            {topicExpandedContent}
+                                        </p>
+                                    ) : (
+                                        <div className="bg-white/5 border border-border/50 rounded-2xl p-8 text-center space-y-6 mt-4">
+                                            <div className="w-16 h-16 bg-purple-500/10 text-purple-400 rounded-2xl flex items-center justify-center mx-auto">
+                                                <Brain className="w-8 h-8" />
+                                            </div>
+                                            <h3 className="text-2xl font-black">No Material Uploaded</h3>
+                                            <p className="text-foreground/40 font-medium max-w-sm mx-auto">
+                                                Enter keywords or a concept to search our knowledge base. ZED AI will retrieve and build focus material for you.
+                                            </p>
+                                            <div className="flex items-center gap-4 max-w-md mx-auto relative group mt-4">
+                                                <input
+                                                    value={searchKeyword}
+                                                    onChange={(e) => setSearchKeyword(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleExpandTopic()}
+                                                    placeholder="e.g. Action Potential, World War II..."
+                                                    className="w-full bg-background border border-border rounded-xl py-4 pl-6 pr-32 focus:outline-none focus:border-purple-500/50 transition-all font-medium"
+                                                />
+                                                <Button 
+                                                    onClick={handleExpandTopic} 
+                                                    disabled={isExpanding}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-10 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-500/20"
+                                                >
+                                                    {isExpanding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                                                    Search
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </section>
                             </div>
                         </motion.div>
@@ -950,37 +1049,43 @@ export default function StudySessionPage() {
                             </div>
                             
                             <div className="relative w-full max-w-3xl aspect-[16/9] bg-card/20 backdrop-blur-md border border-border rounded-[3rem] p-8 flex items-center justify-center overflow-hidden">
-                                {/* Connecting lines background */}
-                                <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
-                                    <path d="M 50% 50% L 20% 20% M 50% 50% L 80% 20% M 50% 50% L 20% 80% M 50% 50% L 80% 80%" stroke="currentColor" strokeWidth="2" fill="none" />
-                                </svg>
-                                
-                                {/* Center Node */}
-                                <div className="absolute z-10 p-6 bg-purple-600 rounded-3xl text-white font-black text-xl shadow-[0_0_30px_rgba(168,85,247,0.4)] text-center max-w-[200px] border border-white/20">
-                                    {session?.subject || "Core Topic"}
-                                </div>
-                                
-                                {/* Peripheral Nodes */}
-                                {[
-                                    { top: '15%', left: '15%', title: 'Fundamentals', delay: 0.1 },
-                                    { top: '15%', right: '15%', title: 'Key Theories', delay: 0.2 },
-                                    { bottom: '15%', left: '15%', title: 'Applications', delay: 0.3 },
-                                    { bottom: '15%', right: '15%', title: 'Case Studies', delay: 0.4 }
-                                ].map((node, i) => (
-                                    <motion.button 
-                                        key={i}
-                                        initial={{ opacity: 0, scale: 0 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: node.delay, type: 'spring' }}
-                                        style={{ top: node.top, left: node.left, right: node.right, bottom: node.bottom }}
-                                        className="absolute p-4 bg-white/5 hover:bg-white/10 border border-border hover:border-purple-400/50 rounded-2xl text-sm font-bold transition-all shadow-xl group max-w-[150px] text-center"
-                                    >
-                                        <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-purple-500 flex items-center justify-center mx-auto mb-2 text-xs transition-colors">
-                                            {i + 1}
-                                        </div>
-                                        {node.title}
-                                    </motion.button>
-                                ))}
+                                {isGeneratingMindmap ? (
+                                    <div className="flex flex-col items-center justify-center text-center">
+                                       <Loader2 className="w-12 h-12 animate-spin text-purple-500 mb-4" />
+                                       <span className="text-purple-400 font-bold animate-pulse">Mapping concepts...</span>
+                                    </div>
+                                ) : (
+                                  <>
+                                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
+                                        {mindmapNodes.map((_, i) => (
+                                           <path key={i} d={`M 50% 50% L ${i % 2 === 0 ? '20%' : '80%'} ${i < 2 ? '20%' : '80%'}`} stroke="currentColor" strokeWidth="2" fill="none" />
+                                        ))}
+                                    </svg>
+                                    
+                                    <div className="absolute z-10 p-6 bg-purple-600 rounded-3xl text-white font-black text-xl shadow-[0_0_30px_rgba(168,85,247,0.4)] text-center max-w-[200px] border border-white/20">
+                                        {session?.subject || "Core Topic"}
+                                    </div>
+                                    
+                                    {mindmapNodes.map((node, i) => (
+                                        <motion.div 
+                                            key={i}
+                                            initial={{ opacity: 0, scale: 0 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: i * 0.1, type: 'spring' }}
+                                            style={{ 
+                                              top: i < 2 ? '15%' : 'auto', 
+                                              bottom: i >= 2 ? '15%' : 'auto', 
+                                              left: i % 2 === 0 ? '15%' : 'auto', 
+                                              right: i % 2 !== 0 ? '15%' : 'auto'
+                                            }}
+                                            className="absolute p-4 bg-white/5 hover:bg-white/10 border border-border hover:border-purple-400/50 rounded-2xl text-sm transition-all shadow-xl group max-w-[180px] text-center"
+                                        >
+                                            <div className="font-bold mb-1 text-purple-400">{node.title}</div>
+                                            <div className="text-[10px] text-foreground/50 leading-relaxed font-medium line-clamp-3">{node.description}</div>
+                                        </motion.div>
+                                    ))}
+                                  </>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -993,26 +1098,53 @@ export default function StudySessionPage() {
                             className="h-full flex flex-col items-center justify-center gap-8"
                         >
                             <div className="w-full max-w-lg aspect-[4/3] relative perspective-1000 group cursor-pointer">
+                               {isGeneratingFlashcards ? (
+                                    <div className="w-full h-full p-12 bg-card/40 backdrop-blur-xl border border-border rounded-[3rem] shadow-2xl flex flex-col items-center justify-center text-center">
+                                       <Loader2 className="w-12 h-12 animate-spin text-purple-500 mb-4" />
+                                       <span className="text-purple-400 font-bold animate-pulse">Forging memory links...</span>
+                                    </div>
+                               ) : flashcardsItems.length > 0 ? (
                                 <div className="w-full h-full p-12 bg-card/40 backdrop-blur-xl border border-border rounded-[3rem] shadow-2xl flex flex-col items-center justify-center text-center transition-all duration-700 group-hover:[transform:rotateY(180deg)] [transform-style:preserve-3d]">
                                     {/* Front */}
                                     <div className="absolute inset-0 flex flex-col items-center justify-center p-12 [backface-visibility:hidden]">
                                         <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 mb-6">
                                             <Sparkles className="w-5 h-5" />
                                         </div>
-                                        <h3 className="text-2xl font-bold leading-tight">What is the core principle of the Feynman Technique?</h3>
+                                        <h3 className="text-2xl font-bold leading-tight">{flashcardsItems[currentFlashcardIdx]?.front || "Question"}</h3>
                                         <p className="mt-8 text-xs font-bold uppercase tracking-widest text-foreground/20">Hover to Reveal</p>
                                     </div>
                                     {/* Back */}
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-12 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-12 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-purple-600/5 rounded-[3rem]">
                                         <p className="text-xl font-medium leading-relaxed text-purple-400">
-                                            The core principle is to explain a concept in simple terms, as if you were teaching it to a child, to identify gaps in your own understanding.
+                                            {flashcardsItems[currentFlashcardIdx]?.back || "Answer"}
                                         </p>
                                     </div>
                                 </div>
+                               ) : (
+                                  <div className="w-full h-full p-12 bg-card/40 backdrop-blur-xl border border-border rounded-[3rem] shadow-2xl flex flex-col items-center justify-center text-center">
+                                       <span className="text-foreground/40 font-bold">No flashcards available</span>
+                                  </div>
+                               )}
                             </div>
                             <div className="flex items-center gap-4">
-                                <Button variant="outline" className="h-14 w-14 rounded-full border-border/50 bg-white/5"><RotateCcw className="w-5 h-5" /></Button>
-                                <Button className="h-14 px-8 rounded-full bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-500/20">Next Card</Button>
+                                <Button 
+                                   onClick={() => setCurrentFlashcardIdx(prev => Math.max(0, prev - 1))}
+                                   disabled={currentFlashcardIdx === 0 || isGeneratingFlashcards || flashcardsItems.length === 0}
+                                   variant="outline" 
+                                   className="h-14 w-14 rounded-full border-border/50 bg-white/5">
+                                   <RotateCcw className="w-5 h-5 -scale-x-100" />
+                                </Button>
+                                
+                                <div className="text-xs font-bold text-foreground/40 px-4">
+                                  {flashcardsItems.length > 0 ? `${currentFlashcardIdx + 1} / ${flashcardsItems.length}` : '0 / 0'}
+                                </div>
+
+                                <Button 
+                                   onClick={() => setCurrentFlashcardIdx(prev => Math.min(flashcardsItems.length - 1, prev + 1))}
+                                   disabled={currentFlashcardIdx === flashcardsItems.length - 1 || isGeneratingFlashcards || flashcardsItems.length === 0}
+                                   className="h-14 px-8 rounded-full bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-500/20">
+                                   Next Card
+                                </Button>
                             </div>
                         </motion.div>
                     )}

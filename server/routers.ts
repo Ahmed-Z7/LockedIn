@@ -731,10 +731,10 @@ export const appRouter = router({
       .input(z.object({ sessionId: z.number(), content: z.string() }))
       .mutation(async ({ input }) => {
         try {
-          const prompt = `Generate exactly 5 high-quality MCQs from this content: ${input.content.substring(0, 4000)}. Return JSON array.`;
+          const prompt = `Generate exactly 5 high-quality MCQs from this content. Output MUST be ONLY a JSON array of objects with the exact structure: [{ "question": "...", "options": ["...", "...", "...", "..."], "answer": "...", "type": "MULTIPLE CHOICE", "weakness": "..." }].\n\nContent:\n${input.content.substring(0, 4000)}`;
           const response = await invokeLLM({
             messages: [
-              { role: "system", content: "Educational assessment AI. Respond with JSON MCQs." },
+              { role: "system", content: "You are an educational assessment AI. Always respond with ONLY a valid JSON array format. No markdown blocks around JSON, and no extra text." },
               { role: "user", content: prompt },
             ],
           });
@@ -745,6 +745,63 @@ export const appRouter = router({
         } catch (error) {
           return { quiz: [], error: "Failed to generate quiz." };
         }
+      }),
+
+    generateMindmap: protectedProcedure
+      .input(z.object({ content: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const prompt = `Analyze the following content and generate a mind map structure. Identify exactly 4 to 6 key related subtopics. Output MUST be ONLY a JSON array of objects: [{ "title": "...", "description": "..." }].\n\nContent:\n${input.content.substring(0, 4000)}`;
+          const response = await invokeLLM({
+             messages: [
+               { role: "system", content: "You are a concept mapping AI. Respond ONLY with a valid JSON array. No markdown." },
+               { role: "user", content: prompt }
+             ]
+          });
+          const content = response.choices[0]?.message?.content || "[]";
+          const rawContent = typeof content === "string" ? content : String(content);
+          const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+          return { nodes: JSON.parse(jsonMatch ? jsonMatch[0] : "[]") };
+        } catch (error) {
+          return { nodes: [], error: "Failed to generate mindmap." };
+        }
+      }),
+
+    generateFlashcards: protectedProcedure
+      .input(z.object({ content: z.string() }))
+      .mutation(async ({ input }) => {
+         try {
+           const prompt = `Create 5 to 8 spaced-repetition flashcards from the following content exploring its core facts and insights. Output MUST be ONLY a JSON array of objects: [{ "front": "Question/Term here", "back": "Answer/Definition here" }].\n\nContent:\n${input.content.substring(0, 4000)}`;
+           const response = await invokeLLM({
+             messages: [
+               { role: "system", content: "You are an active-recall AI. Respond ONLY with a valid JSON array. No extra text." },
+               { role: "user", content: prompt }
+             ]
+           });
+           const content = response.choices[0]?.message?.content || "[]";
+           const rawContent = typeof content === "string" ? content : String(content);
+           const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+           return { cards: JSON.parse(jsonMatch ? jsonMatch[0] : "[]") };
+         } catch (error) {
+           return { cards: [], error: "Failed to generate flashcards." };
+         }
+      }),
+
+    expandTopic: protectedProcedure
+      .input(z.object({ topic: z.string() }))
+      .mutation(async ({ input }) => {
+         try {
+           const prompt = `As a comprehensive Knowledge Base AI, write a highly detailed, extremely well-structured summary and explanation of the topic: "${input.topic}". Include its definition, core fundamentals, key theories, practical applications, and examples. It should be formatted as rich study material (ready to be used for generating quizzes and flashcards later). Make it about 500-1000 words.`;
+           const response = await invokeLLM({
+             messages: [
+               { role: "system", content: "You are ZED Semantic Search Engine. You provide accurate, factual, and deeply educational study materials for topics." },
+               { role: "user", content: prompt }
+             ]
+           });
+           return { content: response.choices[0]?.message?.content || "No information found." };
+         } catch(error) {
+           return { content: "Knowledge retrieval connection failed. Could not process topic.", error: "Search failed" };
+         }
       }),
   }),
 
