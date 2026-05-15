@@ -100,7 +100,7 @@ export default function StudySessionPage() {
   const activeContent = session?.material?.content || topicExpandedContent;
 
   // Game & Sound State
-  const [activeBreakGame, setActiveBreakGame] = useState<'memory' | 'clicker' | 'rhythm'>('memory');
+  const [activeBreakGame, setActiveBreakGame] = useState<'memory' | 'clicker' | 'rhythm' | 'snake' | 'dodge3d'>('memory');
   const [clickerScore, setClickerScore] = useState(0);
   const [clickerTargetPos, setClickerTargetPos] = useState({ top: '50%', left: '50%' });
   const [rhythmScale, setRhythmScale] = useState(1);
@@ -145,7 +145,7 @@ export default function StudySessionPage() {
   };
 
   const nextBreakGame = () => {
-    const games: ('memory' | 'clicker' | 'rhythm')[] = ['memory', 'clicker', 'rhythm'];
+    const games: ('memory' | 'clicker' | 'rhythm' | 'snake' | 'dodge3d')[] = ['memory', 'clicker', 'rhythm', 'snake', 'dodge3d'];
     const currentIdx = games.indexOf(activeBreakGame);
     const nextIdx = (currentIdx + 1) % games.length;
     setActiveBreakGame(games[nextIdx]);
@@ -477,11 +477,11 @@ export default function StudySessionPage() {
     // Check for level completion
     if (fullSchedule && session) {
         const perLevel = Math.ceil(fullSchedule.length / 10);
-        const idx = fullSchedule.findIndex(s => s.id === sessionId);
+        const idx = fullSchedule.findIndex((s: any) => s.id === sessionId);
         const levelIdx = Math.floor(idx / perLevel);
         const levelSessions = fullSchedule.slice(levelIdx * perLevel, Math.min((levelIdx + 1) * perLevel, fullSchedule.length));
         
-        const otherSessionsDone = levelSessions.filter(s => s.id !== sessionId).every(s => s.completed === 1);
+        const otherSessionsDone = levelSessions.filter((s: any) => s.id !== sessionId).every((s: any) => s.completed === 1);
         if (otherSessionsDone) {
             setShowCelebration(true);
         }
@@ -976,7 +976,7 @@ export default function StudySessionPage() {
                         <QuizValidation 
                             quiz={quizData}
                             subject={session?.subject || "Subject"}
-                            onComplete={(score) => completeSession(score)}
+                            onComplete={(score: number) => completeSession(score)}
                             onRetry={() => {
                                 setIsQuizActive(false);
                                 toast.info("Locking session back in. Review material well.");
@@ -1485,6 +1485,18 @@ export default function StudySessionPage() {
                                             <div className="absolute w-24 h-24 border-2 border-white/20 rounded-full" />
                                         </div>
                                     )}
+
+                                    {activeBreakGame === 'snake' && (
+                                      <div className="bg-zinc-900 p-4 rounded-3xl border border-white/10 shadow-2xl">
+                                        <SnakeGame onScore={(s: number) => setClickerScore(prev => prev + s)} />
+                                      </div>
+                                    )}
+
+                                    {activeBreakGame === 'dodge3d' && (
+                                      <div className="w-full max-w-2xl aspect-video bg-zinc-950 rounded-[3rem] border border-white/10 overflow-hidden relative perspective-1000">
+                                        <Dodge3DGame onScore={(s: number) => setClickerScore(prev => prev + s)} />
+                                      </div>
+                                    )}
                                 </div>
                                 
                                 <div className="mt-12">
@@ -1703,3 +1715,193 @@ export default function StudySessionPage() {
     </div>
   );
 }
+
+// ═══════════════════════════════════════════
+// MINIGAMES: SNAKE (2D) & DODGE (3D)
+// ═══════════════════════════════════════════
+
+function SnakeGame({ onScore }: { onScore: (s: number) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [gameOver, setGameOver] = useState(false);
+  const [score, setScore] = useState(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const gridSize = 20;
+    const tileCount = canvas.width / gridSize;
+    let snake = [{ x: 10, y: 10 }];
+    let food = { x: 15, y: 15 };
+    let dx = 0;
+    let dy = 0;
+    let nextDx = 1;
+    let nextDy = 0;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp' && dy === 0) { nextDx = 0; nextDy = -1; }
+      if (e.key === 'ArrowDown' && dy === 0) { nextDx = 0; nextDy = 1; }
+      if (e.key === 'ArrowLeft' && dx === 0) { nextDx = -1; nextDy = 0; }
+      if (e.key === 'ArrowRight' && dx === 0) { nextDx = 1; nextDy = 0; }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    const gameLoop = setInterval(() => {
+      dx = nextDx;
+      dy = nextDy;
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+      if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount || 
+          snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        setGameOver(true);
+        clearInterval(gameLoop);
+        return;
+      }
+
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        setScore(s => s + 1);
+        onScore(10);
+        food = {
+          x: Math.floor(Math.random() * tileCount),
+          y: Math.floor(Math.random() * tileCount)
+        };
+      } else {
+        snake.pop();
+      }
+
+      ctx.fillStyle = '#09090b';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw Grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      for(let i=0; i<tileCount; i++) {
+        ctx.beginPath(); ctx.moveTo(i*gridSize, 0); ctx.lineTo(i*gridSize, canvas.height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i*gridSize); ctx.lineTo(canvas.width, i*gridSize); ctx.stroke();
+      }
+
+      ctx.fillStyle = '#a855f7';
+      snake.forEach((s, i) => {
+        ctx.globalAlpha = 1 - (i / snake.length) * 0.5;
+        ctx.fillRect(s.x * gridSize + 2, s.y * gridSize + 2, gridSize - 4, gridSize - 4);
+      });
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 4, 0, Math.PI * 2);
+      ctx.fill();
+    }, 100);
+
+    return () => {
+      clearInterval(gameLoop);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [gameOver]);
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <canvas ref={canvasRef} width={400} height={400} className="rounded-xl" />
+      {gameOver && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 rounded-3xl">
+          <h2 className="text-3xl font-black text-red-500 mb-4">CRASHED</h2>
+          <Button onClick={() => setGameOver(false)} className="bg-purple-600">Restart</Button>
+        </div>
+      )}
+      <div className="text-xl font-black text-purple-400">SCORE: {score}</div>
+    </div>
+  );
+}
+
+function Dodge3DGame({ onScore }: { onScore: (s: number) => void }) {
+  const [playerPos, setPlayerPos] = useState(0); // -1, 0, 1
+  const [obstacles, setObstacles] = useState<{id: number, z: number, lane: number}[]>([]);
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+
+  useEffect(() => {
+    if (gameOver) return;
+    const interval = setInterval(() => {
+      setObstacles(prev => {
+        const next = prev.map(o => ({ ...o, z: o.z - 5 })).filter(o => o.z > -100);
+        if (Math.random() > 0.95) {
+          next.push({ id: Math.random(), z: 1000, lane: Math.floor(Math.random() * 3) - 1 });
+        }
+        
+        // Collision detection
+        const colliding = next.find(o => o.z < 20 && o.z > 0 && o.lane === playerPos);
+        if (colliding) {
+          setGameOver(true);
+        }
+        
+        return next;
+      });
+      setScore(s => s + 1);
+      if (score % 100 === 0) onScore(5);
+    }, 20);
+    return () => clearInterval(interval);
+  }, [playerPos, gameOver, score]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') setPlayerPos(p => Math.max(-1, p - 1));
+      if (e.key === 'ArrowRight') setPlayerPos(p => Math.min(1, p + 1));
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  return (
+    <div className="w-full h-full relative overflow-hidden flex items-center justify-center bg-[#050505]">
+      {/* 3D Road */}
+      <div className="absolute inset-0 [transform:rotateX(60deg)] origin-bottom">
+        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent" />
+        {/* Lanes */}
+        <div className="absolute left-1/3 w-px h-full bg-white/10" />
+        <div className="absolute left-2/3 w-px h-full bg-white/10" />
+        
+        {/* Obstacles */}
+        {obstacles.map(o => (
+          <motion.div
+            key={o.id}
+            initial={false}
+            animate={{ bottom: `${o.z / 10}%`, left: `${(o.lane + 1) * 33 + 16}%` }}
+            className="absolute w-12 h-12 bg-red-500/50 border-2 border-red-500 rounded-lg shadow-[0_0_20px_rgba(239,68,68,0.5)]"
+          />
+        ))}
+      </div>
+
+      {/* Player Ship */}
+      <motion.div
+        animate={{ x: playerPos * 120 }}
+        className="absolute bottom-12 w-16 h-16 bg-purple-500 rounded-2xl shadow-[0_0_40px_rgba(168,85,247,0.6)] flex items-center justify-center z-50 border-2 border-white/20"
+      >
+        <div className="w-8 h-8 bg-white/20 rounded-full animate-pulse" />
+      </motion.div>
+
+      {/* HUD */}
+      <div className="absolute top-8 left-8 text-2xl font-black text-white/50 tracking-tighter">
+        NEURAL SPEED: {score}m
+      </div>
+
+      {gameOver && (
+        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm">
+          <h2 className="text-6xl font-black text-red-500 mb-8 italic tracking-tighter">CONNECTION LOST</h2>
+          <Button 
+            onClick={() => {
+              setGameOver(false);
+              setObstacles([]);
+              setScore(0);
+            }} 
+            className="h-16 px-12 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xl"
+          >
+            RE-ESTABLISH LINK
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
