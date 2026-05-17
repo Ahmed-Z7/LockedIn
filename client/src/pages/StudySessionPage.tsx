@@ -860,10 +860,10 @@ export default function StudySessionPage() {
                 </motion.div>
                 <div>
                   <p className="text-red-500 font-black tracking-[0.4em] uppercase text-sm mb-2 animate-pulse">⚠ FOCUS BREACH DETECTED</p>
-                  <h2 className="text-5xl md:text-6xl font-black tracking-tighter text-white">يا وحش! ممنوع الهروب 🔒</h2>
+                  <h2 className="text-5xl md:text-6xl font-black tracking-tighter text-white">Focus Lock Active 🔒</h2>
                   <p className="text-foreground/60 mt-6 text-lg leading-relaxed font-bold">
-                    أنت مقفول عليك لحد ما السيشن يخلص. مفيش خروج!<br/>
-                    <span className="text-red-400">دوس في أي مكان على الشاشة فوراً</span> علشان ترجع للفول سكرين.
+                    You are locked in until the session timer expires. There is no escape.<br/>
+                    <span className="text-red-400">Click anywhere on the screen immediately</span> to restore Fullscreen.
                   </p>
                   <div className="mt-6 text-red-500/80 font-mono font-black text-lg bg-red-500/10 border border-red-500/20 py-2 px-4 rounded-xl inline-block">
                     DISTRACTION #{distractions} LOGGED
