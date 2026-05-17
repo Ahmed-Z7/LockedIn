@@ -153,15 +153,14 @@ async function invokeViaGemini(params: InvokeParams): Promise<InvokeResult> {
   const modelsToTry = [
     { id: "gemini-2.0-flash-lite", apiVersion: "v1beta" },
     { id: "gemini-2.0-flash",      apiVersion: "v1beta" },
-    { id: "gemini-1.5-flash-8b",   apiVersion: "v1beta" }, // separate free-tier quota pool
     { id: "gemini-1.5-flash",      apiVersion: "v1beta" },
-    { id: "gemini-1.5-pro",        apiVersion: "v1beta" },
+    { id: "gemini-1.5-flash-8b",   apiVersion: "v1beta" },
   ];
 
   let lastError = "";
   for (const model of modelsToTry) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       console.log(`[AI FALLBACK] Trying Gemini model ${model.id} (${model.apiVersion})...`);
       const url = `https://generativelanguage.googleapis.com/${model.apiVersion}/models/${model.id}:generateContent?key=${ENV.geminiApiKey}`;
@@ -215,25 +214,25 @@ async function invokeViaGemini(params: InvokeParams): Promise<InvokeResult> {
   throw new Error(`All Gemini models failed. Last error: ${lastError}`);
 }
 
-// --- Main entry point: Forge → Groq → Gemini ---
+// --- Main entry point: Gemini → Groq → Forge ---
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  // 1. Try Forge (enterprise, if configured)
-  if (ENV.forgeApiUrl && ENV.forgeApiKey) {
-    try { return await invokeViaForge(params); }
-    catch (err: any) { console.warn(`[AI] Forge failed: ${err.message}`); }
+  // 1. Try Gemini first (primary - fastest free tier)
+  if (ENV.geminiApiKey) {
+    try { return await invokeViaGemini(params); }
+    catch (err: any) { console.warn(`[AI] Gemini failed: ${err.message}`); }
   }
 
-  // 2. Try Groq (free, fast, no billing)
+  // 2. Try Groq (backup - free, OpenAI-compatible)
   if (ENV.groqApiKey) {
     try { return await invokeViaGroq(params); }
     catch (err: any) { console.warn(`[AI] Groq failed: ${err.message}`); }
   }
 
-  // 3. Try Gemini (fallback)
-  if (ENV.geminiApiKey) {
-    try { return await invokeViaGemini(params); }
-    catch (err: any) { throw new Error(`Neural Pulse Erratic: ${err.message}`); }
+  // 3. Try Forge (enterprise, if configured)
+  if (ENV.forgeApiUrl && ENV.forgeApiKey) {
+    try { return await invokeViaForge(params); }
+    catch (err: any) { console.warn(`[AI] Forge failed: ${err.message}`); }
   }
 
-  throw new Error("No AI provider configured. Set GROQ_API_KEY, GEMINI_API_KEY, or VITE_FORGE_API_KEY.");
+  throw new Error("No AI provider configured. Set GEMINI_API_KEY, GROQ_API_KEY, or VITE_FORGE_API_KEY.");
 }
