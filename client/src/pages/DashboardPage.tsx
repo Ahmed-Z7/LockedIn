@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading } = useAuth({ redirectOnUnauthenticated: true, redirectPath: "/auth" });
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
   const { data: profile } = trpc.userAccount.getProfile.useQuery(undefined, { enabled: isAuthenticated });
   const { data: sessions } = trpc.study.getSchedule.useQuery(undefined, { enabled: isAuthenticated });
 
@@ -40,9 +42,9 @@ export default function DashboardPage() {
         >
           <div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2">
-              Hello, <span className="bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 bg-clip-text text-transparent">{user?.name || "Alex"}</span> 👋
+              {t('dash.hello')}, <span className="bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400 bg-clip-text text-transparent">{user?.name || "Alex"}</span> 👋
             </h1>
-            <p className="text-foreground/40 font-medium text-lg">Stay locked in — your goals are waiting.</p>
+            <p className="text-foreground/40 font-medium text-lg">{t('dash.subtitle')}</p>
           </div>
         </motion.header>
 
@@ -56,10 +58,10 @@ export default function DashboardPage() {
           
           <div className="relative z-10 text-center max-w-2xl mx-auto">
             <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-none mb-6">
-              Study Smarter with <span className="text-purple-400 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">AI-Powered</span> Learning
+              {t('dash.hero.title')}
             </h2>
             <p className="text-foreground/60 text-lg font-medium mb-10 leading-relaxed">
-              Upload your study materials and let LOCKEDIN build your personalized study schedule in seconds.
+              {t('dash.hero.subtitle')}
             </p>
             
             <div className="flex flex-wrap justify-center gap-4">
@@ -69,7 +71,7 @@ export default function DashboardPage() {
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl px-8 py-7 text-lg font-bold shadow-xl shadow-purple-500/20 group hover:scale-105 transition-all"
               >
                 <Zap className="w-5 h-5 mr-2 fill-white" />
-                Start Learning
+                {t('dash.start')}
               </Button>
               <Button 
                 onClick={() => setLocation("/schedule")}
@@ -78,22 +80,22 @@ export default function DashboardPage() {
                 className="border-border bg-white/5 hover:bg-white/10 rounded-2xl px-8 py-7 text-lg font-bold backdrop-blur-xl group hover:scale-105 transition-all"
               >
                 <Clock className="w-5 h-5 mr-2" />
-                View Schedule
+                {t('dash.schedule')}
               </Button>
             </div>
 
             <div className="mt-12 flex justify-center gap-12 border-t border-border/50 pt-12">
                <div className="text-center">
                  <div className="text-2xl font-black text-purple-400">50K+</div>
-                 <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">Active Users</div>
+                 <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">{t('dash.stats.users')}</div>
                </div>
                <div className="text-center border-x border-border/50 px-12">
                  <div className="text-2xl font-black text-emerald-400">95%</div>
-                 <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">Success Rate</div>
+                 <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">{t('dash.stats.success')}</div>
                </div>
                <div className="text-center">
                  <div className="text-2xl font-black text-blue-400">24/7</div>
-                 <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">AI Support</div>
+                 <div className="text-xs uppercase tracking-widest text-foreground/30 font-bold">{t('dash.stats.ai')}</div>
                </div>
             </div>
           </div>
@@ -102,10 +104,10 @@ export default function DashboardPage() {
         {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
-              { label: 'Day Streak', value: profile?.streak || 0, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-              { label: 'Sessions Done', value: sessions?.filter(s => s.completed === 1)?.length || 0, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-              { label: 'Neural XP', value: profile?.xp || 0, icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-              { label: 'Active Challenges', value: 'View All', icon: Award, color: 'text-purple-400', bg: 'bg-purple-500/10', path: '/challenges' },
+              { label: t('dash.streak'), value: profile?.streak || 0, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+              { label: t('dash.sessions'), value: sessions?.filter(s => s.completed === 1)?.length || 0, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+              { label: t('dash.xp'), value: profile?.xp || 0, icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+              { label: t('dash.challenges'), value: t('gen.back').replace('ارجع','View All').replace('Back','View All'), icon: Award, color: 'text-purple-400', bg: 'bg-purple-500/10', path: '/challenges' },
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
@@ -139,9 +141,9 @@ export default function DashboardPage() {
         >
           <div className="flex justify-between items-end mb-6">
             <div>
-               <h3 className="text-xl font-bold mb-1">Weekly Objective</h3>
+               <h3 className="text-xl font-bold mb-1">{t('dash.weekly')}</h3>
                <p className="text-foreground/40 text-sm font-medium">
-                 {sessions?.length ? `${sessions?.filter(s => s.completed === 1).length} of ${sessions.length} sessions completed` : "No active goals in system memory."}
+                 {sessions?.length ? `${sessions?.filter(s => s.completed === 1).length} ${t('dash.sessions_of')} ${sessions.length} ${t('dash.sessions_done')}` : t('dash.no_goals')}
                </p>
             </div>
             <div className="text-2xl font-black text-purple-400">
@@ -176,9 +178,9 @@ export default function DashboardPage() {
             <div>
                 <h3 className="text-2xl font-black mb-2 flex items-center gap-3 text-white">
                    <Award className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" /> 
-                   Check Global Rankings
+                   {t('dash.rankings')}
                 </h3>
-                <p className="text-foreground/60 font-medium">See how you stack up against the rest of the network and your squads.</p>
+                <p className="text-foreground/60 font-medium">{t('dash.rankings_sub')}</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-purple-600 transition-colors shadow-lg">
                 <ArrowUpRight className="w-6 h-6 text-white" />

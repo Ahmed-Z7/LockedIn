@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const CATEGORY_MAP: Record<string, { icon: LucideIcon, label: string, color: string, gradient: string }> = {
   study_time: { icon: Clock, label: 'Study Time', color: 'text-blue-400', gradient: 'from-blue-600/20 to-cyan-500/5' },
@@ -24,6 +25,7 @@ const CATEGORY_MAP: Record<string, { icon: LucideIcon, label: string, color: str
 
 export default function ChallengesPage() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const { t } = useLanguage();
   const challengesQuery = trpc.progression.getChallenges.useQuery();
   const profileQuery = trpc.progression.getProfile.useQuery();
 
@@ -117,22 +119,22 @@ export default function ChallengesPage() {
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
-              <Sparkles className="w-3 h-3" /> System Progression
+              <Sparkles className="w-3 h-3" /> {t('chall.badge')}
             </div>
             <h1 className="text-6xl font-black mb-4 tracking-tighter leading-[0.9]">
-              <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent drop-shadow-sm">NEURAL TASKS</span> <br/> 
-              <span className="text-foreground/20 hover:text-white transition-colors cursor-default">LEVEL UP YOUR LIFE</span>
+              <span className="bg-gradient-to-r from-purple-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent drop-shadow-sm">{t('chall.title')}</span> <br/> 
+              <span className="text-foreground/20 hover:text-white transition-colors cursor-default">{t('chall.subtitle')}</span>
             </h1>
             <p className="text-foreground/40 text-lg max-w-xl font-medium tracking-tight">
-              Transform your daily discipline into measurable growth. Complete global challenges to earn XP and unlock legendary neural badges.
+              {t('chall.desc')}
             </p>
           </motion.div>
 
           {/* QUICK STATS */}
           <div className="flex gap-4">
              {[
-               { label: 'In Progress', value: stats.active, icon: Activity, bg: 'bg-purple-500/10' },
-               { label: 'Mastered', value: stats.completed, icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
+               { label: t('chall.in_progress'), value: stats.active, icon: Activity, bg: 'bg-purple-500/10' },
+               { label: t('chall.mastered'), value: stats.completed, icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
              ].map((stat, i) => (
                <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                  className="p-8 rounded-[2rem] bg-card/30 backdrop-blur-3xl border border-border/50 flex flex-col items-center justify-center min-w-[160px] group hover:bg-white/[0.05] transition-all shadow-xl shadow-purple-500/5">
@@ -157,7 +159,7 @@ export default function ChallengesPage() {
                 ? "bg-gradient-to-r from-purple-600 to-cyan-600 text-white shadow-xl shadow-purple-500/30 border-none" 
                 : "bg-white/5 border-border text-foreground/40 hover:text-white hover:bg-white/10"
             )}>
-            All Segments
+            {t('chall.all')}
           </Button>
           {Object.entries(CATEGORY_MAP).map(([slug, meta]) => (
             <Button key={slug} onClick={() => setActiveCategory(slug)} 
@@ -221,7 +223,7 @@ export default function ChallengesPage() {
 
                     <div className="space-y-4 mb-10">
                       <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-foreground/20">
-                        <span>Neural Progress</span>
+                        <span>{t('chall.progress')}</span>
                         <span className={cn("font-mono", isCompleted ? "text-emerald-400" : "text-white")}>
                           {progressRaw.toLocaleString()} / {target.toLocaleString()}
                         </span>
@@ -241,14 +243,14 @@ export default function ChallengesPage() {
                     <div className="flex items-center justify-between pt-6 border-t border-border/50">
                       <div className="flex gap-4">
                         <div>
-                          <p className="text-[8px] font-black text-foreground/20 uppercase tracking-tighter mb-1">XP Reward</p>
+                          <p className="text-[8px] font-black text-foreground/20 uppercase tracking-tighter mb-1">{t('chall.xp')}</p>
                           <p className="text-sm font-black text-yellow-500/80 tracking-tight flex items-center gap-1">
                             <Zap className="w-3 h-3 fill-yellow-500" /> +{challenge.rewardXp}
                           </p>
                         </div>
                         <div className="w-px h-8 bg-white/5" />
                         <div>
-                          <p className="text-[8px] font-black text-foreground/20 uppercase tracking-tighter mb-1">Difficulty</p>
+                          <p className="text-[8px] font-black text-foreground/20 uppercase tracking-tighter mb-1">{t('chall.difficulty')}</p>
                           <p className={cn("text-sm font-black tracking-tight capitalize", 
                             challenge.difficulty === 'hard' ? 'text-red-400/80' : 
                             challenge.difficulty === 'medium' ? 'text-orange-400/80' : 'text-emerald-400/80'
@@ -265,7 +267,7 @@ export default function ChallengesPage() {
                           isCompleted ? "bg-emerald-500/10 text-emerald-400/40 border border-emerald-500/20" : "bg-white/5 hover:bg-white/10 text-white border border-border active:scale-95"
                         )}
                       >
-                        {isCompleted ? "MASTERED" : "REINFORCE"}
+                        {isCompleted ? t('chall.mastered_btn') : t('chall.reinforce')}
                       </Button>
                     </div>
                   </div>
@@ -280,7 +282,7 @@ export default function ChallengesPage() {
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-8">
                <Lock className="w-8 h-8 text-foreground/10" />
             </div>
-            <p className="text-foreground/20 font-black uppercase tracking-[0.2em]">No neural matches found in this segment.</p>
+            <p className="text-foreground/20 font-black uppercase tracking-[0.2em]">{t('chall.empty')}</p>
           </div>
         )}
 

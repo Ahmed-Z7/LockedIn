@@ -15,12 +15,14 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function AICoachPage() {
   const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
-    { role: "assistant", content: "Welcome to LOCKEDIN! 🔒 I'm your AI coach. Ask me anything about your studies or tell me about your preferences." }
+    { role: "assistant", content: t('ai.welcome') }
   ]);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -61,7 +63,7 @@ export default function AICoachPage() {
          // Simple check: if prev has more messages than history * 2, keep prev
          if (prev.length > mapped.length && activeConversationId) return prev;
          return mapped.length > 0 ? mapped : [
-           { role: "assistant", content: "Welcome back! 🔒 I'm ZED. How can I assist your neural growth today?" }
+           { role: "assistant", content: t('ai.welcome_back') }
          ];
       });
     }
@@ -91,16 +93,16 @@ export default function AICoachPage() {
       }
 
       if (response.learnedSomething) {
-        toast.info("ZED learned a new fact about you! 🧠");
+        toast.info(t('ai.learned'));
         refetchKnowledge();
       }
 
       if (response.actionsCount > 0) {
         utils.study.getSchedule.invalidate();
-        setMessages(prev => [...prev, { role: "assistant", content: "⚡ Schedule synchronized with neural intent." }]);
+        setMessages(prev => [...prev, { role: "assistant", content: t('ai.synced') }]);
       }
     } catch (error) {
-      setMessages(prev => [...prev, { role: "assistant", content: "Neural pulse erratic. Try again." }]);
+      setMessages(prev => [...prev, { role: "assistant", content: t('ai.error') }]);
     }
   };
 
@@ -110,9 +112,9 @@ export default function AICoachPage() {
       setActiveConversationId(newConv.id);
       setMessages([]);
       refetchConversations();
-      toast.success("New neural thread initialized.");
+      toast.success(t('ai.new_thread'));
     } catch (error) {
-      toast.error("Failed to initialize new thread.");
+      toast.error(t('ai.error_new'));
     }
   };
 
@@ -122,9 +124,9 @@ export default function AICoachPage() {
       await deleteConvMutation.mutateAsync({ id });
       if (activeConversationId === id) setActiveConversationId(null);
       refetchConversations();
-      toast.success("Neural thread purged.");
+      toast.success(t('ai.purged'));
     } catch (error) {
-      toast.error("Failed to purge thread.");
+      toast.error(t('ai.error_purge'));
     }
   };
 
@@ -134,38 +136,38 @@ export default function AICoachPage() {
       await renameConvMutation.mutateAsync({ id, title: editingTitle });
       setEditingConversationId(null);
       refetchConversations();
-      toast.success("Neural thread renamed.");
+      toast.success(t('ai.renamed'));
     } catch (error) {
-      toast.error("Failed to rename thread.");
+      toast.error(t('ai.error_rename'));
     }
   };
 
   const updateAISetting = async (key: string, value: string) => {
     try {
       await updateSettingsMutation.mutateAsync({ [key]: value });
-      toast.success("ZED core personality updated.");
+      toast.success(t('ai.updated'));
       utils.notifications.getSettings.invalidate();
     } catch (error) {
-      toast.error("Failed to update ZED core.");
+      toast.error(t('ai.error_update'));
     }
   };
 
   const deleteFact = async (id: number) => {
       try {
           await deleteKnowledgeMutation.mutateAsync({ id });
-          toast.success("Information removed from ZED's memory.");
+          toast.success(t('ai.memory_removed'));
           refetchKnowledge();
       } catch (error) {
-          toast.error("Failed to remove information.");
+          toast.error(t('ai.error_remove'));
       }
   };
 
   const quickCommands = [
-    { label: "Study at Night", icon: Moon, text: "I study best at night" },
-    { label: "Exam in 3 Days", icon: AlertTriangle, text: "I have an exam in 3 days!" },
-    { label: "Make it Easier", icon: Feather, text: "Make the schedule easier" },
-    { label: "Weekend Focus", icon: Dumbbell, text: "Heavier sessions on weekends" },
-    { label: "More Review", icon: RotateCcw, text: "Add more review sessions" },
+    { label: t('ai.study_night'), icon: Moon, text: "I study best at night" },
+    { label: t('ai.exam'), icon: AlertTriangle, text: "I have an exam in 3 days!" },
+    { label: t('ai.easier'), icon: Feather, text: "Make the schedule easier" },
+    { label: t('ai.weekend'), icon: Dumbbell, text: "Heavier sessions on weekends" },
+    { label: t('ai.review'), icon: RotateCcw, text: "Add more review sessions" },
   ];
 
   if (!isAuthenticated) return null;
@@ -189,11 +191,11 @@ export default function AICoachPage() {
                     disabled={createConvMutation.isPending}
                 >
                     {createConvMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    New Neural Link
+                    {t('ai.new')}
                 </Button>
 
                 <div className="bg-card/30 backdrop-blur-xl border border-border/50 rounded-3xl p-4 flex-1 flex flex-col min-h-[500px]">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40 px-4 mb-4">Neural History</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/40 px-4 mb-4">{t('ai.history')}</h3>
                     <div className="space-y-1 overflow-y-auto max-h-[600px] scrollbar-hide">
                         {conversations?.map((conv) => (
                             <div
@@ -273,10 +275,10 @@ export default function AICoachPage() {
                                 <Sparkles className="w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold tracking-tight">ZED AI Coach</h2>
+                                <h2 className="text-xl font-bold tracking-tight">{t('ai.title')}</h2>
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Neural Link Active</span>
+                                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">{t('ai.online')}</span>
                                 </div>
                             </div>
                         </div>
@@ -286,7 +288,7 @@ export default function AICoachPage() {
                             <DialogTrigger asChild>
                                 <Button variant="outline" className="relative group border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-2xl px-4 py-6">
                                     <Brain className="w-5 h-5 mr-2 group-hover:animate-pulse" />
-                                    <span className="font-bold uppercase tracking-wider text-xs">Training Center</span>
+                                    <span className="font-bold uppercase tracking-wider text-xs">{t('ai.training')}</span>
                                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full animate-ping" />
                                 </Button>
                             </DialogTrigger>
@@ -428,7 +430,7 @@ export default function AICoachPage() {
                         {chatMutation.isPending && (
                             <div className="flex items-center gap-2 text-purple-400 font-bold text-xs animate-pulse">
                                 <Loader2 className="w-3 h-3 animate-spin" />
-                                SYNCING NEURAL NETWORK...
+                                {t('ai.syncing')}
                             </div>
                         )}
                         <div ref={messagesEndRef} />
@@ -441,7 +443,7 @@ export default function AICoachPage() {
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                placeholder="Command the AI..."
+                                placeholder={t('ai.input')}
                                 className="w-full bg-background/50 border border-border rounded-2xl py-4 pl-6 pr-14 text-sm focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-foreground/20"
                             />
                             <button 
@@ -465,7 +467,7 @@ export default function AICoachPage() {
                 >
                     <h3 className="text-sm font-bold uppercase tracking-widest text-foreground/40 mb-4 flex items-center gap-2">
                         <MessageCircle className="w-4 h-4" />
-                        Recent History
+                        {t('ai.recent')}
                     </h3>
                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10">
                         {isHistoryLoading ? (
@@ -481,7 +483,7 @@ export default function AICoachPage() {
                                 </div>
                             ))
                         ) : (
-                            <div className="py-4 text-center text-xs text-foreground/20">No history found.</div>
+                            <div className="py-4 text-center text-xs text-foreground/20">{t('ai.no_history')}</div>
                         )}
                     </div>
                 </motion.div>
@@ -495,7 +497,7 @@ export default function AICoachPage() {
                 >
                     <div className="relative z-10">
                         <TrendingUp className="w-8 h-8 text-purple-400 mb-4" />
-                        <h3 className="text-lg font-bold mb-1">Knowledge Points</h3>
+                        <h3 className="text-lg font-bold mb-1">{t('ai.knowledge')}</h3>
                         <div className="text-4xl font-black bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent mb-4">
                             {profile?.xp || 0}
                         </div>

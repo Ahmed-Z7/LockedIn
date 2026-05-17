@@ -59,30 +59,24 @@ function getZEDSystemPrompt(params: {
   
   return `You are ZED, the Intelligent AI Study Buddy for LOCKEDIN.
   - USER: ${userName}.
-  - STYLE: Engaging, detailed, and extremely helpful. Do NOT use one-liners unless specifically asked. Explain concepts deeply to ensure mastery.
-  - PERSONA: A brilliant friend with FULL SYSTEM ACCESS. You remember everything and see everything the user does on the platform.
+  - STYLE: Engaging, detailed, and extremely helpful. Do NOT use one-liners. Explain concepts deeply.
   - TONE: ${tone === 'strict' ? 'Firm, demanding, and highly disciplined.' : tone === 'scientific' ? 'Scientific terms, focus on neuro-efficiency.' : 'Supportive, funny, and energetic.'}
-  - LANGUAGE: ${language === 'ar-eg' ? 'Egyptian Arabic (Ammiya) is your native tongue. Be funny, relatable, and use slang like "باشا", "يا وحش", "روقان".' : language === 'english' ? 'English primary.' : 'Dual Arabic (Egyptian/Ammiya) and English.'}
+  - LANGUAGE: ${language === 'ar-eg' ? 'Egyptian Arabic (Ammiya). Use slang like "باشا", "يا وحش", "روقان".' : language === 'english' ? 'English only.' : 'Mix of Egyptian Arabic and English.'}
   - CONTEXT: Today is ${new Date().toISOString()}.
   
-  USER PROGRESS & ACTIVITY:
-  ${userStats || "No stats available."}
+  USER STATS: ${userStats || "No stats available."}
+  MEMORY: ${historyContext || "None"}
+  KNOWN FACTS: ${knowledgeContext || "None yet."}
+  SCHEDULE: ${scheduleContext || "Empty"}
   
-  INTERNAL MEMORY (Last messages):
-  ${historyContext || "None"}
+  CRITICAL OUTPUT RULE: You MUST respond ONLY with this exact JSON format, no extra text:
+  {"response": "your reply here", "actions": [], "newKnowledge": []}
   
-  ESTABLISHED FACTS ABOUT USER:
-  ${knowledgeContext || "None yet. Learn habits/goals/preferences."}
+  - response: Your full reply to the user
+  - actions: Array of schedule changes [{"action": "add|update|delete", "id": number, "subject": "string", "newTime": "ISO_DATE", "newDuration": number}]
+  - newKnowledge: Array of new facts learned about user
   
-  CURRENT SCHEDULE:
-  ${scheduleContext || "Empty"}
-  
-  CAPABILITIES & OUTPUT RULES (JSON ONLY):
-  1. "response": Your direct reply. Be thorough and answer all questions in detail.
-  2. "actions": Array of database changes [{ "action": "add"|"update"|"delete", "id": number (for update/delete), "subject": "string", "newTime": "ISO_DATE", "newDuration": number }]. 
-     - You have FULL PERMISSION to modify the user's schedule if helpful.
-  3. "newKnowledge": Array of strings. Extract NEW persistent facts.
-  4. Always respond with strict JSON: { "response": "...", "actions": [], "newKnowledge": [] }.`;
+  DO NOT wrap JSON in markdown code blocks. Output raw JSON only.`;
 }
 
 export const appRouter = router({
@@ -627,16 +621,39 @@ export const appRouter = router({
           let actions: any[] = [];
           let newKnowledge: any[] = [];
 
+          const rawContent = typeof content === "string" ? content : String(content);
+          
+          // Layer 1: Try full JSON parse (strip markdown code blocks first)
+          const stripped = rawContent.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+          let parsed = false;
+          
           try {
-            const rawContent = typeof content === "string" ? content : String(content);
-            const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-            const result = JSON.parse(jsonMatch ? jsonMatch[0] : "{}");
-            aiResponse = result.response || rawContent || aiResponse;
-            actions = result.actions || [];
-            newKnowledge = result.newKnowledge || [];
-          } catch (e) {
-            console.error("[AI JSON Fallback]: Response was not valid JSON, using raw text.");
-            aiResponse = content;
+            const jsonMatch = stripped.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const result = JSON.parse(jsonMatch[0]);
+              if (result && typeof result.response === "string" && result.response.trim()) {
+                aiResponse = result.response;
+                actions = Array.isArray(result.actions) ? result.actions : [];
+                newKnowledge = Array.isArray(result.newKnowledge) ? result.newKnowledge : [];
+                parsed = true;
+              }
+            }
+          } catch (e) { /* try next layer */ }
+          
+          // Layer 2: Regex-extract "response" field directly
+          if (!parsed) {
+            const responseMatch = rawContent.match(/"response"\s*:\s*"((?:[^"\\]|\\[\s\S])*)"/s);
+            if (responseMatch?.[1]) {
+              try { aiResponse = JSON.parse(`"${responseMatch[1]}"`); } 
+              catch { aiResponse = responseMatch[1].replace(/\\n/g, "\n").replace(/\\"/g, '"'); }
+              parsed = true;
+            }
+          }
+          
+          // Layer 3: Use raw text as-is
+          if (!parsed) {
+            console.warn("[AI JSON Fallback]: Could not parse JSON, using raw text.");
+            aiResponse = rawContent;
           }
 
           let conversationId = input.conversationId;
