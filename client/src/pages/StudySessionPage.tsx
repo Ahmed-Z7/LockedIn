@@ -307,6 +307,18 @@ export default function StudySessionPage() {
       }
     };
 
+    // 8. Capture ANY click or touch on window to immediately trigger fullscreen
+    const handleWindowClick = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen()
+          .then(() => {
+            setFullscreenExited(false);
+            stopBuzzer();
+          })
+          .catch(() => {});
+      }
+    };
+
     // Register all with capture phase for max priority
     document.addEventListener('keydown', handleKeyDown, { capture: true });
     document.addEventListener('contextmenu', handleContextMenu, { capture: true });
@@ -315,6 +327,8 @@ export default function StudySessionPage() {
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     window.addEventListener('blur', handleBlur);
     window.addEventListener('beforeunload', preventExit);
+    window.addEventListener('click', handleWindowClick, { capture: true });
+    window.addEventListener('touchstart', handleWindowClick, { capture: true });
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown, { capture: true });
@@ -324,6 +338,8 @@ export default function StudySessionPage() {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       window.removeEventListener('blur', handleBlur);
       window.removeEventListener('beforeunload', preventExit);
+      window.removeEventListener('click', handleWindowClick, { capture: true });
+      window.removeEventListener('touchstart', handleWindowClick, { capture: true });
     };
   }, [isLocked, isBreak, exceptionTimeLeft]);
 
@@ -824,32 +840,34 @@ export default function StudySessionPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] bg-background flex flex-col items-center justify-center"
+              className="fixed inset-0 z-[9999] bg-[#09090E] w-screen h-screen flex flex-col items-center justify-center cursor-none select-none overflow-hidden"
             >
               <div className="absolute inset-0">
-                <motion.div animate={{ scale: [1,1.2,1], opacity: [0.2,0.5,0.2] }} transition={{ duration: 3, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] bg-red-600/20 rounded-full blur-[120px]" />
+                <motion.div animate={{ scale: [1,1.3,1], opacity: [0.3,0.7,0.3] }} transition={{ duration: 1.5, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] h-[90vw] bg-red-600/30 rounded-full blur-[140px]" />
               </div>
               <div className="relative z-10 text-center space-y-8 max-w-lg p-8">
-                <motion.div animate={{ rotate: [0, -5, 5, 0] }} transition={{ duration: 0.5, repeat: Infinity }} className="w-24 h-24 rounded-3xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto">
-                  <Lock className="w-12 h-12 text-red-400" />
+                <motion.div animate={{ scale: [1, 1.1, 1], rotate: [0, -8, 8, 0] }} transition={{ duration: 0.4, repeat: Infinity }} className="w-28 h-28 rounded-3xl bg-red-500/10 border-2 border-red-500/40 flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(239,68,68,0.3)]">
+                  <Lock className="w-14 h-14 text-red-500" />
                 </motion.div>
                 <div>
-                  <p className="text-red-400 font-black tracking-[0.3em] uppercase text-sm mb-2">⚠ Focus Violation Detected</p>
-                  <h2 className="text-5xl font-black tracking-tighter">You Escaped.</h2>
-                  <p className="text-foreground/40 mt-4 text-lg leading-relaxed">
-                    Fullscreen was exited. You are locked in until the timer ends.<br/>
-                    Return to focus now.
+                  <p className="text-red-500 font-black tracking-[0.4em] uppercase text-sm mb-2 animate-pulse">⚠ FOCUS BREACH DETECTED</p>
+                  <h2 className="text-5xl md:text-6xl font-black tracking-tighter text-white">يا وحش! ممنوع الهروب 🔒</h2>
+                  <p className="text-foreground/60 mt-6 text-lg leading-relaxed font-bold">
+                    أنت مقفول عليك لحد ما السيشن يخلص. مفيش خروج!<br/>
+                    <span className="text-red-400">دوس في أي مكان على الشاشة فوراً</span> علشان ترجع للفول سكرين.
                   </p>
-                  <div className="mt-2 text-red-400/60 font-bold text-sm">Distraction #{distractions} logged.</div>
+                  <div className="mt-6 text-red-500/80 font-mono font-black text-lg bg-red-500/10 border border-red-500/20 py-2 px-4 rounded-xl inline-block">
+                    DISTRACTION #{distractions} LOGGED
+                  </div>
                 </div>
                 <button
                   onClick={() => {
                     stopBuzzer();
                     document.documentElement.requestFullscreen().then(() => setFullscreenExited(false)).catch(() => setFullscreenExited(false));
                   }}
-                  className="w-full h-16 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-400 hover:to-orange-400 text-white font-black text-lg shadow-xl shadow-red-500/20 transition-all active:scale-95"
+                  className="w-full h-18 rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 text-white font-black text-xl shadow-[0_0_40px_rgba(239,68,68,0.3)] transition-all active:scale-95 border-none"
                 >
-                  🔒 Return to Session
+                  🔒 Snap Back & Lock In
                 </button>
               </div>
             </motion.div>
