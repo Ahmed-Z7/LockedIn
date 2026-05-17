@@ -314,6 +314,9 @@ export default function StudySessionPage() {
           .then(() => {
             setFullscreenExited(false);
             stopBuzzer();
+            if ('keyboard' in navigator && (navigator.keyboard as any).lock) {
+              (navigator.keyboard as any).lock(['Escape', 'Tab', 'MetaLeft', 'MetaRight']).catch(() => {});
+            }
           })
           .catch(() => {});
       }
@@ -389,6 +392,9 @@ export default function StudySessionPage() {
     try {
         if (document.documentElement.requestFullscreen) {
             await document.documentElement.requestFullscreen();
+            if ('keyboard' in navigator && (navigator.keyboard as any).lock) {
+                await (navigator.keyboard as any).lock(['Escape', 'Tab', 'MetaLeft', 'MetaRight']);
+            }
         }
     } catch (err) {
         console.error("Neural link fullscreen failed:", err);
@@ -486,6 +492,9 @@ export default function StudySessionPage() {
   const completeSession = (finalScore: number) => {
     setIsQuizActive(false);
     setIsLocked(false);
+    if ('keyboard' in navigator && (navigator.keyboard as any).unlock) {
+        try { (navigator.keyboard as any).unlock(); } catch(e) {}
+    }
     if (document.exitFullscreen) {
         try { document.exitFullscreen(); } catch(e) {}
     }
@@ -863,7 +872,12 @@ export default function StudySessionPage() {
                 <button
                   onClick={() => {
                     stopBuzzer();
-                    document.documentElement.requestFullscreen().then(() => setFullscreenExited(false)).catch(() => setFullscreenExited(false));
+                    document.documentElement.requestFullscreen().then(() => {
+                      setFullscreenExited(false);
+                      if ('keyboard' in navigator && (navigator.keyboard as any).lock) {
+                        (navigator.keyboard as any).lock(['Escape', 'Tab', 'MetaLeft', 'MetaRight']).catch(() => {});
+                      }
+                    }).catch(() => setFullscreenExited(false));
                   }}
                   className="w-full h-18 rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 text-white font-black text-xl shadow-[0_0_40px_rgba(239,68,68,0.3)] transition-all active:scale-95 border-none"
                 >
