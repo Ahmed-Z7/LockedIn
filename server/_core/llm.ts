@@ -151,6 +151,7 @@ async function invokeViaGemini(params: InvokeParams): Promise<InvokeResult> {
 
   // All AI Studio keys must use v1beta endpoint
   const modelsToTry = [
+    { id: "gemini-2.5-flash",      apiVersion: "v1beta" },
     { id: "gemini-2.0-flash-lite", apiVersion: "v1beta" },
     { id: "gemini-2.0-flash",      apiVersion: "v1beta" },
     { id: "gemini-1.5-flash",      apiVersion: "v1beta" },
